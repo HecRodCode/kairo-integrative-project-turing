@@ -1,0 +1,37 @@
+{
+  "name": "learning-platform",
+  "version": "1.0.0",
+  "description": "Backend Node.js for Riwi Learning Platform",
+  "keywords": [
+    "Riwi",
+    "Learning",
+    "PLatform",
+    "API"
+  ],
+  "homepage": "https://github.com/Riwi-Project-C6/Learning-Platform#readme",
+  "bugs": {
+    "url": "https://github.com/Riwi-Project-C6/Learning-Platform/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Riwi-Project-C6/Learning-Platform.git"
+  },
+  "license": "MIT",
+  "author": "Héctor",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "pg": "^8.18.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}
