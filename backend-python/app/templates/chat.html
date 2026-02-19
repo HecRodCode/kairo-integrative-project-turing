@@ -1,0 +1,76 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <title>Chat IA - MatchFlow</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 min-h-screen p-4">
+    <div class="max-w-8xl mx-auto">
+        <div class="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden h-[80vh] flex flex-col">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white text-center">
+                <h1 class="text-3xl font-bold mb-2">🤖 Chat IA</h1>
+                <p class="opacity-90">Powered by Groq Llama3</p>
+            </div>
+            
+            <!-- Mensajes -->
+            <div id="messages" class="flex-1 p-6 overflow-y-auto bg-gray-50 space-y-4">
+                <div class="text-center text-gray-500 py-4">Escribe un mensaje para empezar...</div>
+            </div>
+            
+            <!-- Input -->
+            <div class="p-6 bg-white border-t">
+                <div class="flex gap-2">
+                    <input type="text" id="messageInput" class="flex-1 border border-gray-300 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Escribe tu mensaje...">
+                    <button onclick="sendMessage()" class="bg-indigo-600 text-white px-6 py-3 rounded-2xl hover:bg-indigo-700 font-medium">Enviar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const messages = document.getElementById('messages');
+        const input = document.getElementById('messageInput');
+
+        async function sendMessage() {
+            const text = input.value.trim();
+            if (!text) return;
+
+            // Mensaje usuario
+            addMessage('Tú', text, 'bg-blue-500 text-white ml-auto');
+            input.value = '';
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text })
+                });
+                const data = await response.json();
+                addMessage('IA', data.response, 'bg-gray-200');
+            } catch (error) {
+                addMessage('Error', 'No se pudo conectar con la IA', 'bg-red-200');
+            }
+        }
+
+        function addMessage(sender, text, classes) {
+            const div = document.createElement('div');
+            div.className = `max-w-xs lg:max-w-md p-3 rounded-2xl ${classes} rounded-br-none`;
+            div.innerHTML = `<strong>${sender}:</strong> ${text}`;
+            messages.appendChild(div);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        input.addEventListener('keypress', e => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
