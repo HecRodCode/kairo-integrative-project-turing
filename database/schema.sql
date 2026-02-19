@@ -2,32 +2,14 @@
 -- BASE DE DATOS SIMPLIFICADA
 -- Proyecto: Ruta Formativa Personalizada con IA
 -- Motor: PostgreSQL 12+
--- Versión: 2.0 - MÍNIMA Y EFECTIVA
+-- Versión: 2.1 - MÍNIMA Y EFECTIVA (CORREGIDA)
 -- Fecha: Febrero 2026
 -- ============================================
 
--- ⚠️ EJECUTAR PRIMERO EN LÍNEA DE COMANDOS O COMO SCRIPT SEPARADO:
+--  EJECUTAR PRIMERO EN LÍNEA DE COMANDOS O COMO SCRIPT SEPARADO:
 -- dropdb ruta_formativa_ia;
 -- createdb ruta_formativa_ia;
 -- Luego ejecuta este archivo con: psql ruta_formativa_ia -f tables_pi_postgresql.sql
-
--- Eliminar tipos ENUM si existen (para reinicializar)
-DROP TYPE IF EXISTS feedback_type_enum CASCADE;
-DROP TYPE IF EXISTS activity_type_enum CASCADE;
-DROP TYPE IF EXISTS learning_style_enum CASCADE;
-DROP TYPE IF EXISTS role_enum CASCADE;
-
--- Eliminar tablas
-DROP TABLE IF EXISTS tl_feedback;
-DROP TABLE IF EXISTS activity_progress;
-DROP TABLE IF EXISTS plan_activities;
-DROP TABLE IF EXISTS complementary_plans;
-DROP TABLE IF EXISTS coder_struggling_topics;
-DROP TABLE IF EXISTS topics;
-DROP TABLE IF EXISTS moodle_progress;
-DROP TABLE IF EXISTS modules;
-DROP TABLE IF EXISTS soft_skills_assessment;
-DROP TABLE IF EXISTS users;
 
 -- Crear tipos ENUM
 CREATE TYPE role_enum AS ENUM ('coder', 'tl');
@@ -72,7 +54,20 @@ CREATE TABLE modules (
 );
 
 -- ============================================
--- 4. MOODLE_PROGRESS (Progreso académico)
+-- 4. WEEKS (Semanas) 
+-- ============================================
+CREATE TABLE weeks (
+    id SERIAL PRIMARY KEY,
+    module_id INT NOT NULL,
+    week_number INT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    UNIQUE (module_id, week_number),
+    FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
+);
+
+-- ============================================
+-- 5. MOODLE_PROGRESS (Progreso académico)
 -- ============================================
 CREATE TABLE moodle_progress (
     id SERIAL PRIMARY KEY,
@@ -80,6 +75,7 @@ CREATE TABLE moodle_progress (
     module_id INT NOT NULL,
     current_week INT NOT NULL,
     average_score DECIMAL(5,2) DEFAULT 0,
+    struggling_topics TEXT[] DEFAULT '{}', -- ⬅️ AGREGADO
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (coder_id, module_id),
     FOREIGN KEY (coder_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -89,7 +85,7 @@ CREATE TABLE moodle_progress (
 CREATE INDEX idx_score ON moodle_progress(average_score);
 
 -- ============================================
--- 5. TOPICS (Temas)
+-- 6. TOPICS (Temas)
 -- ============================================
 CREATE TABLE topics (
     id SERIAL PRIMARY KEY,
@@ -102,7 +98,7 @@ CREATE TABLE topics (
 CREATE INDEX idx_category ON topics(category);
 
 -- ============================================
--- 6. CODER_STRUGGLING_TOPICS (Relación N:M)
+-- 7. CODER_STRUGGLING_TOPICS (Relación N:M)
 -- ============================================
 CREATE TABLE coder_struggling_topics (
     id SERIAL PRIMARY KEY,
@@ -114,12 +110,13 @@ CREATE TABLE coder_struggling_topics (
 );
 
 -- ============================================
--- 7. COMPLEMENTARY_PLANS (Planes personalizados)
+-- 8. COMPLEMENTARY_PLANS (Planes personalizados)
 -- ============================================
 CREATE TABLE complementary_plans (
     id SERIAL PRIMARY KEY,
     coder_id INT NOT NULL,
     module_id INT NOT NULL,
+    week_number INT NOT NULL, 
     plan_content TEXT NOT NULL,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -130,7 +127,7 @@ CREATE TABLE complementary_plans (
 CREATE INDEX idx_active ON complementary_plans(is_active);
 
 -- ============================================
--- 8. PLAN_ACTIVITIES (Actividades)
+-- 9. PLAN_ACTIVITIES (Actividades)
 -- ============================================
 CREATE TABLE plan_activities (
     id SERIAL PRIMARY KEY,
@@ -140,13 +137,14 @@ CREATE TABLE plan_activities (
     description TEXT,
     estimated_time_minutes INT,
     activity_type activity_type_enum,
+    order_index INT NOT NULL, 
     FOREIGN KEY (plan_id) REFERENCES complementary_plans(id) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_plan ON plan_activities(plan_id);
 
 -- ============================================
--- 9. ACTIVITY_PROGRESS (Progreso de actividades)
+-- 10. ACTIVITY_PROGRESS (Progreso de actividades)
 -- ============================================
 CREATE TABLE activity_progress (
     id SERIAL PRIMARY KEY,
@@ -164,7 +162,7 @@ CREATE TABLE activity_progress (
 CREATE INDEX idx_completed ON activity_progress(completed);
 
 -- ============================================
--- 10. TL_FEEDBACK (Retroalimentación)
+-- 11. TL_FEEDBACK (Retroalimentación)
 -- ============================================
 CREATE TABLE tl_feedback (
     id SERIAL PRIMARY KEY,
@@ -224,6 +222,6 @@ ORDER BY risk_level DESC, mp.average_score ASC;
 -- ============================================
 -- Confirmación
 -- ============================================
-SELECT '✅ Base de datos (esquema) configurada correctamente' AS status;
+SELECT ' Base de datos (esquema) configurada correctamente' AS status;
 SELECT COUNT(*) AS number_of_tables FROM information_schema.tables 
 WHERE table_schema = 'public' AND table_type = 'BASE TABLE';
