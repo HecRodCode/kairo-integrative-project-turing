@@ -1,0 +1,80 @@
+*{
+  box-sizing:border-box;
+  margin:0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+body{
+  background:#2b2b2b;
+  animation: fadeInPage 0.6s ease-in-out;
+}
+@keyframes fadeInPage {
+    from {
+        opacity: 0;
+        transform: translateY(10px); 
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+li a {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.sidebar {
+    width: 260px;
+    /* background:#e1e1e1; */
+    min-height:100vh;
+    padding:20px;
+    position: fixed;
+    background: linear-gradient(188deg, #261339 30%, #000000 82%);
+    color: #dedede;
+    box-shadow: 0px 2px 12px #dedede;
+}
+
+.sidebar .logo {
+    margin-bottom:40px;
+}
+.sidebar ul {
+    list-style:none;
+    padding:0;
+}
+
+.sidebar li {
+    padding:14px 18px;
+    border-radius:12px;
+    margin-bottom:10px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    font-weight:500;
+    cursor:pointer;
+    transition:.2s;
+}
+
+.sidebar li.active,
+.sidebar li:hover {
+    /* background:#cfcfcf; */
+    color: #dedede;
+    background-color: #5405a3;
+}
+.topbar {
+    /* background:#dedede; */
+    padding:14px 25px;
+    border-radius:14px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background: linear-gradient(188deg, #261339 30%, #000000 82%);
+    color: #dedede;
+    box-shadow: 0px 2px 12px #dedede;
+}
+.main{
+  margin-left: 260px;
+  padding: 22px 30px;
+  background:#000000;
+  min-height:100vh;
+}
