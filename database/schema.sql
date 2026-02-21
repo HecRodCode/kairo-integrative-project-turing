@@ -28,6 +28,8 @@ CREATE TABLE users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+
 -- ============================================
 -- 2. SOFT_SKILLS_ASSESSMENT (Diagnóstico)
 -- ============================================
@@ -43,6 +45,8 @@ CREATE TABLE soft_skills_assessment (
     FOREIGN KEY (coder_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+ALTER TABLE soft_skills_assessment ENABLE ROW LEVEL SECURITY;
+
 -- ============================================
 -- 3. MODULES (Módulos)
 -- ============================================
@@ -52,6 +56,8 @@ CREATE TABLE modules (
     description TEXT,
     total_weeks INT NOT NULL
 );
+
+ALTER TABLE modules ENABLE ROW LEVEL SECURITY;
 
 -- ============================================
 -- 4. WEEKS (Semanas) 
@@ -65,6 +71,8 @@ CREATE TABLE weeks (
     UNIQUE (module_id, week_number),
     FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
 );
+
+ALTER TABLE weeks ENABLE ROW LEVEL SECURITY;
 
 -- ============================================
 -- 5. MOODLE_PROGRESS (Progreso académico)
@@ -82,6 +90,8 @@ CREATE TABLE moodle_progress (
     FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
 );
 
+ALTER TABLE moodle_progress ENABLE ROW LEVEL SECURITY;
+
 CREATE INDEX idx_score ON moodle_progress(average_score);
 
 -- ============================================
@@ -94,6 +104,8 @@ CREATE TABLE topics (
     category VARCHAR(100),
     FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
 );
+
+ALTER TABLE topics ENABLE ROW LEVEL SECURITY;
 
 CREATE INDEX idx_category ON topics(category);
 
@@ -109,6 +121,8 @@ CREATE TABLE coder_struggling_topics (
     FOREIGN KEY (topic_id) REFERENCES topics(id) ON DELETE CASCADE
 );
 
+ALTER TABLE coder_struggling_topics ENABLE ROW LEVEL SECURITY;
+
 -- ============================================
 -- 8. COMPLEMENTARY_PLANS (Planes personalizados)
 -- ============================================
@@ -123,6 +137,8 @@ CREATE TABLE complementary_plans (
     FOREIGN KEY (coder_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
 );
+
+ALTER TABLE complementary_plans ENABLE ROW LEVEL SECURITY;
 
 CREATE INDEX idx_active ON complementary_plans(is_active);
 
@@ -140,6 +156,8 @@ CREATE TABLE plan_activities (
     order_index INT NOT NULL, 
     FOREIGN KEY (plan_id) REFERENCES complementary_plans(id) ON DELETE CASCADE
 );
+
+ALTER TABLE plan_activities ENABLE ROW LEVEL SECURITY;
 
 CREATE INDEX idx_plan ON plan_activities(plan_id);
 
@@ -159,6 +177,8 @@ CREATE TABLE activity_progress (
     FOREIGN KEY (coder_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+ALTER TABLE activity_progress ENABLE ROW LEVEL SECURITY;
+
 CREATE INDEX idx_completed ON activity_progress(completed);
 
 -- ============================================
@@ -174,6 +194,8 @@ CREATE TABLE tl_feedback (
     FOREIGN KEY (coder_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (tl_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+ALTER TABLE tl_feedback ENABLE ROW LEVEL SECURITY;
 
 CREATE INDEX idx_coder ON tl_feedback(coder_id);
 CREATE INDEX idx_tl ON tl_feedback(tl_id);
