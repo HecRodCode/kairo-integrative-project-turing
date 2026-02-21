@@ -12,16 +12,16 @@ BEGIN;
 
 -- Team Leaders
 INSERT INTO users (email, password, role) VALUES
-('tl.maria@riwi.io', '$2b$10$rQZ5JKnYZ5JKnYZ5JKnYZ.eJ5JKnYZ5JKnYZ5JKnYZ5JKnYZ5JKnY', 'tl'),
-('tl.carlos@riwi.io', '$2b$10$rQZ5JKnYZ5JKnYZ5JKnYZ.eJ5JKnYZ5JKnYZ5JKnYZ5JKnYZ5JKnY', 'tl');
+('tl.maria@riwi.io', 'password123', 'tl'),
+('tl.carlos@riwi.io', 'password123', 'tl');
 
 -- Coders
 INSERT INTO users (email, password, role) VALUES
-('coder.juan@riwi.io', '$2b$10$rQZ5JKnYZ5JKnYZ5JKnYZ.eJ5JKnYZ5JKnYZ5JKnYZ5JKnYZ5JKnY', 'coder'),
-('coder.ana@riwi.io', '$2b$10$rQZ5JKnYZ5JKnYZ5JKnYZ.eJ5JKnYZ5JKnYZ5JKnYZ5JKnYZ5JKnY', 'coder'),
-('coder.pedro@riwi.io', '$2b$10$rQZ5JKnYZ5JKnYZ5JKnYZ.eJ5JKnYZ5JKnYZ5JKnYZ5JKnYZ5JKnY', 'coder'),
-('coder.sofia@riwi.io', '$2b$10$rQZ5JKnYZ5JKnYZ5JKnYZ.eJ5JKnYZ5JKnYZ5JKnYZ5JKnYZ5JKnY', 'coder'),
-('coder.luis@riwi.io', '$2b$10$rQZ5JKnYZ5JKnYZ5JKnYZ.eJ5JKnYZ5JKnYZ5JKnYZ5JKnYZ5JKnY', 'coder');
+('coder.juan@riwi.io', 'password123', 'coder'),
+('coder.ana@riwi.io', 'password123', 'coder'),
+('coder.pedro@riwi.io', 'password123', 'coder'),
+('coder.sofia@riwi.io', 'password123', 'coder'),
+('coder.luis@riwi.io', 'password123', 'coder');
 
 -- ============================================
 -- 2. EVALUACIÓN DE HABILIDADES BLANDAS
