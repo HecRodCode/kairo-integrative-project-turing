@@ -1,62 +1,64 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register - Riwi Learning Platform</title>
+    <link rel="stylesheet" href="./../../css/auth.css" />
+  </head>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register</title>
-
-    <link rel="stylesheet" href="./../../css/auth.css">
-</head>
-
-<body class="body-content">
-    
-
+  <body class="body-content">
     <main class="card-content">
+      <section class="content-logo change-logo">
+        <div class="container">
+          <img src="./img_logo/logo.png" alt="Riwi Logo" />
+        </div>
+      </section>
 
-        <section class="content-logo change-logo">
-            <div class="container">
-                <img src="./img_logo/logo.png" alt="">
-            </div>
-        </section>
-        
-        <section class="content-form">
-            
-            <header class="header">
-                <h1>Create Account</h1>
-                <p>Start your journey</p>
-            </header>
+      <section class="content-form">
+        <header class="header">
+          <h1>Create Account</h1>
+          <p>Start your journey</p>
+        </header>
 
-            <form class="form-1">
+        <form class="form-1" id="register-form">
+          <div class="inputs">
+            <label for="name">Full Name</label>
+            <input type="text" id="name" required placeholder="John Doe" />
+          </div>
 
-                <div class="inputs">
-                    <label>Name</label>
-                    <input type="text" required>
-                </div>
+          <div class="inputs">
+            <label for="email">Email</label>
+            <input
+              type="email"
+              id="email"
+              required
+              placeholder="example@riwi.io"
+            />
+          </div>
 
-                <div class="inputs">
-                    <label>Email</label>
-                    <input type="email" required>
-                </div>
+          <div class="inputs">
+            <label for="password">Password</label>
+            <input
+              type="password"
+              id="password"
+              required
+              minlength="6"
+              placeholder="••••••••"
+            />
+          </div>
 
-                <div class="inputs">
-                    <label>Password</label>
-                    <input type="password" required>
-                </div>
+          <input type="hidden" id="role-select" value="coder" />
 
-                <button class="btn-auth">Register</button>
+          <button type="submit" class="btn-auth">Register</button>
 
-                <p class="link">
-                    Already have account?
-                    <a href="./login.html">Login</a>
-                </p>
-
-            </form>
-        </section>
-
-
+          <p class="link">
+            Already have an account? <a href="./login.html">Login</a>
+          </p>
+        </form>
+      </section>
     </main>
 
-</body>
-
+    <script src="./../../js/auth.js"></script>
+  </body>
 </html>
