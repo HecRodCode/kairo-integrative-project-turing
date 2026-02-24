@@ -1,0 +1,20 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environments
+venv/
+env/
+.venv/
+
+# Environment variables
+.env
+
+# AI Models (Si descargas modelos pesados dentro de 'data' o 'models')
+backend-python/app/data/models/
+*.gguf
+*.bin
+
+# Requirements
+.pip-cache/

@@ -1,0 +1,119 @@
+body {
+  background: #f2f2f2;
+  font-family: "Segoe UI", sans-serif;
+  animation: fadeInPage .6s ease-in-out;
+}
+@keyframes fadeInPage {
+    from {
+        opacity: 0;
+        transform: translateY(10px); 
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+li a {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.sidebar {
+    width: 260px;
+    background:#e1e1e1;
+    min-height:100vh;
+    padding:20px;
+    position: fixed;
+}
+
+.sidebar .logo {
+    margin-bottom:40px;
+}
+
+/* .sidebar .logo {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-weight:700;
+    font-size:22px;
+    color:#2b2bb2;
+    margin-bottom:40px;
+} */
+
+.sidebar ul {
+    list-style:none;
+    padding:0;
+}
+
+.sidebar li {
+    padding:14px 18px;
+    border-radius:12px;
+    margin-bottom:10px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    font-weight:500;
+    cursor:pointer;
+    transition:.2s;
+}
+
+.sidebar li.active,
+.sidebar li:hover {
+    background:#cfcfcf;
+}
+.main {
+  margin-left: 260px;
+  padding: 20px 30px;
+}
+
+.topbar {
+  background: #dedede;
+  border-radius: 14px;
+  padding: 14px 25px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.week-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+  font-size: 18px;
+}
+
+.week-box {
+  width: 18px;
+  height: 18px;
+  background: #d9d9d9;
+  border-radius: 4px;
+}
+
+.project-card {
+  background: #dedede;
+  border-radius: 22px;
+  padding: 18px 22px;
+  margin-bottom: 22px;
+}
+
+.badge-custom {
+  background: #a6a6a6;
+  color: white;
+  border-radius: 12px;
+  padding: 4px 12px;
+  font-size: 13px;
+  display: inline-block;
+}
+.mounth span:hover {
+  background-color: #dedede;
+  padding: .4rem;
+  border-radius: .7rem;
+  cursor: pointer;
+}
+.mounth span.active {
+  background-color: #dedede;
+  padding: .4rem;
+  border-radius: .7rem;
+}

@@ -1,0 +1,197 @@
+body {
+    background: #000000;
+    font-family: 'Segoe UI', sans-serif;
+    animation: fadeInPage 0.6s ease-in-out;
+}
+@keyframes fadeInPage {
+    from {
+        opacity: 0;
+        transform: translateY(10px); 
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+li a {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.sidebar {
+    width: 260px;
+    background:#e1e1e1;
+    min-height:100vh;
+    padding:20px;
+    position: fixed;
+    background: linear-gradient(188deg, #261339 30%, #000000 82%);
+    color: #dedede;
+    box-shadow: 0px 2px 12px #dedede;
+}
+
+.sidebar .logo {
+    margin-bottom:40px;
+}
+
+/* .sidebar .logo {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-weight:700;
+    font-size:22px;
+    color:#2b2bb2;
+    margin-bottom:40px;
+} */
+
+.sidebar ul {
+    list-style:none;
+    padding:0;
+}
+
+.sidebar li {
+    padding:14px 18px;
+    border-radius:12px;
+    margin-bottom:10px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    font-weight:500;
+    cursor:pointer;
+    transition:.2s;
+}
+
+.sidebar li.active,
+.sidebar li:hover {
+    /* background:#cfcfcf; */
+    color: #dedede;
+    background-color: #5405a3;
+}
+
+.main {
+    margin-left:260px;
+    padding:20px 25px;
+}
+
+.topbar {
+    /* background:#dedede; */
+    padding:14px 25px;
+    border-radius:14px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background: linear-gradient(188deg, #261339 30%, #000000 82%);
+    color: #dedede;
+    box-shadow: 0px 2px 12px #dedede;
+}
+
+.progress-card {
+    /* background:#dedede; */
+    border-radius:15px;
+    padding:15px;
+    text-align:center;
+    font-weight:600;
+    background: linear-gradient(188deg, #261339 30%, #000000 82%);
+    color: #dedede;
+    box-shadow: 0px 2px 12px #dedede;
+}
+
+.table-wrapper {
+    background:#fff;
+    border-radius:16px;
+    padding:20px;
+}
+
+table th {
+    background:#d0d0d0;
+}
+
+.profile-card {
+    /* background:#dedede; */
+    border-radius:18px;
+    padding:20px;
+    height:100%;
+    background: linear-gradient(218deg, #261339 30%, #000000 82%);
+    color: #dedede;
+    box-shadow: 0px 2px 12px #dedede;
+}
+
+.avatar {
+    width:130px;
+    height:130px;
+    border-radius:50%;
+    background:#5c6585;
+    margin:auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:48px;
+    color:white;
+}
+
+.status {
+    width:16px;
+    height:16px;
+    border-radius:50%;
+    display:inline-block;
+}
+
+.green { background:#0f8c2f; }
+
+.btn-report {
+    background:#7F0DF2;
+    border:none;
+    color: #dedede;
+    border-radius:14px;
+    padding:10px 16px;
+    width:100%;
+    font-weight:600;
+}
+.main-content_container {
+    padding: .8rem;
+    /* background: linear-gradient(188deg, #261339 30%, #000000 82%); */
+    background: linear-gradient(359deg, #261339 10%, #000000 92%);
+    color: #dedede;
+    border-radius: 20px;
+    box-shadow: 0px 2px 12px #dedede;
+}
+.table-style {
+    box-shadow: 0px 2px 12px #dedede;
+    color: #dedede;
+    background: linear-gradient(188deg, #261339 30%, #000000 82%);
+}
+.table-style th {
+    color: #dedede;
+    background: transparent;
+}
+
+
+
+
+/* -------------- STYLE THEME -------------------- */
+
+:root {
+  /* Modo Oscuro (por defecto) */
+  --bg-principal: #0d0d0d;
+  --bg-panel: #1a1a1a;
+  --texto: #ffffff;
+  --acento: #a855f7;
+}
+
+[data-theme="light"] {
+  /* Modo Claro (Minimalista) */
+  --bg-principal: #cdcdcd;
+  --bg-panel: #ffffff;
+  --texto: #1e293b;
+  --acento: #3b82f6; /* Un azul moderno para el modo claro */
+}
+
+body {
+  background-color: var(--bg-principal);
+  color: var(--texto);
+  transition: all 0.3s ease; /* Para que el cambio sea suave */
+}
+
+.card, .tu-tabla-clase { 
+  background-color: var(--bg-panel);
+}
