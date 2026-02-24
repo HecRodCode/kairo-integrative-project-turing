@@ -1,6 +1,6 @@
 /**
  * Riwi Learning Platform - API Gateway
- * Orchestrates authentication, database persistence, and AI microservice communication.
+ * Core orchestrator for authentication, persistence, and AI services.
  */
 
 import 'dotenv/config';
@@ -8,7 +8,7 @@ import express from 'express';
 import cors from 'cors';
 import session from 'express-session';
 import morgan from 'morgan';
-import { pool } from './config/database.js';
+import { pool, testConnection } from './config/database.js';
 
 // Route Definitions
 import authRoutes from './routes/authRoutes.js';
@@ -20,117 +20,144 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 
-/**
- * Security & Cross-Origin Resource Sharing
- * FIXED: Explicitly added common local development origins.
- */
-const allowedOrigins = [
-  'http://localhost:5500',
-  'http://127.0.0.1:5500',
-  'http://localhost:3000',
-  'http://127.0.0.1:3000',
-  'http://192.168.1.4:5500', // Añadí esta porque la vi en tu captura anterior
-];
+// ============================================
+// MIDDLEWARE CONFIGURATION
+// ============================================
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      // Permitir peticiones sin origen (como Postman o apps móviles)
-      if (!origin) return callback(null, true);
-
-      if (allowedOrigins.indexOf(origin) !== -1 || !isProduction) {
-        return callback(null, true);
-      } else {
-        return callback(new Error('CORS Policy violation'), false);
-      }
-    },
-    credentials: true, // REQUERIDO para cookies de sesión
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    origin: process.env.FRONTEND_URL || 'http://localhost:5500',
+    credentials: true,
   })
 );
 
-/**
- * Global Middlewares
- */
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 /**
  * Session State Management
- * FIXED: Optimized for local development handshake.
+ * Configured for secure cookie handling across environments.
  */
 app.use(
   session({
-    name: 'riwi.sid', // Nombre personalizado para la cookie
-    secret: process.env.SESSION_SECRET || 'fallback_dev_secret',
+    name: 'riwi.sid',
+    secret: process.env.SESSION_SECRET || 'dev_secret_fallback',
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: isProduction, // False en desarrollo (HTTP)
+      secure: isProduction,
       httpOnly: true,
-      maxAge: 86400000,
-      sameSite: isProduction ? 'none' : 'lax', // Lax es necesario para desarrollo entre puertos
+      maxAge: 24 * 60 * 60 * 1000, // 24 Hours
+      sameSite: isProduction ? 'none' : 'lax',
     },
   })
 );
 
-// API Endpoint Mapping
+// ============================================
+// API ROUTING
+// ============================================
+
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/diagnostics', diagnosticRoutes);
 app.use('/api/ai', aiRoutes);
 
 /**
- * Resource Health Monitoring
+ * Global Health Check
+ * Monitors system uptime and database connectivity.
  */
 app.get('/api/health', async (req, res) => {
   try {
-    const dbStatus = await pool.query('SELECT NOW()');
-    res.status(200).json({
-      status: 'ok',
+    const result = await pool.query('SELECT NOW()');
+    res.json({
+      status: 'active',
       uptime: process.uptime(),
-      db_connected: !!dbStatus.rows.length,
+      database: {
+        connected: true,
+        cluster: 'aws-1-us-east-1', // Verified IPv4 compatible
+        timestamp: result.rows[0].now,
+      },
     });
   } catch (error) {
-    res.status(503).json({ status: 'error', database: 'disconnected' });
+    res.status(503).json({ status: 'unstable', error: error.message });
   }
 });
 
-/**
- * Centralized Error Handling
- */
+// Error Handling: 404
+app.use((req, res) => {
+  res.status(404).json({ error: 'Endpoint not found' });
+});
+
+// Error Handling: Global Exception Filter
 app.use((err, req, res, next) => {
   const status = err.status || 500;
-  // Solo loguear si no es un error de CORS para no ensuciar la consola
-  if (err.message !== 'CORS Policy violation') {
-    console.error(`[System Error] ${err.message}`);
-  }
-
+  console.error(`[System Error] ${err.stack}`);
   res.status(status).json({
     error: true,
     message: isProduction ? 'Internal Server Error' : err.message,
   });
 });
 
+// ============================================
+// SERVER BOOTSTRAP
+// ============================================
+
 /**
- * System Bootstrap
+ * Start Server Sequence
+ * Verifies database integrity before binding to network port.
  */
 async function startServer() {
   try {
-    await pool.query('SELECT 1');
-    console.log('🔌 Database connectivity verified.');
+    process.stdout.write('🔄 Initializing system services... ');
 
-    app.listen(PORT, () => {
+    // Database Handshake
+    await testConnection();
+
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log('DONE');
       console.log(
-        `🚀 Node.js Gateway active on port ${PORT} [${process.env.NODE_ENV || 'development'}]`
+        '------------------------------------------------------------'
+      );
+      console.log('🚀 RIWI API GATEWAY STARTED SUCCESSFULLY');
+      console.log(
+        '------------------------------------------------------------'
+      );
+      console.log(`📡 URL      : http://localhost:${PORT}`);
+      console.log(`🛠️  ENV      : ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🏥 HEALTH   : http://localhost:${PORT}/api/health`);
+      console.log(
+        '------------------------------------------------------------'
       );
     });
   } catch (error) {
-    console.error('❌ Core Failure: Unable to establish database connection.');
+    console.error('FAILED');
+    console.error(
+      '\n------------------------------------------------------------'
+    );
+    console.error('💥 CRITICAL FAILURE: DATABASE CONNECTION REFUSED');
+    console.error(
+      '------------------------------------------------------------'
+    );
+    console.error('Diagnostic Check:');
+    console.error('  1. Check AWS-1-US-EAST-1 cluster status');
+    console.error('  2. Verify Port 5432 is open for Session Pooler');
+    console.error('  3. Validate .env credentials');
+    console.error(
+      '------------------------------------------------------------\n'
+    );
     process.exit(1);
   }
 }
+
+// Graceful Shutdown Listeners
+const shutdown = async (signal) => {
+  console.log(`\n⚠️ ${signal} received. Closing database pool...`);
+  await pool.end();
+  process.exit(0);
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 
 startServer();
