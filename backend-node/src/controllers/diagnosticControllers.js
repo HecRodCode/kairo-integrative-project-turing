@@ -1,9 +1,15 @@
+/**
+ * Riwi Learning Platform - Diagnostic Controller
+ * Manages soft skills assessments with strict score and style validation.
+ */
+
 import { create, findByCoderId, update, getAll } from '../models/softSkills.js';
 
 /**
- * Create or update soft skills assessment
+ * Handles the creation of a new soft skills assessment.
+ * Renamed to 'saveDiagnostic' to match route imports.
  */
-export async function createDiagnostic(req, res) {
+export async function saveDiagnostic(req, res) {
   try {
     const {
       autonomy,
@@ -14,7 +20,7 @@ export async function createDiagnostic(req, res) {
       learningStyle,
     } = req.body;
 
-    // Validation
+    // 1. Mandatory Field Validation
     if (
       !autonomy ||
       !timeManagement ||
@@ -36,7 +42,7 @@ export async function createDiagnostic(req, res) {
       });
     }
 
-    // Validate scores (1-5)
+    // 2. Score Range Validation (1-5)
     const scores = [
       autonomy,
       timeManagement,
@@ -45,12 +51,10 @@ export async function createDiagnostic(req, res) {
       teamwork,
     ];
     if (scores.some((score) => score < 1 || score > 5)) {
-      return res.status(400).json({
-        error: 'Scores must be between 1 and 5',
-      });
+      return res.status(400).json({ error: 'Scores must be between 1 and 5' });
     }
 
-    // Validate learning style
+    // 3. Learning Style Validation
     const validStyles = ['visual', 'auditory', 'kinesthetic', 'mixed'];
     if (!validStyles.includes(learningStyle)) {
       return res.status(400).json({
@@ -83,32 +87,25 @@ export async function createDiagnostic(req, res) {
       },
     });
   } catch (error) {
-    console.error('Create diagnostic error:', error);
+    console.error('[Diagnostic Creation Error]:', error);
     res.status(500).json({ error: 'Failed to save diagnostic' });
   }
 }
 
 /**
- * Get diagnostic by coder ID
+ * Retrieves the diagnostic for the current user.
+ * Renamed to 'getDiagnostic' to match route imports.
  */
-export async function getDiagnosticByCoderId(req, res) {
+export async function getDiagnostic(req, res) {
   try {
-    const { coderId } = req.params;
-
-    // Check permission: only the coder themselves or TL can access
-    if (req.session.userId !== parseInt(coderId) && req.session.role !== 'tl') {
-      return res.status(403).json({
-        error: 'Forbidden',
-        message: 'You can only access your own diagnostic',
-      });
-    }
-
-    const diagnostic = await findByCoderId(coderId);
+    // We use the session userId directly for the '/me' endpoint
+    const userId = req.session.userId;
+    const diagnostic = await findByCoderId(userId);
 
     if (!diagnostic) {
       return res.status(404).json({
         error: 'Diagnostic not found',
-        message: 'This coder has not completed the assessment yet',
+        message: 'You have not completed the assessment yet',
       });
     }
 
@@ -125,71 +122,14 @@ export async function getDiagnosticByCoderId(req, res) {
       },
     });
   } catch (error) {
-    console.error('Get diagnostic error:', error);
+    console.error('[Get Diagnostic Error]:', error);
     res.status(500).json({ error: 'Failed to get diagnostic' });
   }
 }
 
 /**
- * Update diagnostic
- */
-export async function updateDiagnostic(req, res) {
-  try {
-    const { coderId } = req.params;
-    const updates = req.body;
-
-    // Check permission: only the coder themselves can update
-    if (req.session.userId !== parseInt(coderId)) {
-      return res.status(403).json({
-        error: 'Forbidden',
-        message: 'You can only update your own diagnostic',
-      });
-    }
-
-    // Check if diagnostic exists
-    const existing = await findByCoderId(coderId);
-    if (!existing) {
-      return res.status(404).json({ error: 'Diagnostic not found' });
-    }
-
-    // Map camelCase to snake_case
-    const mappedUpdates = {};
-    if (updates.autonomy !== undefined)
-      mappedUpdates.autonomy = updates.autonomy;
-    if (updates.timeManagement !== undefined)
-      mappedUpdates.time_management = updates.timeManagement;
-    if (updates.problemSolving !== undefined)
-      mappedUpdates.problem_solving = updates.problemSolving;
-    if (updates.communication !== undefined)
-      mappedUpdates.communication = updates.communication;
-    if (updates.teamwork !== undefined)
-      mappedUpdates.teamwork = updates.teamwork;
-    if (updates.learningStyle !== undefined)
-      mappedUpdates.learning_style = updates.learningStyle;
-
-    const updated = await update(coderId, mappedUpdates);
-
-    res.json({
-      message: 'Diagnostic updated successfully',
-      diagnostic: {
-        coderId: updated.coder_id,
-        autonomy: updated.autonomy,
-        timeManagement: updated.time_management,
-        problemSolving: updated.problem_solving,
-        communication: updated.communication,
-        teamwork: updated.teamwork,
-        learningStyle: updated.learning_style,
-        assessedAt: updated.assessed_at,
-      },
-    });
-  } catch (error) {
-    console.error('Update diagnostic error:', error);
-    res.status(500).json({ error: 'Failed to update diagnostic' });
-  }
-}
-
-/**
- * Get all diagnostics (only for TL)
+ * Get all diagnostics (TL access only).
+ * Maintained as 'getAllDiagnostics'.
  */
 export async function getAllDiagnostics(req, res) {
   try {
@@ -211,7 +151,7 @@ export async function getAllDiagnostics(req, res) {
       total: diagnostics.length,
     });
   } catch (error) {
-    console.error('Get all diagnostics error:', error);
+    console.error('[Get All Diagnostics Error]:', error);
     res.status(500).json({ error: 'Failed to get diagnostics' });
   }
 }

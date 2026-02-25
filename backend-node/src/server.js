@@ -1,5 +1,5 @@
 /**
- * Riwi Learning Platform - API Gateway
+ * Riwi Learning Platform - Kairo API Gateway
  * Core orchestrator for authentication, persistence, and AI services.
  */
 
@@ -10,20 +10,18 @@ import session from 'express-session';
 import morgan from 'morgan';
 import { pool, testConnection } from './config/database.js';
 
-// Route Definitions
-import authRoutes from './routes/authRoutes.js';
-import userRoutes from './routes/userRoutes.js';
-import diagnosticRoutes from './routes/diagnosticRoutes.js';
+// Optimized Route Definitions
+import authRoutes from './routes/authRoutes.js'; 
+import diagnosticRoutes from './routes/diagnosticRoutes.js'; 
+import coderRoutes from './routes/coderRoutes.js'; 
+import tlRoutes from './routes/tlRoutes.js';
 import aiRoutes from './routes/iaRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 
-// ============================================
 // MIDDLEWARE CONFIGURATION
-// ============================================
-
 app.use(
   cors({
     origin: process.env.FRONTEND_URL || 'http://localhost:5500',
@@ -37,7 +35,7 @@ app.use(express.urlencoded({ extended: true }));
 
 /**
  * Session State Management
- * Configured for secure cookie handling across environments.
+ * Securely handles user identity across the platform.
  */
 app.use(
   session({
@@ -48,19 +46,18 @@ app.use(
     cookie: {
       secure: isProduction,
       httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000, // 24 Hours
+      maxAge: 24 * 60 * 60 * 1000,
       sameSite: isProduction ? 'none' : 'lax',
     },
   })
 );
 
-// ============================================
-// API ROUTING
-// ============================================
 
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
+// API ROUTING - RESTFUL ENDPOINTS
+app.use('/api/auth', authRoutes); 
 app.use('/api/diagnostics', diagnosticRoutes);
+app.use('/api/coder', coderRoutes); 
+app.use('/api/tl', tlRoutes);
 app.use('/api/ai', aiRoutes);
 
 /**
@@ -75,7 +72,6 @@ app.get('/api/health', async (req, res) => {
       uptime: process.uptime(),
       database: {
         connected: true,
-        cluster: 'aws-1-us-east-1', // Verified IPv4 compatible
         timestamp: result.rows[0].now,
       },
     });
@@ -99,17 +95,10 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ============================================
 // SERVER BOOTSTRAP
-// ============================================
-
-/**
- * Start Server Sequence
- * Verifies database integrity before binding to network port.
- */
 async function startServer() {
   try {
-    process.stdout.write('🔄 Initializing system services... ');
+    process.stdout.write('🔄 Initializing Kairo services... ');
 
     // Database Handshake
     await testConnection();
@@ -119,45 +108,20 @@ async function startServer() {
       console.log(
         '------------------------------------------------------------'
       );
-      console.log('🚀 RIWI API GATEWAY STARTED SUCCESSFULLY');
+      console.log('🚀 KAIRO API GATEWAY STARTED SUCCESSFULLY');
       console.log(
         '------------------------------------------------------------'
       );
       console.log(`📡 URL      : http://localhost:${PORT}`);
       console.log(`🛠️  ENV      : ${process.env.NODE_ENV || 'development'}`);
-      console.log(`🏥 HEALTH   : http://localhost:${PORT}/api/health`);
       console.log(
         '------------------------------------------------------------'
       );
     });
   } catch (error) {
     console.error('FAILED');
-    console.error(
-      '\n------------------------------------------------------------'
-    );
-    console.error('💥 CRITICAL FAILURE: DATABASE CONNECTION REFUSED');
-    console.error(
-      '------------------------------------------------------------'
-    );
-    console.error('Diagnostic Check:');
-    console.error('  1. Check AWS-1-US-EAST-1 cluster status');
-    console.error('  2. Verify Port 5432 is open for Session Pooler');
-    console.error('  3. Validate .env credentials');
-    console.error(
-      '------------------------------------------------------------\n'
-    );
     process.exit(1);
   }
 }
-
-// Graceful Shutdown Listeners
-const shutdown = async (signal) => {
-  console.log(`\n⚠️ ${signal} received. Closing database pool...`);
-  await pool.end();
-  process.exit(0);
-};
-
-process.on('SIGTERM', () => shutdown('SIGTERM'));
-process.on('SIGINT', () => shutdown('SIGINT'));
 
 startServer();

@@ -1,5 +1,6 @@
 /**
  * Service to communicate with Python FastAPI microservice
+ * Handles network errors and status validation
  */
 
 const PYTHON_API_URL = process.env.PYTHON_API_URL || 'http://localhost:8000';
@@ -26,11 +27,8 @@ export async function callPythonApi(endpoint, data) {
 
     return await response.json();
   } catch (error) {
-    if (error.isApiError) {
-      throw error;
-    }
+    if (error.isApiError) throw error;
 
-    // Network or connection error
     const connectionError = new Error('Unable to connect to Python AI service');
     connectionError.isApiError = true;
     connectionError.originalError = error;
