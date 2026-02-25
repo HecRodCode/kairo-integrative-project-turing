@@ -20,7 +20,6 @@ export async function saveDiagnostic(req, res) {
       learningStyle,
     } = req.body;
 
-    // 1. Mandatory Field Validation
     if (
       !autonomy ||
       !timeManagement ||
@@ -42,7 +41,6 @@ export async function saveDiagnostic(req, res) {
       });
     }
 
-    // 2. Score Range Validation (1-5)
     const scores = [
       autonomy,
       timeManagement,
@@ -54,7 +52,6 @@ export async function saveDiagnostic(req, res) {
       return res.status(400).json({ error: 'Scores must be between 1 and 5' });
     }
 
-    // 3. Learning Style Validation
     const validStyles = ['visual', 'auditory', 'kinesthetic', 'mixed'];
     if (!validStyles.includes(learningStyle)) {
       return res.status(400).json({

@@ -4,6 +4,8 @@
  */
 
 import { query } from '../config/database.js';
+import { calculatePercentage, formatDate } from '../utils/helpers.js';
+import { sanitizeInput } from '../utils/validators.js';
 
 /**
  * Retrieves all coders in a specific clan with combined academic and risk data.
@@ -40,7 +42,7 @@ export async function getClanMetrics(req, res) {
     const text = `
       SELECT 
         AVG(mp.average_score) as clan_average,
-        COUNT(CASE WHEN rf.risk_level = 'High' THEN 1 END) as high_risk_count,
+        COUNT(CASE WHEN rf.risk_level = 'high' THEN 1 END) as high_risk_count,
         COUNT(u.id) as total_coders
       FROM users u
       LEFT JOIN moodle_progress mp ON u.id = mp.coder_id
@@ -49,14 +51,17 @@ export async function getClanMetrics(req, res) {
     `;
     const result = await query(text, [clan_id]);
 
+    const clanAverage = parseFloat(result.rows[0].clan_average || 0);
+    const highRiskCount = parseInt(result.rows[0].high_risk_count || 0);
+    const totalCoders = parseInt(result.rows[0].total_coders || 0);
+
     res.json({
       clanId: clan_id,
       metrics: {
-        averagePerformance: parseFloat(
-          result.rows[0].clan_average || 0
-        ).toFixed(2),
-        highRiskCoders: parseInt(result.rows[0].high_risk_count || 0),
-        totalStudents: parseInt(result.rows[0].total_coders || 0),
+        averagePerformance: clanAverage.toFixed(2),
+        highRiskCoders: highRiskCount,
+        totalStudents: totalCoders,
+        riskPercentage: calculatePercentage(highRiskCount, totalCoders),
       },
     });
   } catch (error) {
@@ -73,9 +78,10 @@ export async function getCoderFullDetail(req, res) {
   try {
     const text = `
       SELECT 
-        u.id, u.full_name, u.email, u.clan_id,
+        u.id, u.full_name, u.email, u.clan_id, u.created_at,
         mp.average_score, mp.completed_activities,
-        ss.autonomy, ss.time_management, ss.problem_solving, ss.communication, ss.teamwork, ss.learning_style
+        ss.autonomy, ss.time_management, ss.problem_solving, 
+        ss.communication, ss.teamwork, ss.learning_style
       FROM users u
       LEFT JOIN moodle_progress mp ON u.id = mp.coder_id
       LEFT JOIN soft_skills_assessment ss ON u.id = ss.coder_id
@@ -87,7 +93,10 @@ export async function getCoderFullDetail(req, res) {
       return res.status(404).json({ error: 'Coder not found' });
     }
 
-    res.json({ coder: result.rows[0] });
+    const coderData = result.rows[0];
+    coderData.joined_date = formatDate(coderData.created_at);
+
+    res.json({ coder: coderData });
   } catch (error) {
     console.error('[TL Coder Detail Error]:', error);
     res.status(500).json({ error: 'Failed to fetch coder details' });
@@ -101,6 +110,10 @@ export async function submitFeedback(req, res) {
   const { coderId, feedbackText, feedbackType } = req.body;
   const tlId = req.session.userId;
 
+  if (!coderId || !feedbackText || !feedbackType) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
+
   try {
     const text = `
       INSERT INTO tl_feedback (coder_id, tl_id, feedback_text, feedback_type, created_at)
@@ -109,16 +122,15 @@ export async function submitFeedback(req, res) {
     const result = await query(text, [
       coderId,
       tlId,
-      feedbackText,
-      feedbackType,
+      sanitizeInput(feedbackText),
+      sanitizeInput(feedbackType),
     ]);
-    res
-      .status(201)
-      .json({
-        success: true,
-        message: 'Feedback registered',
-        data: result.rows[0],
-      });
+
+    res.status(201).json({
+      success: true,
+      message: 'Feedback registered',
+      data: result.rows[0],
+    });
   } catch (error) {
     console.error('[TL Feedback Error]:', error);
     res.status(500).json({ error: 'Failed to submit feedback' });
@@ -135,7 +147,7 @@ export async function getRiskReports(req, res) {
       FROM risk_flags rf
       JOIN users u ON rf.coder_id = u.id
       WHERE rf.resolved = false
-      ORDER BY CASE WHEN risk_level = 'High' THEN 1 WHEN risk_level = 'Medium' THEN 2 ELSE 3 END
+      ORDER BY CASE WHEN risk_level = 'high' THEN 1 WHEN risk_level = 'medium' THEN 2 ELSE 3 END
     `;
     const result = await query(text);
     res.json({ active_risks: result.rows });

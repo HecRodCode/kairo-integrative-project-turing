@@ -15,7 +15,6 @@ export async function generatePlan(req, res) {
       moodleProgress,
     } = req.body;
 
-    // Validation
     if (!moduleNumber || !currentWeek) {
       return res.status(400).json({
         error: 'Module number and current week are required',
@@ -23,13 +22,11 @@ export async function generatePlan(req, res) {
       });
     }
 
-    // Get user data
     const user = await findById(req.session.userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Get soft skills diagnostic
     const diagnostic = await findByCoderId(req.session.userId);
     if (!diagnostic) {
       return res.status(400).json({
@@ -39,7 +36,7 @@ export async function generatePlan(req, res) {
       });
     }
 
-    // Prepare data for Python API
+
     const requestData = {
       coder: {
         id: user.id,
@@ -63,7 +60,6 @@ export async function generatePlan(req, res) {
       additionalTopics: additionalTopics || [],
     };
 
-    // Call Python API
     const aiResponse = await callPythonApi('/generate-plan', requestData);
 
     res.json({
@@ -79,7 +75,6 @@ export async function generatePlan(req, res) {
   } catch (error) {
     console.error('Generate plan error:', error);
 
-    // Check if it's a Python API error
     if (error.isApiError) {
       return res.status(503).json({
         error: 'AI service unavailable',

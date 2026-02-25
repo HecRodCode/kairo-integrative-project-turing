@@ -8,9 +8,14 @@ import {
   create,
   verifyPassword,
   findById,
-  updateUserInDb,
 } from '../models/user.js';
-import { validateEmail, validatePassword } from '../utils/validators.js';
+import {
+  validateEmail,
+  validatePassword,
+  validateRole,
+  validateFullName,
+  sanitizeInput,
+} from '../utils/validators.js';
 import { query } from '../config/database.js';
 
 /**
@@ -25,12 +30,27 @@ export async function register(req, res) {
       return res.status(400).json({ error: 'All fields are required' });
     }
 
-    const normalizedRole = role.toLowerCase().trim();
-    const allowedRoles = ['coder', 'tl'];
+    if (!validateEmail(email)) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
 
-    if (!allowedRoles.includes(normalizedRole)) {
+    if (!validatePassword(password)) {
+      return res
+        .status(400)
+        .json({ error: 'Password must be at least 6 characters' });
+    }
+
+    if (!validateFullName(name)) {
+      return res
+        .status(400)
+        .json({ error: 'Name must be at least 3 characters' });
+    }
+
+    if (!validateRole(role)) {
       return res.status(400).json({ error: 'Invalid role provided' });
     }
+
+    const normalizedRole = sanitizeInput(role).toLowerCase();
 
     const existingUser = await findByEmail(email);
     if (existingUser) {
@@ -38,9 +58,9 @@ export async function register(req, res) {
     }
 
     const newUser = await create({
-      email,
+      email: sanitizeInput(email),
       password,
-      fullName: name,
+      fullName: sanitizeInput(name),
       role: normalizedRole,
     });
 
@@ -60,13 +80,18 @@ export async function register(req, res) {
 export async function login(req, res) {
   try {
     const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
+
     const user = await findByEmail(email);
 
     if (!user || !(await verifyPassword(password, user.password))) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    const safeRole = user.role.toLowerCase().trim();
+    const safeRole = sanitizeInput(user.role).toLowerCase();
     req.session.userId = user.id;
     req.session.role = safeRole;
 
@@ -103,7 +128,6 @@ export async function updateFirstLoginStatus(req, res) {
 
 /**
  * Updates basic user profile information (Self-service).
- * Fused from previous userControllers.
  */
 export async function updateUserProfile(req, res) {
   try {
@@ -111,18 +135,27 @@ export async function updateUserProfile(req, res) {
     const userId = req.session.userId;
 
     const updates = {};
-    if (fullName) updates.full_name = fullName;
+
+    if (fullName) {
+      if (!validateFullName(fullName)) {
+        return res
+          .status(400)
+          .json({ error: 'Name must be at least 3 characters' });
+      }
+      updates.full_name = sanitizeInput(fullName);
+    }
+
     if (email) {
-      if (!validateEmail(email))
-        return res.status(400).json({ error: 'Invalid email' });
-      updates.email = email;
+      if (!validateEmail(email)) {
+        return res.status(400).json({ error: 'Invalid email format' });
+      }
+      updates.email = sanitizeInput(email);
     }
 
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({ error: 'No fields to update' });
     }
 
-    // Dynamic query building
     const fields = Object.keys(updates)
       .map((key, i) => `${key} = $${i + 1}`)
       .join(', ');
@@ -150,7 +183,7 @@ export async function getCurrentUser(req, res) {
         id: user.id,
         email: user.email,
         fullName: user.full_name,
-        role: user.role.toLowerCase().trim(),
+        role: sanitizeInput(user.role).toLowerCase(),
         firstLogin: user.first_login,
       },
     });

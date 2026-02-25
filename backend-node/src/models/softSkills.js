@@ -1,5 +1,14 @@
+/**
+ * Riwi Learning Platform - Soft Skills Persistence Layer
+ * Handles the storage and retrieval of psychometric data and learning styles.
+ */
+
 import { query } from '../config/database.js';
 
+/**
+ * Persists a new assessment or updates existing scores if the coder has already
+ * completed the quiz. Uses an Upsert pattern (ON CONFLICT) for atomicity.
+ */
 export async function create({
   coderId,
   autonomy,
@@ -41,6 +50,9 @@ export async function create({
   return result.rows[0];
 }
 
+/**
+ * Retrieves the specific assessment record for a single coder.
+ */
 export async function findByCoderId(coderId) {
   const queryText = `
     SELECT * FROM soft_skills_assessment 
@@ -50,6 +62,10 @@ export async function findByCoderId(coderId) {
   return result.rows[0];
 }
 
+/**
+ * Performs a granular update on specific soft skill fields.
+ * Includes automated timestamp management for the 'assessed_at' field.
+ */
 export async function update(coderId, updates) {
   const fields = [];
   const values = [];
@@ -63,9 +79,7 @@ export async function update(coderId, updates) {
     }
   });
 
-  if (fields.length === 0) {
-    throw new Error('No fields to update');
-  }
+  if (fields.length === 0) return null;
 
   values.push(coderId);
 
@@ -80,6 +94,10 @@ export async function update(coderId, updates) {
   return result.rows[0];
 }
 
+/**
+ * Fetches all assessments with joined user context (Name and Email).
+ * Optimized for Team Leader dashboards and reporting.
+ */
 export async function getAll() {
   const queryText = `
     SELECT 
@@ -92,4 +110,15 @@ export async function getAll() {
   `;
   const result = await query(queryText);
   return result.rows;
+}
+
+/**
+ * Removes a diagnostic record.
+ * Note: Use with caution as this deletes historical assessment data.
+ */
+export async function deleteByCoderId(coderId) {
+  const queryText =
+    'DELETE FROM soft_skills_assessment WHERE coder_id = $1 RETURNING *';
+  const result = await query(queryText, [coderId]);
+  return result.rows[0];
 }

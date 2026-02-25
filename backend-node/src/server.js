@@ -52,7 +52,6 @@ app.use(
   })
 );
 
-
 // API ROUTING - RESTFUL ENDPOINTS
 app.use('/api/auth', authRoutes); 
 app.use('/api/diagnostics', diagnosticRoutes);
