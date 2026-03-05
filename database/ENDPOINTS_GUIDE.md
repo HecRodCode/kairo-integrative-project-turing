@@ -1,253 +1,213 @@
-# Endpoints Supabase - Guía Práctica
+# 📡 Guía de Endpoints - Supabase
 
-## ¿Cómo funcionan los endpoints en Supabase?
-
-Con las **tablas + RLS + Políticas** que hemos creado, Supabase **automáticamente genera endpoints REST**. No necesitas escribir backend.
+Supabase genera automáticamente endpoints REST para cada tabla. No necesitas escribir backend manualmente. El frontend habla directamente con la BD usando el cliente de Supabase.
 
 ---
 
-## Endpoints Generados por Tabla
+## 👥 Usuarios
 
-### 1. **USERS** (Usuarios)
-```
-GET    /rest/v1/users           ← Leer usuarios
-POST   /rest/v1/users           ← Crear usuario
-PUT    /rest/v1/users           ← Actualizar usuario
-DELETE /rest/v1/users           ← Eliminar usuario
-```
+**Tabla:** `users`
 
-**Ejemplo en Frontend:**
 ```javascript
-// Leer usuario actual
+// Leer mi perfil
 const { data: user } = await supabase
   .from('users')
   .select('*')
   .single();
 
-// Actualizar tu email
+// Actualizar mi nombre
 const { data } = await supabase
   .from('users')
-  .update({ email: 'newemail@riwi.io' })
+  .update({ full_name: 'Nuevo nombre' })
   .eq('id', userId)
   .select();
+
+// Ver todos los coders de mi clan (si eres TL)
+const { data: teamMembers } = await supabase
+  .from('users')
+  .select('*')
+  .eq('clan_id', 'Turing')
+  .eq('role', 'coder');
 ```
 
 ---
 
-### 2. **SOFT_SKILLS_ASSESSMENT** (Evaluación de habilidades)
-```
-GET    /rest/v1/soft_skills_assessment
-POST   /rest/v1/soft_skills_assessment
-UPDATE /rest/v1/soft_skills_assessment
-```
+## 📊 Habilidades Blandas
 
-**Ejemplo:**
+**Tabla:** `soft_skills_assessment`
+
 ```javascript
-// El coder ve su evaluación
-const { data: assessment } = await supabase
+// Ver mi evaluación
+const { data: mySkills } = await supabase
   .from('soft_skills_assessment')
   .select('*')
   .eq('coder_id', currentUserId)
   .single();
 
-// El TL ve evaluaciones de sus coders
-const { data: assessments } = await supabase
+// TL ve habilidades de un coder
+const { data: coderSkills } = await supabase
   .from('soft_skills_assessment')
-  .select('*');
+  .select('*')
+  .eq('coder_id', coderId)
+  .single();
 ```
 
 ---
 
-### 3. **MODULES** (Módulos de aprendizaje)
-```
-GET /rest/v1/modules           ← Todos pueden leer
-POST /rest/v1/modules          ← Solo TL puede crear
-```
+## 📚 Módulos
 
-**Ejemplo:**
+**Tabla:** `modules`
+
 ```javascript
-// Obtener todos los módulos (público)
+// Ver todos los módulos (público)
 const { data: modules } = await supabase
   .from('modules')
   .select('*');
 
-// Un TL crea un nuevo módulo
-const { data } = await supabase
+// Ver detalles de un módulo
+const { data: module } = await supabase
   .from('modules')
-  .insert({
-    name: 'React Avanzado',
-    description: 'Conceptos avanzados de React',
-    total_weeks: 4
-  })
-  .select();
-```
-
----
-
-### 4. **WEEKS** (Semanas del módulo)
-```
-GET /rest/v1/weeks
-POST /rest/v1/weeks (solo TL)
-```
-
-**Ejemplo:**
-```javascript
-// Obtener semanas del módulo 1
-const { data: weeks } = await supabase
-  .from('weeks')
   .select('*')
-  .eq('module_id', 1);
+  .eq('id', moduleId)
+  .single();
 ```
 
 ---
 
-### 5. **MOODLE_PROGRESS** (Progreso académico)
-```
-GET /rest/v1/moodle_progress
-POST /rest/v1/moodle_progress (create)
-PUT /rest/v1/moodle_progress (update)
-```
+## 📈 Progreso Académico
 
-**Ejemplo:**
+**Tabla:** `moodle_progress`
+
 ```javascript
-// El coder ve su progreso
-const { data: progress } = await supabase
+// Ver mi progreso en un módulo
+const { data: myProgress } = await supabase
   .from('moodle_progress')
-  .select('*')
+  .select(`
+    *,
+    module:modules(name)
+  `)
   .eq('coder_id', currentUserId)
   .eq('module_id', moduleId)
   .single();
 
-// El TL ve progreso de todos sus coders
+// TL ve el promedio de todos sus coders
 const { data: allProgress } = await supabase
   .from('moodle_progress')
-  .select('*');
-
-// Actualizar puntuación promedio
-const { data } = await supabase
-  .from('moodle_progress')
-  .update({ average_score: 85.5 })
-  .eq('id', progressId)
-  .select();
+  .select('*')
+  .order('average_score', { ascending: false });
 ```
 
 ---
 
-### 6. **TOPICS** (Temas)
-```
-GET /rest/v1/topics
-```
+## 🎯 Temas
 
-**Ejemplo:**
+**Tabla:** `topics`
+
 ```javascript
+// Ver temas de un módulo
 const { data: topics } = await supabase
   .from('topics')
   .select('*')
-  .eq('module_id', 1);
+  .eq('module_id', moduleId);
+
+// Ver solo temas por categoría
+const { data: categoryTopics } = await supabase
+  .from('topics')
+  .select('*')
+  .eq('category', 'JavaScript');
 ```
 
 ---
 
-### 7. **CODER_STRUGGLING_TOPICS** (Temas con dificultad)
-```
-GET    /rest/v1/coder_struggling_topics
-POST   /rest/v1/coder_struggling_topics
-DELETE /rest/v1/coder_struggling_topics
-```
+## ⚠️ Mis Temas Difíciles
 
-**Ejemplo:**
+**Tabla:** `coder_struggling_topics`
+
 ```javascript
-// Agregar un tema con dificultad
+// Reportar que tengo dificultad con un tema
 const { data } = await supabase
   .from('coder_struggling_topics')
   .insert({
     coder_id: currentUserId,
-    topic_id: 5
+    topic_id: topicId
   });
 
-// Leer temas con dificultad del coder
-const { data: struggles } = await supabase
+// Ver todos mis temas difíciles
+const { data: myStruggles } = await supabase
   .from('coder_struggling_topics')
   .select(`
     *,
     topic:topics(name, category)
   `)
   .eq('coder_id', currentUserId);
-```
 
----
-
-### 8. **COMPLEMENTARY_PLANS** (Planes personalizados)
-```
-GET  /rest/v1/complementary_plans
-POST /rest/v1/complementary_plans (solo TL)
-PUT  /rest/v1/complementary_plans (solo TL)
-```
-
-**Ejemplo:**
-```javascript
-// El coder ve sus planes activos
-const { data: plans } = await supabase
-  .from('complementary_plans')
-  .select('*')
+// Dejar de reportar dificultad
+await supabase
+  .from('coder_struggling_topics')
+  .delete()
   .eq('coder_id', currentUserId)
-  .eq('is_active', true);
-
-// El TL crea un plan para un coder
-const { data } = await supabase
-  .from('complementary_plans')
-  .insert({
-    coder_id: selectedCoderId,
-    module_id: 4,
-    week_number: 2,
-    plan_content: 'Contenido del plan personalizado...',
-    is_active: true
-  })
-  .select();
+  .eq('topic_id', topicId);
 ```
 
 ---
 
-### 9. **PLAN_ACTIVITIES** (Actividades del plan)
-```
-GET  /rest/v1/plan_activities
-POST /rest/v1/plan_activities (solo TL)
+## 🎨 Las 6 Cards
+
+**Tabla:** `complementary_plans`
+
+```javascript
+// Ver mis 6 cards activas (ordenadas por prioridad)
+const { data: myCards } = await supabase
+  .from('complementary_plans')
+  .select(`
+    *,
+    activities:plan_activities(day_number, title)
+  `)
+  .eq('coder_id', currentUserId)
+  .eq('is_active', true)
+  .order('priority_level', { ascending: false });
+
+// (Resultado: 2 High, 2 Medium, 2 Low)
+
+// Ver detalles de una card específica
+const { data: card } = await supabase
+  .from('complementary_plans')
+  .select(`
+    *,
+    activities:plan_activities(*)
+  `)
+  .eq('id', cardId)
+  .single();
 ```
 
-**Ejemplo:**
+---
+
+## 📅 Actividades Diarias
+
+**Tabla:** `plan_activities`
+
 ```javascript
-// Obtener actividades de un plan
+// Ver actividades de mi card (ordenadas por día)
 const { data: activities } = await supabase
   .from('plan_activities')
   .select('*')
-  .eq('plan_id', planId)
+  .eq('plan_id', cardId)
   .order('day_number', { ascending: true });
 
-// TL crea una actividad
-const { data } = await supabase
+// Ver detalles de una actividad
+const { data: activity } = await supabase
   .from('plan_activities')
-  .insert({
-    plan_id: planId,
-    day_number: 1,
-    title: 'Introducción a Async/Await',
-    description: 'Aprender concepto de programación asincrónica',
-    estimated_time_minutes: 60,
-    activity_type: 'guided',
-    order_index: 1
-  })
-  .select();
+  .select('*')
+  .eq('id', activityId)
+  .single();
 ```
 
 ---
 
-### 10. **ACTIVITY_PROGRESS** (Progreso de actividades)
-```
-GET  /rest/v1/activity_progress
-POST /rest/v1/activity_progress
-PUT  /rest/v1/activity_progress
-```
+## ✅ Mi Progreso en Actividades
 
-**Ejemplo:**
+**Tabla:** `activity_progress`
+
 ```javascript
 // Marcar actividad como completada
 const { data } = await supabase
@@ -255,194 +215,158 @@ const { data } = await supabase
   .update({
     completed: true,
     completed_at: new Date(),
-    reflection_text: 'Aprendí sobre async/await',
+    reflection_text: 'Aprendí mucho hoy',
     time_spent_minutes: 45
   })
   .eq('activity_id', activityId)
   .eq('coder_id', currentUserId)
   .select();
 
-// Ver progreso del coder
+// Ver mi progreso en una card
 const { data: progress } = await supabase
   .from('activity_progress')
+  .select('*')
+  .eq('coder_id', currentUserId);
+
+// Porcentaje de actividades completadas
+const completed = progress.filter(p => p.completed).length;
+const percentage = (completed / progress.length) * 100;
+```
+
+---
+
+## 📤 Subir Evidencia
+
+**Tabla:** `evidence_submissions`
+
+```javascript
+// Subir evidencia de una actividad
+const { data } = await supabase
+  .from('evidence_submissions')
+  .insert({
+    activity_id: activityId,
+    coder_id: currentUserId,
+    file_url: 'https://storage.example.com/proof.pdf',
+    description: 'Mi proyecto completado'
+  });
+
+// Ver mis evidencias subidas
+const { data: myEvidence } = await supabase
+  .from('evidence_submissions')
   .select('*')
   .eq('coder_id', currentUserId);
 ```
 
 ---
 
-### 11. **TL_FEEDBACK** (Retroalimentación)
-```
-GET  /rest/v1/tl_feedback
-POST /rest/v1/tl_feedback (solo TL)
-PUT  /rest/v1/tl_feedback (solo TL)
-```
+## 💬 Mensajes del TL
 
-**Ejemplo:**
+**Tabla:** `tl_feedback`
+
 ```javascript
-// El coder ve feedback que recibe
-const { data: feedback } = await supabase
+// Ver mensajes nuevos (no leídos)
+const { data: unread } = await supabase
   .from('tl_feedback')
   .select(`
     *,
-    tl_user:tl_id(email)
+    tl_user:tl_id(email, full_name)
   `)
+  .eq('coder_id', currentUserId)
+  .eq('is_read', false);
+
+// Ver todos mis mensajes
+const { data: allFeedback } = await supabase
+  .from('tl_feedback')
+  .select('*')
   .eq('coder_id', currentUserId)
   .order('created_at', { ascending: false });
 
-// El TL envía feedback
+// Marcar mensaje como leído
+await supabase
+  .from('tl_feedback')
+  .update({ is_read: true })
+  .eq('id', feedbackId);
+
+// TL envía un mensaje
 const { data } = await supabase
   .from('tl_feedback')
   .insert({
     coder_id: selectedCoderId,
     tl_id: currentUserId,
-    feedback_text: '¡Excelente trabajo en esta semana!',
+    feedback_text: '¡Excelente trabajo!',
     feedback_type: 'weekly'
-  })
-  .select();
+  });
 ```
 
 ---
 
-## Consultas Avanzadas
+## ⚠️ Alertas de Riesgo
 
-### Joins (relaciones entre tablas)
+**Tabla:** `risk_flags`
+
 ```javascript
-// Obtener módulo CON sus semanas
-const { data } = await supabase
-  .from('modules')
-  .select(`
-    *,
-    weeks(*)
-  `)
-  .eq('id', 1);
+// Ver mis alertas activas
+const { data: myRisks } = await supabase
+  .from('risk_flags')
+  .select('*')
+  .eq('coder_id', currentUserId)
+  .eq('resolved', false);
 
-// Obtener plan CON actividades Y progreso
-const { data } = await supabase
-  .from('complementary_plans')
-  .select(`
-    *,
-    plan_activities(
-      *,
-      activity_progress(*)
-    )
-  `)
-  .eq('id', planId);
+// TL ve coders en riesgo
+const { data: coderRisks } = await supabase
+  .from('risk_flags')
+  .select('*')
+  .eq('risk_level', 'high')
+  .eq('resolved', false);
+
+// Marcar alerta como resuelta
+await supabase
+  .from('risk_flags')
+  .update({ resolved: true, resolved_at: new Date() })
+  .eq('id', flagId);
 ```
 
-### Filtros
+---
+
+## 📊 Reportes del TL
+
+**Tabla:** `ai_reports`
+
 ```javascript
-// Mayor que
-.gt('average_score', 70)
+// TL ve reportes de sus coders
+const { data: myReports } = await supabase
+  .from('ai_reports')
+  .select('*')
+  .eq('target_type', 'coder')
+  .eq('target_id', coderId);
 
-// Menor que
-.lt('average_score', 50)
-
-// Igual a
-.eq('is_active', true)
-
-// En rango
-.gte('average_score', 70)
-.lte('average_score', 100)
-
-// IN (múltiples valores)
-.in('module_id', [1, 2, 3])
-
-// Búsqueda de texto
-.like('name', '%Python%')
-
-// Orden
-.order('created_at', { ascending: false })
-
-// Límite
-.limit(10)
-
-// Offset (para paginación)
-.range(0, 9)
+// Marcar reporte como visto
+await supabase
+  .from('ai_reports')
+  .update({ viewed_by_tl: true })
+  .eq('id', reportId);
 ```
 
 ---
 
-## Estructura de Respuesta
+## 🔍 Log de IA (Auditoría)
 
-**Éxito:**
+**Tabla:** `ai_generation_log`
+
 ```javascript
-const { data, error } = await supabase
-  .from('users')
-  .select('*');
-
-if (error) {
-  console.error('Error:', error.message);
-} else {
-  console.log('Datos:', data);
-}
-```
-
-**Respuesta típica:**
-```json
-{
-  "id": 1,
-  "email": "coder.juan@riwi.io",
-  "role": "coder",
-  "created_at": "2026-02-20T10:30:00Z"
-}
+// Ver cuándo se generaron mis planes
+const { data: log } = await supabase
+  .from('ai_generation_log')
+  .select('*')
+  .eq('coder_id', currentUserId)
+  .order('generated_at', { ascending: false });
 ```
 
 ---
 
-## Pasos para usar en tu aplicación
+## 📌 Notas Importantes
 
-### 1. Instalar cliente Supabase en Frontend
-```bash
-npm install @supabase/supabase-js
-```
-
-### 2. Inicializar cliente
-```javascript
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  'https://tu-proyecto.supabase.co',
-  'tu-public-key'
-);
-```
-
-### 3. Usar en tus componentes
-```javascript
-// En un componente React
-useEffect(() => {
-  const fetchModules = async () => {
-    const { data, error } = await supabase
-      .from('modules')
-      .select('*');
-    
-    if (error) console.error(error);
-    else setModules(data);
-  };
-  
-  fetchModules();
-}, []);
-```
-
----
-
-## Lo que NO tienes que hacer
-
-✗ ~~Crear rutas manualmente (GET /api/modules, POST /api/users, etc.)~~  
-✗ ~~Escribir controladores~~ ✗ ~~Crear servicios REST~~
-
----
-
-## Lo que YA hiciste
-
-✓ Crear tablas ✓ Habilitar RLS
-✓ Crear políticas de seguridad
-
-**¿Eso es todo!** Supabase hace el resto. 🚀
-
----
-
-**Próximos pasos:**
-1. Subir `schema.sql` + `rls_policies.sql` a Supabase
-2. Los endpoints están listos automáticamente
-3. Usa el cliente de Supabase en tu frontend
+- Los campos `is_read` en `tl_feedback` son clave para la campana de notificaciones
+- El campo `priority_level` en `complementary_plans` ordena las 6 cards (2 High, 2 Medium, 2 Low)
+- El campo `clan_id` en `users` permite al TL filtrar coders por clan
+- Todos los timestamps se actualizan automáticamente con `CURRENT_TIMESTAMP`

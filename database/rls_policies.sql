@@ -1,261 +1,294 @@
 -- ============================================
--- ROW LEVEL SECURITY (RLS) POLICIES
--- Proyecto: Ruta Formativa Personalizada con IA
--- Estas políticas definen quién puede acceder a qué datos
+-- ROW LEVEL SECURITY (RLS) - Políticas de Acceso
+-- KAIRO - Plataforma de Aprendizaje Personalizado
+-- 
+-- Estas políticas controlan qué datos puede ver/editar cada tipo de usuario
+-- Las ejecuta Supabase automáticamente en cada consulta
 -- ============================================
 
--- ============================================
--- 1. USERS - Control de acceso a usuarios
--- ============================================
-
--- Los usuarios pueden ver su propio perfil
-CREATE POLICY "users_select_own"
-ON users FOR SELECT
-USING (id = auth.uid()::int);
-
--- Los Team Leaders pueden ver todos los usuarios (coders)
-CREATE POLICY "users_select_tl"
-ON users FOR SELECT
-USING (
-  auth.jwt()->>'role' = 'tl' 
-  OR id = auth.uid()::int
-);
-
--- Los usuarios pueden actualizar su propio perfil (excepto rol)
-CREATE POLICY "users_update_own"
-ON users FOR UPDATE
-USING (id = auth.uid()::int)
-WITH CHECK (id = auth.uid()::int);
+-- PRIMERO: Habilitar RLS en todas las tablas
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE soft_skills_assessment ENABLE ROW LEVEL SECURITY;
+ALTER TABLE modules ENABLE ROW LEVEL SECURITY;
+ALTER TABLE moodle_progress ENABLE ROW LEVEL SECURITY;
+ALTER TABLE topics ENABLE ROW LEVEL SECURITY;
+ALTER TABLE coder_struggling_topics ENABLE ROW LEVEL SECURITY;
+ALTER TABLE complementary_plans ENABLE ROW LEVEL SECURITY;
+ALTER TABLE plan_activities ENABLE ROW LEVEL SECURITY;
+ALTER TABLE activity_progress ENABLE ROW LEVEL SECURITY;
+ALTER TABLE evidence_submissions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tl_feedback ENABLE ROW LEVEL SECURITY;
+ALTER TABLE risk_flags ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ai_reports ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ai_generation_log ENABLE ROW LEVEL SECURITY;
 
 -- ============================================
--- 2. SOFT_SKILLS_ASSESSMENT - Evaluación de habilidades
+-- USUARIOS
 -- ============================================
 
--- Los coders ven su propia evaluación
-CREATE POLICY "soft_skills_select_own"
-ON soft_skills_assessment FOR SELECT
-USING (coder_id = auth.uid()::int);
+-- Cada coder ve su propio perfil
+CREATE POLICY "users_own_profile"
+  ON users FOR SELECT
+  USING (id = auth.uid()::int);
 
--- Los TL ven evaluaciones de todos los coders
-CREATE POLICY "soft_skills_select_tl"
-ON soft_skills_assessment FOR SELECT
-USING (auth.jwt()->>'role' = 'tl');
+-- El TL ve todos los coders
+CREATE POLICY "users_tl_sees_all"
+  ON users FOR SELECT
+  USING (auth.jwt()->>'role' = 'tl' OR id = auth.uid()::int);
 
--- Solo se pueden insertar/actualizar datos propios
-CREATE POLICY "soft_skills_manage_own"
-ON soft_skills_assessment FOR INSERT
-WITH CHECK (coder_id = auth.uid()::int);
-
-CREATE POLICY "soft_skills_update_own"
-ON soft_skills_assessment FOR UPDATE
-USING (coder_id = auth.uid()::int)
-WITH CHECK (coder_id = auth.uid()::int);
+-- Cada usuario puede editar su propio perfil (menos el rol)
+CREATE POLICY "users_edit_own"
+  ON users FOR UPDATE
+  USING (id = auth.uid()::int)
+  WITH CHECK (id = auth.uid()::int);
 
 -- ============================================
--- 3. MODULES - Módulos (lectura pública)
+-- HABILIDADES BLANDAS
+-- ============================================
+
+-- Cada coder ve su evaluación
+CREATE POLICY "skills_own_assessment"
+  ON soft_skills_assessment FOR SELECT
+  USING (coder_id = auth.uid()::int);
+
+-- El TL ve evaluaciones de todos
+CREATE POLICY "skills_tl_sees_all"
+  ON soft_skills_assessment FOR SELECT
+  USING (auth.jwt()->>'role' = 'tl');
+
+-- Solo el coder puede actualizar la suya
+CREATE POLICY "skills_edit_own"
+  ON soft_skills_assessment FOR UPDATE
+  USING (coder_id = auth.uid()::int)
+  WITH CHECK (coder_id = auth.uid()::int);
+
+-- ============================================
+-- MÓDULOS (Lectura pública)
 -- ============================================
 
 -- Todos pueden leer módulos
-CREATE POLICY "modules_select_all"
-ON modules FOR SELECT
-USING (true);
+CREATE POLICY "modules_read_all"
+  ON modules FOR SELECT
+  USING (true);
 
--- Solo TL pueden crear/modificar módulos
-CREATE POLICY "modules_create_tl"
-ON modules FOR INSERT
-WITH CHECK (auth.jwt()->>'role' = 'tl');
+-- Solo TL puede crear/editar módulos
+CREATE POLICY "modules_tl_only"
+  ON modules FOR INSERT
+  WITH CHECK (auth.jwt()->>'role' = 'tl');
 
-CREATE POLICY "modules_update_tl"
-ON modules FOR UPDATE
-USING (auth.jwt()->>'role' = 'tl');
-
--- ============================================
--- 4. WEEKS - Semanas (lectura pública)
--- ============================================
-
--- Todos pueden leer semanas
-CREATE POLICY "weeks_select_all"
-ON weeks FOR SELECT
-USING (true);
-
--- Solo TL pueden crear/modificar semanas
-CREATE POLICY "weeks_create_tl"
-ON weeks FOR INSERT
-WITH CHECK (auth.jwt()->>'role' = 'tl');
-
-CREATE POLICY "weeks_update_tl"
-ON weeks FOR UPDATE
-USING (auth.jwt()->>'role' = 'tl');
+CREATE POLICY "modules_tl_edit"
+  ON modules FOR UPDATE
+  USING (auth.jwt()->>'role' = 'tl');
 
 -- ============================================
--- 5. MOODLE_PROGRESS - Progreso académico
+-- PROGRESO ACADÉMICO (Moodle)
 -- ============================================
 
--- Los coders ven su propio progreso
-CREATE POLICY "moodle_progress_select_own"
-ON moodle_progress FOR SELECT
-USING (coder_id = auth.uid()::int);
+-- Cada coder ve su progreso
+CREATE POLICY "progress_own_record"
+  ON moodle_progress FOR SELECT
+  USING (coder_id = auth.uid()::int);
 
--- Los TL ven progreso de todos los coders
-CREATE POLICY "moodle_progress_select_tl"
-ON moodle_progress FOR SELECT
-USING (auth.jwt()->>'role' = 'tl');
+-- El TL ve progreso de todos
+CREATE POLICY "progress_tl_sees_all"
+  ON moodle_progress FOR SELECT
+  USING (auth.jwt()->>'role' = 'tl');
 
--- Los coders pueden actualizar su progreso
-CREATE POLICY "moodle_progress_update_own"
-ON moodle_progress FOR UPDATE
-USING (coder_id = auth.uid()::int)
-WITH CHECK (coder_id = auth.uid()::int);
-
-CREATE POLICY "moodle_progress_insert_own"
-ON moodle_progress FOR INSERT
-WITH CHECK (coder_id = auth.uid()::int);
+-- El coder puede actualizar su progreso
+CREATE POLICY "progress_edit_own"
+  ON moodle_progress FOR UPDATE
+  USING (coder_id = auth.uid()::int)
+  WITH CHECK (coder_id = auth.uid()::int);
 
 -- ============================================
--- 6. TOPICS - Temas (lectura pública)
+-- TEMAS (Lectura pública)
 -- ============================================
 
 -- Todos pueden leer temas
-CREATE POLICY "topics_select_all"
-ON topics FOR SELECT
-USING (true);
+CREATE POLICY "topics_read_all"
+  ON topics FOR SELECT
+  USING (true);
 
--- Solo TL pueden crear/modificar temas
-CREATE POLICY "topics_create_tl"
-ON topics FOR INSERT
-WITH CHECK (auth.jwt()->>'role' = 'tl');
-
-CREATE POLICY "topics_update_tl"
-ON topics FOR UPDATE
-USING (auth.jwt()->>'role' = 'tl');
+-- Solo TL puede crear/editar
+CREATE POLICY "topics_tl_only"
+  ON topics FOR INSERT
+  WITH CHECK (auth.jwt()->>'role' = 'tl');
 
 -- ============================================
--- 7. CODER_STRUGGLING_TOPICS - Temas en los que lucha
+-- TEMAS CON DIFICULTAD
 -- ============================================
 
--- Los coders ven sus temas problemáticos
-CREATE POLICY "struggling_topics_select_own"
-ON coder_struggling_topics FOR SELECT
-USING (coder_id = auth.uid()::int);
+-- Cada coder ve sus propios temas problemáticos
+CREATE POLICY "struggles_own_topics"
+  ON coder_struggling_topics FOR SELECT
+  USING (coder_id = auth.uid()::int);
 
--- Los TL ven temas problemáticos de todos
-CREATE POLICY "struggling_topics_select_tl"
-ON coder_struggling_topics FOR SELECT
-USING (auth.jwt()->>'role' = 'tl');
+-- El TL ve todos los temas problemáticos
+CREATE POLICY "struggles_tl_sees_all"
+  ON coder_struggling_topics FOR SELECT
+  USING (auth.jwt()->>'role' = 'tl');
 
--- Los coders pueden actualizar sus temas
-CREATE POLICY "struggling_topics_manage_own"
-ON coder_struggling_topics FOR INSERT
-WITH CHECK (coder_id = auth.uid()::int);
+-- El coder puede reportar/eliminar sus temas
+CREATE POLICY "struggles_coder_manage"
+  ON coder_struggling_topics FOR INSERT
+  WITH CHECK (coder_id = auth.uid()::int);
 
-CREATE POLICY "struggling_topics_delete_own"
-ON coder_struggling_topics FOR DELETE
-USING (coder_id = auth.uid()::int);
-
--- ============================================
--- 8. COMPLEMENTARY_PLANS - Planes personalizados
--- ============================================
-
--- Los coders ven sus propios planes
-CREATE POLICY "complementary_plans_select_own"
-ON complementary_plans FOR SELECT
-USING (coder_id = auth.uid()::int);
-
--- Los TL ven planes de todos los coders
-CREATE POLICY "complementary_plans_select_tl"
-ON complementary_plans FOR SELECT
-USING (auth.jwt()->>'role' = 'tl');
-
--- Solo el TL puede crear planes
-CREATE POLICY "complementary_plans_insert_tl"
-ON complementary_plans FOR INSERT
-WITH CHECK (auth.jwt()->>'role' = 'tl');
-
--- El TL puede actualizar planes
-CREATE POLICY "complementary_plans_update_tl"
-ON complementary_plans FOR UPDATE
-USING (auth.jwt()->>'role' = 'tl');
+CREATE POLICY "struggles_coder_delete"
+  ON coder_struggling_topics FOR DELETE
+  USING (coder_id = auth.uid()::int);
 
 -- ============================================
--- 9. PLAN_ACTIVITIES - Actividades del plan
+-- PLANES PERSONALIZADOS (Las 6 Cards)
 -- ============================================
 
--- Los coders ven actividades de sus planes
-CREATE POLICY "plan_activities_select_own"
-ON plan_activities FOR SELECT
-USING (
-  plan_id IN (
-    SELECT id FROM complementary_plans WHERE coder_id = auth.uid()::int
-  )
-);
+-- Cada coder ve sus planes
+CREATE POLICY "plans_own_plans"
+  ON complementary_plans FOR SELECT
+  USING (coder_id = auth.uid()::int);
 
--- Los TL ven todas las actividades
-CREATE POLICY "plan_activities_select_tl"
-ON plan_activities FOR SELECT
-USING (auth.jwt()->>'role' = 'tl');
+-- El TL ve planes de todos
+CREATE POLICY "plans_tl_sees_all"
+  ON complementary_plans FOR SELECT
+  USING (auth.jwt()->>'role' = 'tl');
 
--- Solo TL puede crear/modificar actividades
-CREATE POLICY "plan_activities_insert_tl"
-ON plan_activities FOR INSERT
-WITH CHECK (auth.jwt()->>'role' = 'tl');
+-- Solo TL puede crear planes
+CREATE POLICY "plans_tl_create"
+  ON complementary_plans FOR INSERT
+  WITH CHECK (auth.jwt()->>'role' = 'tl');
 
-CREATE POLICY "plan_activities_update_tl"
-ON plan_activities FOR UPDATE
-USING (auth.jwt()->>'role' = 'tl');
+-- TL puede editar planes
+CREATE POLICY "plans_tl_edit"
+  ON complementary_plans FOR UPDATE
+  USING (auth.jwt()->>'role' = 'tl');
 
 -- ============================================
--- 10. ACTIVITY_PROGRESS - Progreso de actividades
+-- ACTIVIDADES DIARIAS
 -- ============================================
 
--- Los coders ven su propio progreso en actividades
-CREATE POLICY "activity_progress_select_own"
-ON activity_progress FOR SELECT
-USING (coder_id = auth.uid()::int);
+-- Coder ve actividades de sus planes
+CREATE POLICY "activities_own_plans"
+  ON plan_activities FOR SELECT
+  USING (
+    plan_id IN (
+      SELECT id FROM complementary_plans WHERE coder_id = auth.uid()::int
+    )
+  );
 
--- Los TL ven progreso de todos
-CREATE POLICY "activity_progress_select_tl"
-ON activity_progress FOR SELECT
-USING (auth.jwt()->>'role' = 'tl');
+-- TL ve todas las actividades
+CREATE POLICY "activities_tl_sees_all"
+  ON plan_activities FOR SELECT
+  USING (auth.jwt()->>'role' = 'tl');
 
--- Los coders pueden actualizar su progreso
-CREATE POLICY "activity_progress_update_own"
-ON activity_progress FOR UPDATE
-USING (coder_id = auth.uid()::int)
-WITH CHECK (coder_id = auth.uid()::int);
-
-CREATE POLICY "activity_progress_insert_own"
-ON activity_progress FOR INSERT
-WITH CHECK (coder_id = auth.uid()::int);
-
--- ============================================
--- 11. TL_FEEDBACK - Retroalimentación
--- ============================================
-
--- Los coders ven feedback que reciben
-CREATE POLICY "tl_feedback_select_own"
-ON tl_feedback FOR SELECT
-USING (coder_id = auth.uid()::int);
-
--- Los TL ven todos los feedback
-CREATE POLICY "tl_feedback_select_tl"
-ON tl_feedback FOR SELECT
-USING (auth.jwt()->>'role' = 'tl');
-
--- Solo los TL pueden crear feedback
-CREATE POLICY "tl_feedback_insert_tl"
-ON tl_feedback FOR INSERT
-WITH CHECK (
-  auth.jwt()->>'role' = 'tl' 
-  AND tl_id = auth.uid()::int
-);
-
--- Los TL pueden actualizar su feedback
-CREATE POLICY "tl_feedback_update_tl"
-ON tl_feedback FOR UPDATE
-USING (tl_id = auth.uid()::int)
-WITH CHECK (tl_id = auth.uid()::int);
+-- Solo TL crea/edita actividades
+CREATE POLICY "activities_tl_create"
+  ON plan_activities FOR INSERT
+  WITH CHECK (auth.jwt()->>'role' = 'tl');
 
 -- ============================================
--- Confirmación
+-- PROGRESO DE ACTIVIDADES
 -- ============================================
-SELECT 'Todas las políticas de RLS han sido configuradas' AS status;
+
+-- Coder ve su progreso
+CREATE POLICY "activity_progress_own"
+  ON activity_progress FOR SELECT
+  USING (coder_id = auth.uid()::int);
+
+-- TL ve progreso de todos
+CREATE POLICY "activity_progress_tl"
+  ON activity_progress FOR SELECT
+  USING (auth.jwt()->>'role' = 'tl');
+
+-- Coder actualiza su progreso
+CREATE POLICY "activity_progress_edit"
+  ON activity_progress FOR UPDATE
+  USING (coder_id = auth.uid()::int)
+  WITH CHECK (coder_id = auth.uid()::int);
+
+-- Coder marca actividades completadas
+CREATE POLICY "activity_progress_insert"
+  ON activity_progress FOR INSERT
+  WITH CHECK (coder_id = auth.uid()::int);
+
+-- ============================================
+-- EVIDENCIAS
+-- ============================================
+
+-- Coder ve sus evidencias
+CREATE POLICY "evidence_own_submissions"
+  ON evidence_submissions FOR SELECT
+  USING (coder_id = auth.uid()::int);
+
+-- TL ve evidencias de todos
+CREATE POLICY "evidence_tl_sees_all"
+  ON evidence_submissions FOR SELECT
+  USING (auth.jwt()->>'role' = 'tl');
+
+-- Coder sube sus evidencias
+CREATE POLICY "evidence_coder_submit"
+  ON evidence_submissions FOR INSERT
+  WITH CHECK (coder_id = auth.uid()::int);
+
+-- ============================================
+-- RETROALIMENTACIÓN DEL TL
+-- ============================================
+
+-- Coder ve feedback que recibe
+CREATE POLICY "feedback_own_feedback"
+  ON tl_feedback FOR SELECT
+  USING (coder_id = auth.uid()::int);
+
+-- TL ve feedback que envía
+CREATE POLICY "feedback_tl_sends"
+  ON tl_feedback FOR SELECT
+  USING (tl_id = auth.uid()::int OR auth.jwt()->>'role' = 'tl');
+
+-- Solo TL puede enviar feedback
+CREATE POLICY "feedback_tl_create"
+  ON tl_feedback FOR INSERT
+  WITH CHECK (auth.jwt()->>'role' = 'tl' AND tl_id = auth.uid()::int);
+
+-- TL puede editar su feedback
+CREATE POLICY "feedback_tl_edit"
+  ON tl_feedback FOR UPDATE
+  USING (tl_id = auth.uid()::int AND auth.jwt()->>'role' = 'tl');
+
+-- Coder puede marcar como leído
+CREATE POLICY "feedback_coder_mark_read"
+  ON tl_feedback FOR UPDATE
+  USING (coder_id = auth.uid()::int AND auth.jwt()->>'role' = 'coder');
+
+-- ============================================
+-- ALERTAS DE RIESGO
+-- ============================================
+
+-- Coder ve sus alertas
+CREATE POLICY "risk_own_alerts"
+  ON risk_flags FOR SELECT
+  USING (coder_id = auth.uid()::int);
+
+-- TL ve alertas de todos
+CREATE POLICY "risk_tl_sees_all"
+  ON risk_flags FOR SELECT
+  USING (auth.jwt()->>'role' = 'tl');
+
+-- ============================================
+-- REPORTES DEL TL
+-- ============================================
+
+-- TL ve reportes que le generan
+CREATE POLICY "reports_tl_only"
+  ON ai_reports FOR SELECT
+  USING (auth.jwt()->>'role' = 'tl');
+
+-- ============================================
+-- LOG DE IA (Solo auditoría)
+-- ============================================
+
+-- Solo para auditoría interna (normalmente deshabilitado en producción)
+CREATE POLICY "ai_log_tl_only"
+  ON ai_generation_log FOR SELECT
+  USING (auth.jwt()->>'role' = 'tl');
+
+-- ============================================
+-- FIN - RLS CONFIGURADO
+-- ============================================
