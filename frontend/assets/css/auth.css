@@ -258,6 +258,48 @@ body {
   width: 100%;
 }
 
+.password-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.password-wrapper input {
+  width: 100%;
+  padding-right: 45px !important;
+  position: relative;
+  z-index: 1;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 45px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  color: var(--text-muted);
+  outline: none;
+}
+
+.toggle-password:hover {
+  color: var(--primary-color);
+  opacity: 0.8;
+}
+
+.toggle-password svg {
+  pointer-events: none;
+  width: 20px;
+  height: 20px;
+}
+
 label {
   font-size: 14px;
   color: var(--text-muted);
@@ -379,7 +421,7 @@ input:focus,
 }
 
 /* Indicador de Fortaleza de Contraseña */
-.strength-meter {
+.strength-put {
   height: 4px;
   width: 100%;
   background: #334155;

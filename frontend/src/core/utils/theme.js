@@ -87,6 +87,7 @@ const resources = {
           login_success: 'Welcome back, {name}!',
           invalid_credentials: 'Invalid email or password.',
           invalid_email: 'Please enter a valid email address.',
+          user_exists: 'This email address is already registered.',
         },
       },
       footer: {
@@ -192,6 +193,7 @@ const resources = {
           login_success: '¡Bienvenido de nuevo, {name}!',
           invalid_credentials: 'Correo o contraseña incorrectos.',
           invalid_email: 'Por favor, ingresa un correo electrónico válido.',
+          user_exists: 'Este correo electrónico ya está registrado.',
         },
       },
       footer: {
@@ -276,6 +278,37 @@ document.addEventListener('DOMContentLoaded', () => {
       updateThemeIcons(newTheme === 'dark', moonIcon, sunIcon);
     });
   }
+
+  const initPasswordToggles = () => {
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.toggle-password');
+      if (!btn) return;
+
+      e.preventDefault();
+
+      const targetId = btn.getAttribute('data-target');
+      const input = document.getElementById(targetId);
+
+      if (input) {
+        const eyeOpen = btn.querySelector('.eye-open');
+        const eyeClosed = btn.querySelector('.eye-closed');
+
+        if (input.type === 'password') {
+          input.type = 'text';
+          if (eyeOpen) eyeOpen.style.display = 'none';
+          if (eyeClosed) eyeClosed.style.display = 'block';
+        } else {
+          input.type = 'password';
+          if (eyeOpen) eyeOpen.style.display = 'block';
+          if (eyeClosed) eyeClosed.style.display = 'none';
+        }
+
+        input.focus();
+      }
+    });
+  };
+
+  initPasswordToggles();
 });
 
 function updateThemeIcons(isDark, moon, sun) {
