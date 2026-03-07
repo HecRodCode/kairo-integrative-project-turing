@@ -1,150 +1,453 @@
 <!doctype html>
-<html lang="en">
+<html lang="es" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Riwi - Personalized Growth Path</title>
-
+    <title>Kairo | AI-Powered Learning Path</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./frontend/css/landing_page.css" />
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/i18next/dist/umd/i18next.min.js"></script>
+    <link rel="stylesheet" href="./frontend/assets/css/landing_page.css" />
+    <script src="./frontend/js/theme.js" defer></script>
   </head>
-
   <body>
     <header class="main-header">
       <nav class="navbar navbar-expand-lg">
-        <div class="container-fluid">
-          <img
-            src="./frontend/views/auth/img_logo/logo.png"
-            alt="Riwi Logo"
-            style="height: 40px; cursor: pointer"
-            onclick="window.location.reload()"
-          />
+        <div class="container">
+          <a class="navbar-brand d-lg-none" href="#">KAIRO</a>
+          <button
+            class="navbar-toggler"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbarNav"
+          >
+            <span class="navbar-toggler-icon"></span>
+          </button>
 
-          <div class="me-5 d-flex align-items-center gap-5">
-            <div class="log-in">
+          <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0 gap-3">
+              <li class="nav-item">
+                <a class="nav-link" href="#how-it-works" data-i18n="nav.meth"
+                  >Metodología</a
+                >
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#features" data-i18n="nav.feat"
+                  >Características</a
+                >
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#ecosystem" data-i18n="nav.eco"
+                  >Ecosistema</a
+                >
+              </li>
+            </ul>
+            <div class="d-flex align-items-center gap-3">
               <button
                 class="btn-log-in"
-                onclick="window.location.href = './frontend/views/auth/login.html'"
+                onclick="location.href = './frontend/views/auth/login.html'"
+                data-i18n="nav.login"
               >
-                Log-in
+                Iniciar sesión
               </button>
-            </div>
-            <div
-              class="btn-register"
-              style="cursor: pointer"
-              onclick="window.location.href = './frontend/views/auth/register.html'"
-            >
-              Register
+              <button
+                class="btn-register"
+                onclick="location.href = './frontend/views/auth/register.html'"
+                data-i18n="nav.reg"
+              >
+                Registrate
+              </button>
             </div>
           </div>
         </div>
       </nav>
     </header>
 
-    <main class="content-main">
+    <main>
       <section class="hero text-center">
-        <div class="container" id="content-title">
-          <h1 class="hero-title">
-            Welcome to your
-            <span class="gradient-text">Personalized Growth Path</span>
+        <div class="container">
+          <div class="hero-logo-wrapper mb-5">
+            <img
+              src="./frontend/assets/img/logo.png"
+              alt="Kairo Global Logo"
+              class="main-hero-logo"
+            />
+          </div>
+
+          <div class="badge-ai mb-3">
+            <i data-lucide="sparkles" class="me-2"></i>
+            <span data-i18n="hero.badge">Desarrollado con OpenIA</span>
+          </div>
+
+          <h1 class="hero-title" data-i18n="hero.title">
+            El futuro del aprendizaje es <br />
+            <span class="gradient-text">Hiperpersonalizado</span>
           </h1>
-          <p class="hero-text">
-            Unlock your potential at Riwi. Our AI analyzes your technical skills
-            and soft skills to build a curriculum tailored specifically for your
-            career goals.
+
+          <p class="hero-text" data-i18n="hero.text">
+            Deja de seguir planes genéricos. Kairo utiliza la inteligencia
+            artificial para salvar la distancia entre tus habilidades actuales y
+            el trabajo de tus sueños en Riwi.
           </p>
 
-          <div class="d-flex justify-content-center gap-5 flex-wrap mt-5 pt-3">
+          <div
+            class="hero-actions d-flex justify-content-center gap-4 flex-wrap"
+          >
             <button
-              class="btn-btn1"
-              onclick="window.location.href = './views/auth/register.html'"
+              class="btn-primary-custom"
+              onclick="location.href = './frontend/views/auth/register.html'"
+              data-i18n="hero.btn_main"
             >
-              Start Initial Assessment
+              Obtener mi contenido profesional
             </button>
-            <button class="btn-btn2">View Demo Path</button>
+            <button class="btn-secondary-custom">
+              <i data-lucide="play-circle" class="me-2"></i>
+              <span data-i18n="hero.btn_demo">Ver Demo</span>
+            </button>
           </div>
         </div>
       </section>
 
-      <section
-        class="d-flex justify-content-center gap-5 mt-5 pt-3"
-        id="items-12"
-      >
-        <h3>AI VERIFIED</h3>
-        <h3>MOODLE INTEGRATED</h3>
-        <h3>SKILL MAPPING</h3>
+      <section class="benefits-bar py-5">
+        <div class="container">
+          <div class="row text-center g-4">
+            <div class="col-md-3">
+              <div class="benefit-item">
+                <i data-lucide="zap" class="mb-2 text-accent"></i>
+                <p class="benefit-text" data-i18n="benefits.fast">
+                  Aprendizaje rápido
+                </p>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="benefit-item">
+                <i data-lucide="shield-check" class="mb-2 text-accent"></i>
+                <p class="benefit-text" data-i18n="benefits.riwi">
+                  Complemento de Riwi
+                </p>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="benefit-item">
+                <i data-lucide="cpu" class="mb-2 text-accent"></i>
+                <p class="benefit-text" data-i18n="benefits.ai">
+                  Impulsado con IA
+                </p>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="benefit-item">
+                <i data-lucide="infinity" class="mb-2 text-accent"></i>
+                <p class="benefit-text" data-i18n="benefits.paths">
+                  Rutas dinámicas
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
-      <section class="content-articule">
+      <section id="how-it-works" class="py-100">
         <div class="container">
-          <div class="small-description text-center">
-            <h2 class="section-title">How it works</h2>
-            <p class="content-text-1">
-              Your journey is calculated through three core pillars of data to
-              ensure the most efficient learning experience possible.
+          <div class="section-header text-center mb-5">
+            <h2 class="section-title" data-i18n="meth.title">
+              Nuestra Metodología
+            </h2>
+            <p class="section-subtitle" data-i18n="meth.subtitle">
+              Construimos tu camino basado en datos reales, no en suposiciones.
             </p>
           </div>
 
-          <div class="row g-4 mt-5 pt-3">
+          <div class="row g-4">
             <div class="col-md-4">
               <article class="card-simple">
-                <div class="icon"></div>
-                <h3>Soft Skills Diagnostic</h3>
-                <p class="p-of-the-card">
-                  Evaluate your communication, teamwork, and leadership
-                  potential through our interactive scenario-based assessment.
+                <div class="card-icon"><i data-lucide="fingerprint"></i></div>
+                <h3 data-i18n="meth.card1_h">Fase de diagnóstico</h3>
+                <p data-i18n="meth.card1_p">
+                  Evaluamos tus bases técnicas y rasgos de personalidad para
+                  entender cómo aprendes mejor.
                 </p>
               </article>
             </div>
+            <div class="col-md-4">
+              <article class="card-simple active-card">
+                <div class="card-icon"><i data-lucide="git-branch"></i></div>
+                <h3 data-i18n="meth.card2_h">Camino de aprendizaje</h3>
+                <p data-i18n="meth.card2_p">
+                  Tu currículo cambia en tiempo real según tu progreso en Moodle
+                  y tus evaluaciones AI.
+                </p>
+              </article>
+            </div>
+            <div class="col-md-4">
+              <article class="card-simple">
+                <div class="card-icon"><i data-lucide="target"></i></div>
+                <h3 data-i18n="meth.card3_h">Pensando en grande</h3>
+                <p data-i18n="meth.card3_p">
+                  Enfoque total en las habilidades que las empresas aliadas de
+                  Riwi están buscando hoy mismo.
+                </p>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
 
-            <div class="col-md-4">
-              <article class="card-simple">
-                <div class="icon"></div>
-                <h3>Academic Sync</h3>
-                <p class="p-of-the-card">
-                  We'll automatically synchronize your existing Moodle progress
-                  and technical foundations to pick up exactly where you left
-                  off.
-                </p>
-              </article>
+      <section id="features" class="py-100 bg-subtle">
+        <div class="container">
+          <div class="row align-items-center g-5">
+            <div class="col-lg-6">
+              <h2 class="section-title" data-i18n="feat.title">
+                Mapeo profundo de habilidades
+              </h2>
+              <p class="mb-4" data-i18n="feat.subtitle">
+                No solo medimos si sabes programar, medimos qué tan bien te
+                integras en un equipo.
+              </p>
+              <ul class="feature-list">
+                <li>
+                  <i data-lucide="check-circle" class="text-accent"></i>
+                  <span data-i18n="feat.list1"
+                    >Análisis de Soft Skills mediante IA.</span
+                  >
+                </li>
+                <li>
+                  <i data-lucide="check-circle" class="text-accent"></i>
+                  <span data-i18n="feat.list2"
+                    >Sincronización nativa con Riwi Moodle.</span
+                  >
+                </li>
+                <li>
+                  <i data-lucide="check-circle" class="text-accent"></i>
+                  <span data-i18n="feat.list3"
+                    >Dashboard de progreso en tiempo real.</span
+                  >
+                </li>
+              </ul>
             </div>
+            <div class="col-lg-6">
+              <div class="skill-preview-container">
+                <div class="skill-bar-mockup">
+                  <span data-i18n="feat.skill1">Java Backend</span>
+                  <div class="progress-track">
+                    <div class="progress-fill" style="width: 85%"></div>
+                  </div>
+                </div>
+                <div class="skill-bar-mockup">
+                  <span data-i18n="feat.skill2">Soft Skills</span>
+                  <div class="progress-track">
+                    <div class="progress-fill" style="width: 60%"></div>
+                  </div>
+                </div>
+                <div class="skill-bar-mockup">
+                  <span data-i18n="feat.skill3">Communication</span>
+                  <div class="progress-track">
+                    <div class="progress-fill" style="width: 92%"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-            <div class="col-md-4">
-              <article class="card-simple">
-                <div class="icon"></div>
-                <h3>AI-Generated Curriculum</h3>
-                <p class="p-of-the-card">
-                  Receive a custom-tailored roadmap focusing on what you need
-                  most to succeed, skipping what you already know.
-                </p>
-              </article>
-            </div>
+      <section id="ecosystem" class="py-100">
+        <div class="container text-center">
+          <h2 class="section-title mb-5" data-i18n="eco.title">
+            Aprende las herramientas que usa la industria
+          </h2>
+          <div
+            class="tech-grid d-flex justify-content-center align-items-center gap-5 flex-wrap"
+          >
+            <div class="tech-item">IA for Devs</div>
+            <div class="tech-item">Modern Frameworks</div>
+            <div class="tech-item">Git & Workflow</div>
+            <div class="tech-item">API integration</div>
+            <div class="tech-item">Cloud Deployment</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="cta-section py-100">
+        <div class="container">
+          <div class="cta-card text-center p-5">
+            <h2 class="mb-4" data-i18n="cta.title">
+              ¿Listo para acelerar tu carrera profesional?
+            </h2>
+            <p class="mb-4 text-white-50" data-i18n="cta.p">
+              Únete a la nueva generación de talento técnico en Riwi.
+            </p>
+            <button
+              class="btn-register btn-lg"
+              onclick="
+                window.location.href = '../frontend/views/auth/register.html'
+              "
+              data-i18n="cta.btn"
+            >
+              Crear cuenta gratuita
+            </button>
           </div>
         </div>
       </section>
     </main>
 
-    <footer class="footer mt-5">
-      <div class="container text-center py-4">
-        <h2 class="footer-logo"><span>Riwi Learning</span></h2>
-        <div class="d-flex justify-content-center gap-4 mt-3">
-          <a href="#" class="text-decoration-none text-white-50"
-            >Privacy Policy</a
-          >
-          <a href="#" class="text-decoration-none text-white-50"
-            >Terms of Service</a
-          >
-          <a href="#" class="text-decoration-none text-white-50">Support</a>
+    <footer class="footer py-100">
+      <div class="container">
+        <div class="row g-5">
+          <div class="col-lg-4 col-md-6 text-center text-md-start">
+            <div class="footer-logo mb-3">KAIRO</div>
+            <p class="text-muted footer-mission" data-i18n="footer.mission">
+              Potenciamos el talento de Riwi mediante rutas de aprendizaje
+              inteligentes.
+            </p>
+            <div
+              class="social-links d-flex justify-content-center justify-content-md-start gap-3 mt-4"
+            >
+              <a href="#" class="social-icon"><i data-lucide="github"></i></a>
+              <a href="#" class="social-icon"><i data-lucide="linkedin"></i></a>
+              <a href="#" class="social-icon"><i data-lucide="twitter"></i></a>
+            </div>
+          </div>
+
+          <div class="col-lg-2 col-md-6 text-center text-md-start">
+            <h5 class="footer-heading" data-i18n="footer.h_platform">
+              Plataforma
+            </h5>
+            <ul class="footer-nav">
+              <li>
+                <a href="#how-it-works" data-i18n="nav.meth">Metodología</a>
+              </li>
+              <li><a href="#features" data-i18n="nav.feat">Habilidades</a></li>
+              <li><a href="#ecosystem" data-i18n="nav.eco">Ecosistema</a></li>
+            </ul>
+          </div>
+
+          <div class="col-lg-2 col-md-6 text-center text-md-start">
+            <h5 class="footer-heading" data-i18n="footer.h_resources">
+              Recursos
+            </h5>
+            <ul class="footer-nav">
+              <li><a href="#" data-i18n="footer.doc">Documentación</a></li>
+              <li><a href="#" data-i18n="footer.support">Soporte</a></li>
+              <li><a href="#" data-i18n="footer.community">Comunidad</a></li>
+            </ul>
+          </div>
+
+          <div class="col-lg-4 col-md-6 text-center text-md-start">
+            <h5 class="footer-heading" data-i18n="footer.h_stay">
+              Mantente al tanto
+            </h5>
+            <p class="small text-muted mb-3" data-i18n="footer.news_p">
+              Recibe actualizaciones sobre nuevas rutas técnicas.
+            </p>
+            <div class="footer-newsletter">
+              <input
+                type="email"
+                placeholder="tu@email.com"
+                class="newsletter-input"
+              />
+              <button class="btn-newsletter"><i data-lucide="send"></i></button>
+            </div>
+          </div>
         </div>
-        <p class="mt-4 text-white-50">
-          &copy; 2026 Riwi Project. All rights reserved.
-        </p>
+        <hr class="footer-divider" />
+        <div class="row align-items-center py-3">
+          <div class="col-md-6 text-center text-md-start">
+            <p class="text-muted small mb-0" data-i18n="footer.rights">
+              © 2026 Kairo Project. All rights reserved.
+            </p>
+          </div>
+          <div class="col-md-6 text-center text-md-end">
+            <div class="footer-legal">
+              <a href="#" class="me-3" data-i18n="footer.terms">Términos</a>
+              <a href="#" class="me-3" data-i18n="footer.privacy">Privacidad</a>
+            </div>
+          </div>
+        </div>
       </div>
     </footer>
 
+    <div class="theme-switch-wrapper">
+      <button
+        id="language-toggle"
+        class="theme-btn me-2"
+        title="Change Language"
+      >
+        <svg
+          id="lang-icon"
+          class="theme-icon"
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="m5 8 6 6" />
+          <path d="m4 14 6-6 2-3" />
+          <path d="M2 5h12" />
+          <path d="M7 2h1" />
+          <path d="m22 22-5-10-5 10" />
+          <path d="M14 18h6" />
+        </svg>
+      </button>
+
+      <button id="theme-toggle" class="theme-btn" title="Toggle Theme">
+        <svg
+          id="moon-icon"
+          class="theme-icon"
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+        </svg>
+        <svg
+          id="sun-icon"
+          class="theme-icon"
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          style="display: none"
+        >
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 2v2" />
+          <path d="M12 20v2" />
+          <path d="m4.93 4.93 1.41 1.41" />
+          <path d="m17.66 17.66 1.41 1.41" />
+          <path d="M2 12h2" />
+          <path d="M20 12h2" />
+          <path d="m6.34 17.66-1.41 1.41" />
+          <path d="m19.07 4.93-1.41 1.41" />
+        </svg>
+      </button>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      lucide.createIcons();
+    </script>
   </body>
 </html>
