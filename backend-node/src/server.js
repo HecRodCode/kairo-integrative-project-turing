@@ -8,12 +8,13 @@ import express from 'express';
 import cors from 'cors';
 import session from 'express-session';
 import morgan from 'morgan';
+import passport from './config/passport.js';
 import { pool, testConnection } from './config/database.js';
 
-// Optimized Route Definitions
-import authRoutes from './routes/authRoutes.js'; 
-import diagnosticRoutes from './routes/diagnosticRoutes.js'; 
-import coderRoutes from './routes/coderRoutes.js'; 
+// Route Definitions
+import authRoutes from './routes/authRoutes.js';
+import diagnosticRoutes from './routes/diagnosticRoutes.js';
+import coderRoutes from './routes/coderRoutes.js';
 import tlRoutes from './routes/tlRoutes.js';
 import aiRoutes from './routes/iaRoutes.js';
 
@@ -21,10 +22,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 
-// MIDDLEWARE CONFIGURATION
+// MIDDLEWARE CONFIG
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5500',
+    origin: ['http://localhost:5500', 'http://127.0.0.1:5500'],
     credentials: true,
   })
 );
@@ -52,10 +53,17 @@ app.use(
   })
 );
 
+/**
+ * Passport Middleware [NUEVO]
+ * Must be initialized after session configuration.
+ */
+app.use(passport.initialize());
+app.use(passport.session());
+
 // API ROUTING - RESTFUL ENDPOINTS
-app.use('/api/auth', authRoutes); 
+app.use('/api/auth', authRoutes);
 app.use('/api/diagnostics', diagnosticRoutes);
-app.use('/api/coder', coderRoutes); 
+app.use('/api/coder', coderRoutes);
 app.use('/api/tl', tlRoutes);
 app.use('/api/ai', aiRoutes);
 
@@ -79,7 +87,6 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// Error Handling: 404
 app.use((req, res) => {
   res.status(404).json({ error: 'Endpoint not found' });
 });
@@ -98,8 +105,6 @@ app.use((err, req, res, next) => {
 async function startServer() {
   try {
     process.stdout.write('🔄 Initializing Kairo services... ');
-
-    // Database Handshake
     await testConnection();
 
     app.listen(PORT, '0.0.0.0', () => {
@@ -123,4 +128,4 @@ async function startServer() {
   }
 }
 
-startServer();
+startServer(); // INIT

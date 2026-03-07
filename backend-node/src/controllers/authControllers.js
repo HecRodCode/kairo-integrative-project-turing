@@ -1,6 +1,6 @@
 /**
  * Riwi Learning Platform - Unified Authentication & User Controller
- * Handles Session Management, Identity Verification, and Profile Updates.
+ * Handles Session Management, Identity Verification, and Social Auth.
  */
 
 import {
@@ -18,16 +18,49 @@ import {
 } from '../utils/validators.js';
 import { query } from '../config/database.js';
 
-/**
- * Handles user registration with strict role normalization.
- */
+/* handles the redirect and session setup after Social Auth (Google/GitHub) This function bridges Passport.js with your existing session logic */
+export async function socialAuthSuccess(req, res) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Social authentication failed' });
+    }
+
+    const { emails, displayName, id, provider } = req.user;
+    const email = emails[0].value;
+
+    let user = await findByEmail(email);
+
+    if (!user) {
+      user = await create({
+        email: email,
+        password: `social_auth_${provider}_${id}`,
+        fullName: displayName || 'Riwi Coder',
+        role: 'coder',
+      });
+    }
+
+    const safeRole = sanitizeInput(user.role).toLowerCase();
+    req.session.userId = user.id;
+    req.session.role = safeRole;
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5500';
+    res.redirect(`${frontendUrl}/dashboard.html`);
+  } catch (error) {
+    console.error('[Social Auth Success Error]:', error);
+    res.status(500).json({ error: 'Failed to synchronize social account' });
+  }
+}
+
+/* handles user registration with strict role normalization */
 export async function register(req, res) {
   try {
-    const { email, password, fullName, full_name, role } = req.body;
+    const { email, password, fullName, full_name, role, clan } = req.body;
     const name = fullName || full_name;
 
-    if (!email || !password || !name || !role) {
-      return res.status(400).json({ error: 'All fields are required' });
+    if (!email || !password || !name || !role || !clan) {
+      return res
+        .status(400)
+        .json({ error: 'All fields are required, including Clan selection' });
     }
 
     if (!validateEmail(email)) {
@@ -62,11 +95,17 @@ export async function register(req, res) {
       password,
       fullName: sanitizeInput(name),
       role: normalizedRole,
+      clan: sanitizeInput(clan).toLowerCase(),
     });
 
     res.status(201).json({
       message: 'User registered successfully',
-      user: { id: newUser.id, email: newUser.email, role: newUser.role },
+      user: {
+        id: newUser.id,
+        email: newUser.email,
+        role: newUser.role,
+        clan: newUser.clan,
+      },
     });
   } catch (error) {
     console.error('[Registration Error]:', error);
@@ -74,9 +113,7 @@ export async function register(req, res) {
   }
 }
 
-/**
- * Handles user authentication and session initialization.
- */
+/* handles user authentication and session initialization */
 export async function login(req, res) {
   try {
     const { email, password } = req.body;
@@ -110,9 +147,7 @@ export async function login(req, res) {
   }
 }
 
-/**
- * Updates the first_login flag after completing the onboarding quiz.
- */
+/* updates the first_login flag after completing the onboarding quiz */
 export async function updateFirstLoginStatus(req, res) {
   try {
     const queryText =
@@ -126,9 +161,7 @@ export async function updateFirstLoginStatus(req, res) {
   }
 }
 
-/**
- * Updates basic user profile information (Self-service).
- */
+/* updates basic user profile information (Self-service) */
 export async function updateUserProfile(req, res) {
   try {
     const { fullName, email } = req.body;
@@ -170,9 +203,7 @@ export async function updateUserProfile(req, res) {
   }
 }
 
-/**
- * Retrieves current authenticated user context.
- */
+/* retrieves current authenticated user context */
 export async function getCurrentUser(req, res) {
   try {
     const user = await findById(req.session.userId);
@@ -192,10 +223,14 @@ export async function getCurrentUser(req, res) {
   }
 }
 
-/**
- * Standard logout and session destruction.
- */
+/* updated logout: Clears session and passport info */
 export async function logout(req, res) {
+  if (req.logout) {
+    req.logout((err) => {
+      if (err) console.error('Passport logout error');
+    });
+  }
+
   req.session.destroy((err) => {
     if (err) return res.status(500).json({ error: 'Logout failed' });
     res.clearCookie('riwi.sid');
@@ -203,9 +238,7 @@ export async function logout(req, res) {
   });
 }
 
-/**
- * Simple session verification for frontend guards.
- */
+/* simple session verification for frontend guards */
 export async function checkAuth(req, res) {
   res.json({
     authenticated: !!req.session.userId,
