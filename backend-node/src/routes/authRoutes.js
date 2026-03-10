@@ -18,6 +18,8 @@ import {
   updateFirstLoginStatus,
   updateUserProfile,
   socialAuthSuccess,
+  verifyOtp,
+  resendOtp,
 } from '../controllers/authControllers.js';
 import { isAuthenticated, hasRole } from '../middlewares/authMiddlewares.js';
 
@@ -25,6 +27,8 @@ const router = Router();
 
 /* ── Public ──────────────────────────────────────────────── */
 router.post('/register', register);
+router.post('/verify-otp', verifyOtp); // ← FALTABA — causa raíz
+router.post('/resend-otp', resendOtp); // ← FALTABA
 router.post('/login', login);
 router.get('/check', checkAuth);
 
