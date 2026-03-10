@@ -1,125 +1,123 @@
-import os
-import json
+"""
+app/routers/roadmap.py
+POST /generate-plan
+
+Architecture: Slim Communication
+  Node.js sends only: { coder_id, module_id, topic, struggling_topics, additional_topics }
+  Python owns data retrieval: fetches soft_skills, module, weeks directly from Supabase.
+  Python builds the full context and calls OpenAI.
+"""
+
 import time
 import logging
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from groq import Groq
-from supabase import create_client
+from app.services.ia_services import generate_plan_with_openai
+from app.services.supabase_service import db_manager
 
-# Initialize professional logging for Riwi AI Service
-logger = logging.getLogger("riwi-ai-roadmap")
+logger = logging.getLogger("kairo-roadmap")
+router = APIRouter(tags=["Learning Plans"])
 
-router = APIRouter(prefix="/roadmap", tags=["Learning Paths"])
 
-# --- Data Transfer Objects (DTOs) ---
-class RoadmapRequest(BaseModel):
+# ── Slim DTO — only IDs and dynamic context from Node ──────────
+class GeneratePlanRequest(BaseModel):
+    coder_id:         int
+    module_id:        int
+    topic:            str
+    struggling_topics: list[str] = []
+    additional_topics: list[str] = []
+
+
+# ── Endpoint ───────────────────────────────────────────────────
+@router.post("/generate-plan")
+async def generate_plan(req: GeneratePlanRequest):
     """
-    Schema for generating personalized roadmaps.
-    Integrates coder profiling and module-specific constraints.
+    1. Python fetches soft_skills from Supabase using coder_id
+    2. Python fetches module + weeks from Supabase using module_id
+    3. Builds full profile and calls OpenAI
+    4. Saves plan to complementary_plans + logs to ai_generation_log
     """
-    topic: str
-    coder_id: int
-    module_id: int
+    start = time.time()
 
-# --- Business Logic Helpers ---
-def get_module_context(module_id: int):
-    """
-    Returns specific Riwi curriculum constraints based on the module ID.
-    This ensures the AI respects the 3-week or 4-week structure.
-    """
-    curriculum = {
-        1: {"name": "Python Fundamentals", "weeks": 3, "critical": False},
-        2: {"name": "HTML & CSS", "weeks": 3, "critical": False},
-        3: {"name": "JavaScript", "weeks": 4, "critical": True},
-        4: {"name": "Databases", "weeks": 3, "critical": False}
-    }
-    return curriculum.get(module_id, {"name": "Software Development", "weeks": 3, "critical": False})
-
-# --- Main Endpoint ---
-@router.post("/generate")
-async def generate_roadmap(request: RoadmapRequest):
-    """
-    Generates a module-aligned roadmap that cross-references technical goals
-    with onboarding soft skills and Riwi's specific timeframes.
-    """
-    execution_start = time.time()
-    module_info = get_module_context(request.module_id)
-    
-    try:
-        # 1. Initialize Cloud Service Clients
-        groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-        supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_KEY"))
-
-        # 2. Fetch Coder Onboarding Data (Soft Skills)
-        # This aligns the AI output with the "Life Skills" objective.
-        coder_data = supabase.table("soft_skills_assessment").select("*").eq("coder_id", request.coder_id).single().execute()
-        soft_skills = coder_data.data if coder_data.data else {}
-        
-        # 3. Construct the Professional Pedagogical Prompt
-        # We explicitly tell the AI about the 3/4 week limit and the performance test.
-        prompt = f"""
-        You are a Senior Technical Mentor at Riwi. 
-        Student Profile: Learning Style: {soft_skills.get('learning_style', 'Mixed')}, 
-        Autonomy: {soft_skills.get('autonomy', 3)}/5, Time Management: {soft_skills.get('time_management', 3)}/5.
-        
-        Task: Create a COMPLEMENTARY roadmap for '{request.topic}' within Module {request.module_id} ({module_info['name']}).
-        
-        Constraints:
-        - Duration: Exactly {module_info['weeks']} weeks.
-        - Week {module_info['weeks']} must focus on 'Performance Test Simulation'.
-        - Level: {'Advanced & Rigorous' if module_info['critical'] else 'Foundational'}.
-        
-        Return ONLY a JSON object:
-        {{
-            "title": "{request.topic}",
-            "targeted_soft_skill": "Based on onboarding, e.g., Time Management",
-            "weeks": [
-                {{
-                    "week_number": 1,
-                    "focus": "Topic",
-                    "activities": ["Task 1", "Task 2"],
-                    "estimated_hours": 5
-                }}
-            ]
-        }}
-        """
-
-        # 4. AI Inference
-        completion = groq_client.chat.completions.create(
-            model=os.getenv("MODEL_NAME", "llama-3.3-70b-versatile"),
-            messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"}
+    # ── 1. Soft skills (learning style + scores) ────────────────
+    soft_skills = db_manager.get_soft_skills(req.coder_id)
+    if not soft_skills:
+        raise HTTPException(
+            status_code=400,
+            detail=f"No diagnostic found for coder {req.coder_id}. Complete onboarding first."
         )
-        
-        roadmap_json = json.loads(completion.choices[0].message.content)
 
-        # 5. Persistence in Database
-        # Saving the plan and logging the AI generation for TL auditing.
-        plan_insert = supabase.table("complementary_plans").insert({
-            "coder_id": request.coder_id,
-            "module_id": request.module_id,
-            "plan_content": roadmap_json,
-            "targeted_soft_skill": roadmap_json.get("targeted_soft_skill"),
-            "is_active": True
-        }).execute()
+    # ── 2. Module info ──────────────────────────────────────────
+    module = db_manager.get_module(req.module_id)
+    if not module:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Module {req.module_id} not found in database. Run seed_modules.sql first."
+        )
 
-        execution_time_ms = int((time.time() - execution_start) * 1000)
-        supabase.table("ai_generation_log").insert({
-            "coder_id": request.coder_id,
-            "agent_type": "learning_plan",
-            "input_payload": {"topic": request.topic, "module": module_info['name']},
-            "output_payload": roadmap_json,
-            "execution_time_ms": execution_time_ms,
-            "success": True
-        }).execute()
+    # ── 3. Weeks for this module ────────────────────────────────
+    weeks = db_manager.get_weeks(req.module_id)
 
-        return {
-            "status": "success",
-            "module_context": module_info,
-            "data": roadmap_json
-        }
+    # ── 4. Coder name ───────────────────────────────────────────
+    coder = db_manager.get_coder(req.coder_id)
+    coder_name = coder.get("full_name", "Student") if coder else "Student"
 
-    except Exception as e:
-        logger.error(f"Roadmap generation failed: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Internal Logic Error: {str(e)}")
+    # ── 5. Build full context and generate plan ─────────────────
+    context = {
+        "coder_id":   req.coder_id,
+        "coder_name": coder_name,
+        "soft_skills": soft_skills,
+        "module":      module,
+        "weeks":       weeks,
+        "topic":              req.topic,
+        "struggling_topics":  req.struggling_topics,
+        "additional_topics":  req.additional_topics,
+    }
+
+    plan = await generate_plan_with_openai(context)
+    exec_ms = int((time.time() - start) * 1000)
+
+    # ── 6. Persist plan ─────────────────────────────────────────
+    moodle_snapshot = {
+        "topic":             req.topic,
+        "struggling_topics": req.struggling_topics,
+        "additional_topics": req.additional_topics,
+        "module_name":       module.get("name"),
+        "total_weeks":       module.get("total_weeks"),
+        "weeks_in_module":   [{"week": w.get("week_number"), "name": w.get("name")} for w in weeks],
+    }
+    plan_id = db_manager.save_plan(
+        coder_id=req.coder_id,
+        module_id=req.module_id,
+        plan=plan,
+        soft_skills_snapshot=soft_skills,
+        moodle_status_snapshot=moodle_snapshot,
+        targeted_soft_skill=plan.get("targeted_soft_skill"),
+    )
+
+    # ── 7. Log generation ───────────────────────────────────────
+    db_manager.log_generation(
+        coder_id=req.coder_id,
+        agent_type="plan_generator",
+        input_payload={
+            "module_id":       req.module_id,
+            "topic":           req.topic,
+            "struggling_topics": req.struggling_topics,
+        },
+        output_payload={"plan_id": plan_id, "status": plan.get("status", "ok")},
+        execution_time_ms=exec_ms,
+        success=plan.get("status") != "fallback",
+    )
+
+    return {
+        "success": True,
+        "plan":    plan,
+        "metadata": {
+            "coder_id":     req.coder_id,
+            "module_id":    req.module_id,
+            "module_name":  module.get("name"),
+            "plan_id":      plan_id,
+            "execution_ms": exec_ms,
+            "model":        "gpt-4o-mini",
+        },
+    }

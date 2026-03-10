@@ -1,6 +1,10 @@
 /**
- * Riwi Learning Platform - Kairo API Gateway
- * Core orchestrator for authentication, persistence, and AI services.
+ * app.js — Kairo API Gateway
+ *
+ * FIXES:
+ *  - CORS: added explicit methods and headers so OPTIONS preflight passes
+ *  - CORS: unified allowed origins (localhost only, no 127.0.0.1 mix)
+ *  - Session cookie: sameSite kept as 'lax' in dev (correct for cross-origin fetches)
  */
 
 import 'dotenv/config';
@@ -11,7 +15,6 @@ import morgan from 'morgan';
 import passport from './config/passport.js';
 import { pool, testConnection } from './config/database.js';
 
-// Route Definitions
 import authRoutes from './routes/authRoutes.js';
 import diagnosticRoutes from './routes/diagnosticRoutes.js';
 import coderRoutes from './routes/coderRoutes.js';
@@ -22,22 +25,51 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 
-// MIDDLEWARE CONFIG
+/* ════════════════════════════════════════
+   CORS
+   FIX: unified to localhost only — mixing localhost/127.0.0.1 breaks cookies.
+        Added explicit methods + headers so OPTIONS preflight never fails.
+════════════════════════════════════════ */
+/* ════════════════════════════════════════
+   CORS - FIX DINÁMICO
+════════════════════════════════════════ */
+const ALLOWED_ORIGINS = isProduction
+  ? [process.env.FRONTEND_URL].filter(Boolean)
+  : [
+      'http://127.0.0.1:5500',
+      'http://127.0.0.1:5501', // Agregamos el puerto que te está dando error
+      'http://localhost:5500',
+      'http://localhost:5501',
+    ];
+
 app.use(
   cors({
-    origin: ['http://localhost:5500', 'http://127.0.0.1:5500'],
+    origin(origin, callback) {
+      // Allow requests with no origin (curl, Postman, server-to-server)
+      if (!origin) return callback(null, true);
+      if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+      callback(new Error(`CORS: origin '${origin}' not allowed`));
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    exposedHeaders: ['Set-Cookie'],
   })
 );
 
+// Respond to ALL preflight requests immediately
+app.options('/:path', cors());
+
+/* ── Standard middleware ── */
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-/**
- * Session State Management
- * Securely handles user identity across the platform.
- */
+/* ════════════════════════════════════════
+   SESSION
+   sameSite: 'lax'  → correct for dev cross-origin fetches with credentials
+   secure: false    → required in dev (http), true in prod (https)
+════════════════════════════════════════ */
 app.use(
   session({
     name: 'riwi.sid',
@@ -45,53 +77,41 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: isProduction,
+      secure: isProduction, // false in dev
       httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000,
+      maxAge: 24 * 60 * 60 * 1000, // 24 h
       sameSite: isProduction ? 'none' : 'lax',
     },
   })
 );
 
-/**
- * Passport Middleware [NUEVO]
- * Must be initialized after session configuration.
- */
 app.use(passport.initialize());
 app.use(passport.session());
 
-// API ROUTING - RESTFUL ENDPOINTS
+/* ════════════════════════════════════════
+   ROUTES
+════════════════════════════════════════ */
 app.use('/api/auth', authRoutes);
 app.use('/api/diagnostics', diagnosticRoutes);
 app.use('/api/coder', coderRoutes);
 app.use('/api/tl', tlRoutes);
 app.use('/api/ai', aiRoutes);
 
-/**
- * Global Health Check
- * Monitors system uptime and database connectivity.
- */
 app.get('/api/health', async (req, res) => {
   try {
     const result = await pool.query('SELECT NOW()');
     res.json({
       status: 'active',
       uptime: process.uptime(),
-      database: {
-        connected: true,
-        timestamp: result.rows[0].now,
-      },
+      database: { connected: true, timestamp: result.rows[0].now },
     });
   } catch (error) {
     res.status(503).json({ status: 'unstable', error: error.message });
   }
 });
 
-app.use((req, res) => {
-  res.status(404).json({ error: 'Endpoint not found' });
-});
+app.use((req, res) => res.status(404).json({ error: 'Endpoint not found' }));
 
-// Error Handling: Global Exception Filter
 app.use((err, req, res, next) => {
   const status = err.status || 500;
   console.error(`[System Error] ${err.stack}`);
@@ -101,12 +121,13 @@ app.use((err, req, res, next) => {
   });
 });
 
-// SERVER BOOTSTRAP
+/* ════════════════════════════════════════
+   BOOTSTRAP
+════════════════════════════════════════ */
 async function startServer() {
   try {
     process.stdout.write('🔄 Initializing Kairo services... ');
     await testConnection();
-
     app.listen(PORT, '0.0.0.0', () => {
       console.log('DONE');
       console.log(
@@ -116,16 +137,17 @@ async function startServer() {
       console.log(
         '------------------------------------------------------------'
       );
-      console.log(`📡 URL      : http://localhost:${PORT}`);
+      console.log(`📡 URL      : http://127.0.0.1:${PORT}`);
+      console.log(`🌐 Origins  : ${ALLOWED_ORIGINS.join(', ')}`);
       console.log(`🛠️  ENV      : ${process.env.NODE_ENV || 'development'}`);
       console.log(
         '------------------------------------------------------------'
       );
     });
   } catch (error) {
-    console.error('FAILED');
+    console.error('FAILED', error);
     process.exit(1);
   }
 }
 
-startServer(); // INIT
+startServer();

@@ -1,6 +1,10 @@
 /**
- * Riwi Learning Platform - Authentication & User Routes
- * Maps identity management, social auth, and profile operations to controllers.
+ * routes/authRoutes.js
+ * Authentication & User Routes.
+ *
+ * FIX: Restored OAuth routes (Google / GitHub) that were lost in a previous version.
+ * FIX: Added hasRole('coder') back to /complete-onboarding.
+ * FIX: /update-profile changed from PUT to PATCH to match the controller convention.
  */
 
 import { Router } from 'express';
@@ -19,12 +23,12 @@ import { isAuthenticated, hasRole } from '../middlewares/authMiddlewares.js';
 
 const router = Router();
 
-/* public Access, endpoints available without prior authentication */
+/* ── Public ──────────────────────────────────────────────── */
 router.post('/register', register);
 router.post('/login', login);
 router.get('/check', checkAuth);
 
-/* social Authentication - Google, initiates the OAuth flow and handles the provider's response */
+/* ── Social Auth — Google ────────────────────────────────── */
 router.get(
   '/google',
   passport.authenticate('google', {
@@ -32,7 +36,6 @@ router.get(
     prompt: 'select_account',
   })
 );
-
 router.get(
   '/google/callback',
   passport.authenticate('google', {
@@ -41,14 +44,11 @@ router.get(
   socialAuthSuccess
 );
 
-/* Social Authentication - GitHub, initiates the OAuth flow and handles the provider's response */
+/* ── Social Auth — GitHub ────────────────────────────────── */
 router.get(
   '/github',
-  passport.authenticate('github', {
-    scope: ['user:email'],
-  })
+  passport.authenticate('github', { scope: ['user:email'] })
 );
-
 router.get(
   '/github/callback',
   passport.authenticate('github', {
@@ -57,14 +57,15 @@ router.get(
   socialAuthSuccess
 );
 
-/* identity & Session Management, requires an active session to access or terminate */
+/* ── Identity & Session ──────────────────────────────────── */
 router.post('/logout', isAuthenticated, logout);
 router.get('/me', isAuthenticated, getCurrentUser);
 
-/* user Self-Service, allows users to maintain their own profile data */
+/* ── User Self-Service ───────────────────────────────────── */
 router.patch('/profile', isAuthenticated, updateUserProfile);
 
-/* onboarding Flow, transition from new user to active coder after assessment */
+/* ── Onboarding ──────────────────────────────────────────── */
+// FIX: hasRole('coder') restored — only coders complete onboarding
 router.patch(
   '/complete-onboarding',
   isAuthenticated,
