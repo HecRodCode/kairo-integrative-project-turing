@@ -1,16 +1,18 @@
 /**
- * Riwi Learning Platform - Security Middlewares
- * Handles session validation, identity verification, and Role-Based Access Control (RBAC).
+ * middleware/authMiddlewares.js
+ * Session validation and Role-Based Access Control — Kairo Project.
  */
 
 import { findById } from '../models/user.js';
 
 /**
- * Validates that a session is active and the user exists in the database.
+ * isAuthenticated
+ * Verifies active session and loads the user into req.user.
+ * Must run before hasRole — hasRole reads req.user.role set here.
  */
 export async function isAuthenticated(req, res, next) {
   try {
-    if (!req.session || !req.session.userId) {
+    if (!req.session?.userId) {
       return res.status(401).json({
         error: 'Unauthorized',
         message: 'Active session not found. Please log in.',
@@ -27,10 +29,10 @@ export async function isAuthenticated(req, res, next) {
       });
     }
 
-    req.user = user;
+    req.user = user; // ← role lives here: req.user.role
     next();
   } catch (error) {
-    console.error('[Auth Middleware Error]:', error);
+    console.error('[isAuthenticated]', error);
     res
       .status(500)
       .json({ error: 'Internal Server Error during authentication' });
@@ -38,30 +40,33 @@ export async function isAuthenticated(req, res, next) {
 }
 
 /**
- * Enforces Role-Based Access Control (RBAC).
- * Supports single or multiple roles (e.g., hasRole('tl', 'admin')).
+ * hasRole(...allowedRoles)
+ * Must run AFTER isAuthenticated (depends on req.user set above).
+ *
+ * BUG WAS HERE: previous version read req.session.role — never populated.
+ * FIX: reads req.user.role, which isAuthenticated always sets.
  */
 export function hasRole(...allowedRoles) {
   return (req, res, next) => {
-    const userRole = req.session.role;
+    // req.user is guaranteed by isAuthenticated running first
+    const userRole = req.user?.role;
 
     if (!userRole) {
       return res.status(401).json({
         error: 'Unauthorized',
-        message: 'No role associated with this session.',
+        message: 'No role found for this user.',
       });
     }
 
-    const normalizedRole = userRole.toLowerCase().trim();
+    const normalized = userRole.toLowerCase().trim();
     const isAuthorized = allowedRoles.some(
-      (role) => role.toLowerCase() === normalizedRole
+      (r) => r.toLowerCase() === normalized
     );
 
     if (!isAuthorized) {
       console.warn(
-        `[Security Warning] Access denied for user ${req.session.userId}. Role '${normalizedRole}' not in [${allowedRoles}]`
+        `[RBAC] User ${req.user.id} (${normalized}) denied. Required: [${allowedRoles}]`
       );
-
       return res.status(403).json({
         error: 'Forbidden',
         message: `Access denied. Requires one of: [${allowedRoles.join(', ')}]`,
@@ -73,14 +78,15 @@ export function hasRole(...allowedRoles) {
 }
 
 /**
- * Specialized middleware for onboarding flow.
- * Ensures coders complete their diagnostic before accessing the dashboard.
+ * checkOnboarding
+ * Blocks dashboard access until first_login = false.
+ * Use on protected coder routes that require completed onboarding.
  */
 export function checkOnboarding(req, res, next) {
-  if (req.session.role === 'coder' && req.user?.first_login) {
+  if (req.user?.role === 'coder' && req.user?.first_login) {
     return res.status(403).json({
       error: 'Onboarding Required',
-      message: 'You must complete the diagnostic assessment first.',
+      message: 'Complete the diagnostic assessment first.',
       redirect: '/onboarding',
     });
   }

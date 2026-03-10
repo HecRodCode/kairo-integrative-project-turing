@@ -8,7 +8,7 @@
  *      breaks cookies because the browser treats them as different domains.
  */
 
-const API_BASE = 'http://127.0.0.1:3000/api';
+const API_BASE = 'http://localhost:3000/api';
 
 export const authService = {
   async login(credentials) {

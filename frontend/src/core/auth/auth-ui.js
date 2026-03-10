@@ -13,20 +13,13 @@ import { authService } from './auth-service.js';
 import { sessionManager, guards } from './session.js';
 import { validator } from './validation.js';
 
-/* UI HELPERS */
+/* ── UI HELPERS ────────────────────────────────────────────────── */
 const ui = {
   getLang: () =>
     localStorage.getItem('kairo-lang') || document.documentElement.lang || 'es',
 
-  /**
-   * Shows a toast notification.
-   * Uses window.i18nT() (exposed by i18n.js) to translate the key.
-   * Falls back to the raw key if i18next is not available.
-   */
   showMessage(key, type = 'success', params = {}) {
     let message = typeof window.i18nT === 'function' ? window.i18nT(key) : key;
-
-    // Replace {param} placeholders
     Object.entries(params).forEach(([k, v]) => {
       message = message.replace(`{${k}}`, v);
     });
@@ -61,16 +54,11 @@ const ui = {
     }, 4000);
   },
 
-  /**
-   * Toggles button loading state.
-   * Uses window.i18nT() for the button label.
-   */
   setLoading(btn, isLoading, labelKey) {
     const lang = this.getLang();
     const loadingText = lang === 'es' ? 'Cargando...' : 'Loading...';
     const label =
       typeof window.i18nT === 'function' ? window.i18nT(labelKey) : labelKey;
-
     btn.disabled = isLoading;
     btn.innerHTML = isLoading
       ? `<span class="spinner"></span> ${loadingText}`
@@ -81,12 +69,10 @@ const ui = {
     const bar = document.getElementById(barId);
     if (!bar) return;
     bar.className = 'strength-bar';
-
     if (!password.length) {
       bar.style.width = '0';
       return;
     }
-
     const { score } = validator.checkPasswordStrength(password);
     if (score === 1) {
       bar.classList.add('strength-weak');
@@ -101,36 +87,35 @@ const ui = {
   },
 
   setupPasswordToggles() {
-    const buttons = document.querySelectorAll('.toggle-password');
-
-    buttons.forEach((btn) => {
+    document.querySelectorAll('.toggle-password').forEach((btn) => {
       btn.addEventListener('click', () => {
-        const targetId = btn.getAttribute('data-target');
-        const input = document.getElementById(targetId);
+        const input = document.getElementById(btn.getAttribute('data-target'));
         const eyeOpen = btn.querySelector('.eye-open');
         const eyeClosed = btn.querySelector('.eye-closed');
-
-        if (input && eyeOpen && eyeClosed) {
-          const isPassword = input.type === 'password';
-
-          // We changed the input type
-          input.type = isPassword ? 'text' : 'password';
-
-          // We alternate the visibility of SVGs
-          if (isPassword) {
-            eyeOpen.style.display = 'none';
-            eyeClosed.style.display = 'block';
-          } else {
-            eyeOpen.style.display = 'block';
-            eyeClosed.style.display = 'none';
-          }
-        }
+        if (!input || !eyeOpen || !eyeClosed) return;
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        eyeOpen.style.display = isPassword ? 'none' : 'block';
+        eyeClosed.style.display = isPassword ? 'block' : 'none';
       });
     });
   },
+
+  /** Fade out the card and run callback when done */
+  fadeOutCard(callback) {
+    // Try .card-content first (login layout), fallback to body
+    const card =
+      document.querySelector('.card-content') ||
+      document.querySelector('.content-form') ||
+      document.body;
+    card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(-10px)';
+    setTimeout(callback, 320);
+  },
 };
 
-/* LOGIN HANDLER */
+/* ── LOGIN HANDLER ──────────────────────────────────────────────── */
 async function handleLogin(e) {
   e.preventDefault();
 
@@ -151,11 +136,25 @@ async function handleLogin(e) {
     const data = await res.json();
 
     if (res.ok) {
+      // ── BUG FIX 3: backend now returns firstLogin — use it ──
       ui.showMessage('auth.alerts.login_success', 'success', {
         name: data.user.fullName,
       });
       sessionManager.saveUser(data.user);
       setTimeout(() => sessionManager.redirectByRole(data.user), 1500);
+    } else if (res.status === 403 && data.requiresOtp) {
+      // ── BUG FIX 2: user exists but hasn't verified OTP ──────
+      // Backend blocks login and tells us to go verify
+      ui.showMessage('auth.alerts.verify_email_first', 'error');
+
+      // Save email so otp-ui.js can find it
+      sessionStorage.setItem('kairo_pending_email', email);
+
+      setTimeout(() => {
+        ui.fadeOutCard(() => {
+          window.location.href = './email-validation.html';
+        });
+      }, 1500);
     } else {
       validator.highlightError('password');
       ui.showMessage(
@@ -170,7 +169,7 @@ async function handleLogin(e) {
   }
 }
 
-/* REGISTER HANDLER */
+/* ── REGISTER HANDLER ───────────────────────────────────────────── */
 async function handleRegister(e) {
   e.preventDefault();
 
@@ -210,19 +209,17 @@ async function handleRegister(e) {
         clan: clan.toUpperCase(),
       });
 
+      // ── BUG FIX 1: save to sessionStorage, NOT query param ──
+      // otp-ui.js reads from sessionStorage — this is the bridge
+      sessionStorage.setItem('kairo_pending_email', userData.email);
+
       setTimeout(() => {
-        const container = document.querySelector('.auth-container');
-        if (container) {
-          container.style.transition = 'all 0.3s ease-in-out';
-          container.style.opacity = '0';
-          container.style.transform = 'translateY(-10px)';
-        }
-        setTimeout(() => {
-          window.location.href = './login.html';
-        }, 300);
+        ui.fadeOutCard(() => {
+          window.location.href = './email-validation.html';
+        });
       }, 1000);
     } else {
-      if (res.status === 409) {
+      if (res.status === 409 || res.status === 400) {
         validator.highlightError('email');
         ui.showMessage('auth.alerts.user_exists', 'error');
       } else {
@@ -237,17 +234,12 @@ async function handleRegister(e) {
   }
 }
 
-/* INIT */
+/* ── INIT ───────────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', async () => {
-  /* If already authenticated, skip login/register page */
   await guards.requireGuest();
 
   ui.setupPasswordToggles();
 
-  const loginForm = document.getElementById('login-form');
-  const registerForm = document.getElementById('register-form');
-
-  // Real-time password strength
   document.querySelectorAll('input[type="password"]').forEach((input) => {
     input.addEventListener('input', (e) => {
       const barId =
@@ -257,6 +249,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       ui.updateStrengthUI(e.target.value, barId);
     });
   });
+
+  const loginForm = document.getElementById('login-form');
+  const registerForm = document.getElementById('register-form');
 
   if (loginForm) loginForm.addEventListener('submit', handleLogin);
   if (registerForm) registerForm.addEventListener('submit', handleRegister);

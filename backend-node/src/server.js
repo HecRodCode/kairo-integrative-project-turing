@@ -127,7 +127,13 @@ app.use((err, req, res, next) => {
 async function startServer() {
   try {
     process.stdout.write('🔄 Initializing Kairo services... ');
+
     await testConnection();
+
+    if (!process.env.RESEND_API_KEY) {
+      throw new Error('MAILER: RESEND_API_KEY is missing in .env');
+    }
+
     app.listen(PORT, '0.0.0.0', () => {
       console.log('DONE');
       console.log(
@@ -145,9 +151,22 @@ async function startServer() {
       );
     });
   } catch (error) {
-    console.error('FAILED', error);
+    // Aquí es donde el servidor se detiene y te chismea qué pasó
+    console.log('FAILED');
+    console.log('------------------------------------------------------------');
+    console.log('❌ CRITICAL ERROR DURING BOOTSTRAP');
+    console.log('------------------------------------------------------------');
+    console.log(`👉 TYPE    : ${error.name}`);
+    console.log(`👉 MESSAGE : ${error.message}`);
+
+    // Si el error tiene stack, te da la línea exacta para que no busques a ciegas
+    if (error.stack) {
+      const line = error.stack.split('\n')[1].trim();
+      console.log(`👉 LOCATION: ${line}`);
+    }
+
+    console.log('------------------------------------------------------------');
     process.exit(1);
   }
 }
-
 startServer();
