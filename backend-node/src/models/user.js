@@ -8,28 +8,36 @@ import bcrypt from 'bcrypt';
 
 const SALT_ROUNDS = 10;
 
-/**
- * Persists a new user with hashed credentials and Clan assignment.
- */
-export async function create({ email, password, fullName, role, clan }) {
+export async function create({
+  email,
+  password,
+  fullName,
+  role,
+  clan,
+  first_login = true,
+}) {
   const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
-
-  // Agregamos 'clan' a la consulta SQL
   const queryText = `
-    INSERT INTO users (email, password, full_name, role, clan)
-    VALUES ($1, $2, $3, $4, $5)
+    INSERT INTO users (email, password, full_name, role, clan, first_login)
+    VALUES ($1, $2, $3, $4, $5, $6)
     RETURNING id, email, full_name, role, clan, first_login, created_at
   `;
 
-  // Añadimos el valor del clan al array de parámetros
-  const values = [email, hashedPassword, fullName, role, clan];
+  const values = [
+    email,
+    hashedPassword,
+    fullName,
+    role,
+    clan || null,
+    first_login,
+  ];
+
   const result = await query(queryText, values);
   return result.rows[0];
 }
 
 /**
  * Finds a user by their unique email address.
- * Optimized for login flows - Added clan to selection.
  */
 export async function findByEmail(email) {
   const queryText = `
@@ -43,7 +51,6 @@ export async function findByEmail(email) {
 
 /**
  * Retrieves core user data by primary key.
- * Excludes sensitive data like password hashes.
  */
 export async function findById(id) {
   const queryText = `
@@ -63,17 +70,15 @@ export async function verifyPassword(plainPassword, hashedPassword) {
   return await bcrypt.compare(plainPassword, hashedPassword);
 }
 
-/**
- * Transitions user out of the onboarding phase.
- */
-export async function updateFirstLogin(userId) {
+export async function updateFirstLogin(userId, clan = null) {
   const queryText = `
     UPDATE users 
-    SET first_login = false 
+    SET first_login = false,
+        clan = COALESCE($2, clan)
     WHERE id = $1
-    RETURNING id, first_login
+    RETURNING id, first_login, clan
   `;
-  const result = await query(queryText, [userId]);
+  const result = await query(queryText, [userId, clan]);
   return result.rows[0];
 }
 
@@ -81,9 +86,6 @@ export async function updateFirstLogin(userId) {
  * Performs dynamic updates on user profile fields.
  */
 export async function updateUserInDb(userId, updates) {
-  const fields = Object.keys(updates);
-  if (fields.length === 0) return null;
-
   const finalUpdates = { ...updates };
 
   if (finalUpdates.password) {
@@ -94,6 +96,7 @@ export async function updateUserInDb(userId, updates) {
   }
 
   const keys = Object.keys(finalUpdates);
+  if (keys.length === 0) return null;
   const setClause = keys
     .map((field, index) => `${field} = $${index + 1}`)
     .join(', ');

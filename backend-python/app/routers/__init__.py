@@ -1,3 +1,3 @@
-from .ia_router import router as ia_router
+from . import roadmap, cards, chat, reports
 
-__all__ = ['ia_router']
+__all__ = ["roadmap", "cards", "chat", "reports"]

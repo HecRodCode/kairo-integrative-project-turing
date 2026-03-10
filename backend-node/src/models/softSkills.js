@@ -1,13 +1,17 @@
 /**
- * Riwi Learning Platform - Soft Skills Persistence Layer
- * Handles the storage and retrieval of psychometric data and learning styles.
+ * models/softSkills.js
+ * Soft Skills Persistence Layer.
+ *
+ * FIX: create() now accepts and persists rawAnswers → raw_answers column.
+ *      Without this, the full onboarding answers array sent by the frontend
+ *      was silently dropped and never stored in the DB.
  */
 
 import { query } from '../config/database.js';
 
 /**
- * Persists a new assessment or updates existing scores if the coder has already
- * completed the quiz. Uses an Upsert pattern (ON CONFLICT) for atomicity.
+ * Upserts a soft skills assessment.
+ * If the coder already has one, all fields are updated (re-take scenario).
  */
 export async function create({
   coderId,
@@ -17,22 +21,24 @@ export async function create({
   communication,
   teamwork,
   learningStyle,
+  rawAnswers = null, // FIX: was missing — raw_answers JSONB column
 }) {
   const queryText = `
     INSERT INTO soft_skills_assessment (
-      coder_id, autonomy, time_management, problem_solving, 
-      communication, teamwork, learning_style
+      coder_id, autonomy, time_management, problem_solving,
+      communication, teamwork, learning_style, raw_answers
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7)
-    ON CONFLICT (coder_id) 
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    ON CONFLICT (coder_id)
     DO UPDATE SET
-      autonomy = EXCLUDED.autonomy,
+      autonomy        = EXCLUDED.autonomy,
       time_management = EXCLUDED.time_management,
       problem_solving = EXCLUDED.problem_solving,
-      communication = EXCLUDED.communication,
-      teamwork = EXCLUDED.teamwork,
-      learning_style = EXCLUDED.learning_style,
-      assessed_at = CURRENT_TIMESTAMP
+      communication   = EXCLUDED.communication,
+      teamwork        = EXCLUDED.teamwork,
+      learning_style  = EXCLUDED.learning_style,
+      raw_answers     = EXCLUDED.raw_answers,
+      assessed_at     = CURRENT_TIMESTAMP
     RETURNING *
   `;
 
@@ -44,6 +50,7 @@ export async function create({
     communication,
     teamwork,
     learningStyle,
+    rawAnswers ? JSON.stringify(rawAnswers) : null,
   ];
 
   const result = await query(queryText, values);
@@ -51,30 +58,28 @@ export async function create({
 }
 
 /**
- * Retrieves the specific assessment record for a single coder.
+ * Returns the assessment for a single coder.
  */
 export async function findByCoderId(coderId) {
-  const queryText = `
-    SELECT * FROM soft_skills_assessment 
-    WHERE coder_id = $1
-  `;
-  const result = await query(queryText, [coderId]);
+  const result = await query(
+    'SELECT * FROM soft_skills_assessment WHERE coder_id = $1',
+    [coderId]
+  );
   return result.rows[0];
 }
 
 /**
- * Performs a granular update on specific soft skill fields.
- * Includes automated timestamp management for the 'assessed_at' field.
+ * Partial update — only touches the fields provided.
  */
 export async function update(coderId, updates) {
   const fields = [];
   const values = [];
   let paramCount = 1;
 
-  Object.keys(updates).forEach((key) => {
-    if (updates[key] !== undefined) {
+  Object.entries(updates).forEach(([key, val]) => {
+    if (val !== undefined) {
       fields.push(`${key} = $${paramCount}`);
-      values.push(updates[key]);
+      values.push(val);
       paramCount++;
     }
   });
@@ -82,9 +87,8 @@ export async function update(coderId, updates) {
   if (fields.length === 0) return null;
 
   values.push(coderId);
-
   const queryText = `
-    UPDATE soft_skills_assessment 
+    UPDATE soft_skills_assessment
     SET ${fields.join(', ')}, assessed_at = CURRENT_TIMESTAMP
     WHERE coder_id = $${paramCount}
     RETURNING *
@@ -95,30 +99,25 @@ export async function update(coderId, updates) {
 }
 
 /**
- * Fetches all assessments with joined user context (Name and Email).
- * Optimized for Team Leader dashboards and reporting.
+ * All assessments with user info — for TL dashboard.
  */
 export async function getAll() {
-  const queryText = `
-    SELECT 
-      s.*,
-      u.email,
-      u.full_name
+  const result = await query(`
+    SELECT s.*, u.email, u.full_name
     FROM soft_skills_assessment s
     JOIN users u ON s.coder_id = u.id
     ORDER BY s.assessed_at DESC
-  `;
-  const result = await query(queryText);
+  `);
   return result.rows;
 }
 
 /**
- * Removes a diagnostic record.
- * Note: Use with caution as this deletes historical assessment data.
+ * Hard delete — use with caution.
  */
 export async function deleteByCoderId(coderId) {
-  const queryText =
-    'DELETE FROM soft_skills_assessment WHERE coder_id = $1 RETURNING *';
-  const result = await query(queryText, [coderId]);
+  const result = await query(
+    'DELETE FROM soft_skills_assessment WHERE coder_id = $1 RETURNING *',
+    [coderId]
+  );
   return result.rows[0];
 }

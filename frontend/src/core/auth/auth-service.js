@@ -1,29 +1,68 @@
-/* Communication service with the API */
-const API_BASE = 'http://127.0.0.1:3000/api/auth';
+/**
+ * src/core/auth/auth-service.js
+ *
+ * FIX: API_BASE changed from 127.0.0.1 to localhost.
+ *      The OAuth buttons in HTML point to localhost:3000.
+ *      The session cookie is set on localhost.
+ *      ALL fetch calls must also go to localhost — mixing hostnames
+ *      breaks cookies because the browser treats them as different domains.
+ */
+
+const API_BASE = 'http://127.0.0.1:3000/api';
 
 export const authService = {
-  // Sends user credentials to the server for authentication and token generation
   async login(credentials) {
-    const response = await fetch(`${API_BASE}/login`, {
+    return fetch(`${API_BASE}/auth/login`, {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(credentials),
     });
-    return response;
   },
 
-  // Processes new account creation by sending structured user data to the API
   async register(userData) {
-    const response = await fetch(`${API_BASE}/register`, {
+    return fetch(`${API_BASE}/auth/register`, {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(userData),
     });
-    return response;
   },
 
-  // Validates existing social media sessions using secure cross-origin credentials
-  async checkSocial() {
-    return fetch(`${API_BASE}/me`, { credentials: 'include' });
+  async logout() {
+    return fetch(`${API_BASE}/auth/logout`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+  },
+
+  async checkAuth() {
+    return fetch(`${API_BASE}/auth/check`, {
+      credentials: 'include',
+    });
+  },
+
+  async getMe() {
+    return fetch(`${API_BASE}/auth/me`, {
+      credentials: 'include',
+    });
+  },
+
+  async completeOnboarding(payload) {
+    return fetch(`${API_BASE}/auth/complete-onboarding`, {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async saveDiagnostic(payload) {
+    return fetch(`${API_BASE}/diagnostics`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
   },
 };

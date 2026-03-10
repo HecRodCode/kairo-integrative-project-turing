@@ -54,35 +54,143 @@ The repository is organized into independent modules that work together as a dis
 
 ---
 
-## 🏁 Quick Start
+## 🛠️ Setup & Execution Guide
 
-### 1. Prerequisites
+To ensure the **Kairo** ecosystem functions correctly, both backend engines must be active simultaneously. Node.js acts as the **System Orchestrator**, while Python serves as the **AI Brain**.
 
-- Node.js 24+ | Python 3.10+ | PostgreSQL 14+
-- **Ollama:** Installed locally with the `qwen2.5` model.
+### 1. Environment Configuration (`.env`)
 
-### 2. Environment Setup
+You must create specific environment files in the root of their respective directories. **Note:** These files contain sensitive keys and should never be committed to version control.
 
-You must create a `.env` file in both `backend-node/` and `backend-python/` folders based on the provided examples.
+#### 📁 `backend-node/.env`
 
-### 3. Execution
+Controls database connectivity, authentication, and frontend permissions.
 
-To run the full environment, you need three terminal instances:
+```env
 
-```bash
-# Terminal 1: Node.js API
-cd backend-node && npm run dev
+# SERVER CONFIGURATION
+PORT=3000
+NODE_ENV=development
 
-# Terminal 2: Python AI Microservice
-cd backend-python && uvicorn app.main:app --reload
+# SECURITY & SESSIONS
+SESSION_SECRET=your_session_secret
 
-# Terminal 3: Frontend
-# Use VSCode Live Server or any static server on /index.html
+# DATABASE (POSTGRESQL - SUPABASE)
+DB_HOST=your_host
+DB_PORT=5432
+DB_NAME=your_name
+DB_USER=postgres.your_user
+DB_PASSWORD=your_password
+DATABASE_URL=your_database_url
+
+# SUPABASE CONFIG
+SUPABASE_URL=your_supabase_url
+SUPABASE_ANON_KEY=your_anon_key
+
+# FRONTEND CONNECTION
+FRONTEND_URL=http://127.0.0.1:5500/frontend
+
+# PYTHON CONNECTION
+PYTHON_API_URL=http://localhost:8000
+
+# SOCIAL AUTH - GITHUB
+GITHUB_CLIENT_ID=your_client
+GITHUB_CLIENT_SECRET=your_client_secret
+
+# SOCIAL AUTH - GOOGLE
+GOOGLE_CLIENT_ID=your_client
+GOOGLE_CLIENT_SECRET=your_client_secret
+
+# API KEY AI
+RIWI_IA_KEY=your_ia_key
+
 ```
 
 ---
 
+#### 📁 `Backend-python/.en`
+
+```env
+
+# PYTHON CONFIGURATION
+PORT=8000
+ENV=development
+
+# OPENIA
+OPENAI_API_KEY=your_api_key
+
+# MODEL IA
+MODEL_NAME=your_model
+
+# SUPABASE CONFIG
+SUPABASE_URL=your_supabase_url
+SUPABASE_SERVICE_KEY=your_service_key
+
+# BACKEND NODE PORT
+NODE_URL=http://localhost:3000
+
+# FRONTEND PORT
+FRONTEND_URL=http://localhost:5500
+
+```
+
+### 2. Spinning Up the Engines
+
+Open three independent terminal instances in your Ubuntu environment and execute the following commands in order:
+
+#### Terminal A: The Orchestrator (Node.js)
+
+- cd backend-node
+- npm install
+- npm run dev
+
+  `Verification: Look for the message 🚀 KAIRO API GATEWAY STARTED SUCCESSFULLY`
+
+#### Terminal B: The AI Brain (Python FastAPI)
+
+Processes data and generates personalized learning plans.
+
+- Linux
+
+```Bash
+1. cd backend-python
+2. python3 -m venv env
+3. source env/bin/activate
+4. pip install -r requirements.txt
+5. uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+- macOS
+
+```Terminal
+1. cd backend-python
+2. python3 -m venv env
+3. source env/bin/activate
+4. pip install -r requirements.txt
+5. uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+- Windows
+
+```PowerShell
+1. cd backend-python
+2. python -m venv env
+3. env\Scripts\Activate.ps1
+4. pip install -r requirements.txt
+5. uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+`Verification: Look for INFO: Supabase client initialized and the Uvicorn link at port 8000`
+
+#### Terminal C: The Interface (Frontend)
+
+- **Recommended: Use VS Code Live Server (Port 5500)**
+- Or use `npx serve -p 5500`
+
+---
+
 ## 👥 The Team
+
 - Héctor Rios: Backend Lead & Documentation
 - Miguel Calle: Database Architect
 - Duvan Piedrahita: Frontend Engineer (Coder Experience)

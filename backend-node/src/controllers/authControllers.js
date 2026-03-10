@@ -1,6 +1,11 @@
 /**
- * Riwi Learning Platform - Unified Authentication & User Controller
- * Handles Session Management, Identity Verification, and Social Auth.
+ * controllers/authControllers.js
+ *
+ * FIX: Added req.session.save() before every res.json() / res.redirect()
+ *      that relies on the session being persisted.
+ *      Without this, express-session may not finish writing to the store
+ *      before the client receives the response and immediately fires a
+ *      follow-up request — causing the guard to see no session.
  */
 
 import {
@@ -8,6 +13,8 @@ import {
   create,
   verifyPassword,
   findById,
+  updateFirstLogin,
+  updateUserInDb,
 } from '../models/user.js';
 import {
   validateEmail,
@@ -16,76 +23,69 @@ import {
   validateFullName,
   sanitizeInput,
 } from '../utils/validators.js';
-import { query } from '../config/database.js';
 
-/* handles the redirect and session setup after Social Auth (Google/GitHub) This function bridges Passport.js with your existing session logic */
+/* ════════════════════════════════════════
+   SOCIAL AUTH
+════════════════════════════════════════ */
 export async function socialAuthSuccess(req, res) {
   try {
     if (!req.user) {
       return res.status(401).json({ error: 'Social authentication failed' });
     }
 
-    const { emails, displayName, id, provider } = req.user;
-    const email = emails[0].value;
+    req.session.userId = req.user.id;
+    req.session.role = sanitizeInput(req.user.role).toLowerCase();
+    req.session.firstLogin = req.user.first_login;
 
-    let user = await findByEmail(email);
+    const frontendUrl =
+      process.env.FRONTEND_URL || 'http://127.0.0.1:5500/frontend';
 
-    if (!user) {
-      user = await create({
-        email: email,
-        password: `social_auth_${provider}_${id}`,
-        fullName: displayName || 'Riwi Coder',
-        role: 'coder',
-      });
-    }
-
-    const safeRole = sanitizeInput(user.role).toLowerCase();
-    req.session.userId = user.id;
-    req.session.role = safeRole;
-
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5500';
-    res.redirect(`${frontendUrl}/dashboard.html`);
+    // FIX: save session before redirect so the cookie is fully persisted
+    req.session.save((err) => {
+      if (err) {
+        console.error('[Session Save Error]:', err);
+        return res.status(500).json({ error: 'Session could not be saved' });
+      }
+      return res.redirect(
+        req.user.first_login
+          ? `${frontendUrl}/src/views/coder/onboarding.html`
+          : `${frontendUrl}/src/views/coder/dashboard.html`
+      );
+    });
   } catch (error) {
     console.error('[Social Auth Success Error]:', error);
     res.status(500).json({ error: 'Failed to synchronize social account' });
   }
 }
 
-/* handles user registration with strict role normalization */
+/* ════════════════════════════════════════
+   REGISTER
+════════════════════════════════════════ */
 export async function register(req, res) {
   try {
     const { email, password, fullName, full_name, role, clan } = req.body;
     const name = fullName || full_name;
 
     if (!email || !password || !name || !role || !clan) {
+      return res.status(400).json({
+        error: 'All fields are required, including Clan selection',
+      });
+    }
+
+    if (
+      !validateEmail(email) ||
+      !validatePassword(password) ||
+      !validateFullName(name) ||
+      !validateRole(role)
+    ) {
       return res
         .status(400)
-        .json({ error: 'All fields are required, including Clan selection' });
-    }
-
-    if (!validateEmail(email)) {
-      return res.status(400).json({ error: 'Invalid email format' });
-    }
-
-    if (!validatePassword(password)) {
-      return res
-        .status(400)
-        .json({ error: 'Password must be at least 6 characters' });
-    }
-
-    if (!validateFullName(name)) {
-      return res
-        .status(400)
-        .json({ error: 'Name must be at least 3 characters' });
-    }
-
-    if (!validateRole(role)) {
-      return res.status(400).json({ error: 'Invalid role provided' });
+        .json({ error: 'Validation failed. Check your inputs.' });
     }
 
     const normalizedRole = sanitizeInput(role).toLowerCase();
-
     const existingUser = await findByEmail(email);
+
     if (existingUser) {
       return res.status(409).json({ error: 'Email already registered' });
     }
@@ -96,6 +96,7 @@ export async function register(req, res) {
       fullName: sanitizeInput(name),
       role: normalizedRole,
       clan: sanitizeInput(clan).toLowerCase(),
+      first_login: true,
     });
 
     res.status(201).json({
@@ -105,6 +106,7 @@ export async function register(req, res) {
         email: newUser.email,
         role: newUser.role,
         clan: newUser.clan,
+        firstLogin: true,
       },
     });
   } catch (error) {
@@ -113,7 +115,9 @@ export async function register(req, res) {
   }
 }
 
-/* handles user authentication and session initialization */
+/* ════════════════════════════════════════
+   LOGIN
+════════════════════════════════════════ */
 export async function login(req, res) {
   try {
     const { email, password } = req.body;
@@ -129,17 +133,27 @@ export async function login(req, res) {
     }
 
     const safeRole = sanitizeInput(user.role).toLowerCase();
+
     req.session.userId = user.id;
     req.session.role = safeRole;
+    req.session.firstLogin = user.first_login;
 
-    res.json({
-      message: 'Login successful',
-      user: {
-        id: user.id,
-        fullName: user.full_name,
-        role: safeRole,
-        firstLogin: user.first_login,
-      },
+    // FIX: save session before responding to eliminate race condition
+    req.session.save((err) => {
+      if (err) {
+        console.error('[Session Save Error]:', err);
+        return res.status(500).json({ error: 'Session could not be saved' });
+      }
+      res.json({
+        message: 'Login successful',
+        user: {
+          id: user.id,
+          fullName: user.full_name,
+          role: safeRole,
+          firstLogin: user.first_login,
+          clan: user.clan,
+        },
+      });
     });
   } catch (error) {
     console.error('[Login Error]:', error);
@@ -147,63 +161,52 @@ export async function login(req, res) {
   }
 }
 
-/* updates the first_login flag after completing the onboarding quiz */
+/* ════════════════════════════════════════
+   COMPLETE ONBOARDING
+════════════════════════════════════════ */
 export async function updateFirstLoginStatus(req, res) {
   try {
-    const queryText =
-      'UPDATE users SET first_login = false WHERE id = $1 RETURNING first_login';
-    const result = await query(queryText, [req.session.userId]);
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
 
-    res.json({ success: true, firstLogin: result.rows[0].first_login });
+    const { clan } = req.body;
+
+    const currentUser = await findById(userId);
+    if (!currentUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (!currentUser.clan && !clan) {
+      return res.status(400).json({
+        error: 'Clan is required to complete onboarding',
+      });
+    }
+
+    const updated = await updateFirstLogin(userId, clan || null);
+
+    // FIX: save updated firstLogin flag before responding
+    req.session.firstLogin = false;
+    req.session.save((err) => {
+      if (err) console.error('[Session Save Error]:', err);
+    });
+
+    res.json({
+      success: true,
+      message: 'Onboarding completed',
+      firstLogin: updated.first_login,
+      clan: updated.clan,
+    });
   } catch (error) {
     console.error('[Onboarding Update Error]:', error);
     res.status(500).json({ error: 'Failed to update onboarding status' });
   }
 }
 
-/* updates basic user profile information (Self-service) */
-export async function updateUserProfile(req, res) {
-  try {
-    const { fullName, email } = req.body;
-    const userId = req.session.userId;
-
-    const updates = {};
-
-    if (fullName) {
-      if (!validateFullName(fullName)) {
-        return res
-          .status(400)
-          .json({ error: 'Name must be at least 3 characters' });
-      }
-      updates.full_name = sanitizeInput(fullName);
-    }
-
-    if (email) {
-      if (!validateEmail(email)) {
-        return res.status(400).json({ error: 'Invalid email format' });
-      }
-      updates.email = sanitizeInput(email);
-    }
-
-    if (Object.keys(updates).length === 0) {
-      return res.status(400).json({ error: 'No fields to update' });
-    }
-
-    const fields = Object.keys(updates)
-      .map((key, i) => `${key} = $${i + 1}`)
-      .join(', ');
-    const values = [...Object.values(updates), userId];
-    const queryText = `UPDATE users SET ${fields} WHERE id = $${values.length} RETURNING id, full_name, email`;
-
-    const result = await query(queryText, values);
-    res.json({ message: 'Profile updated', user: result.rows[0] });
-  } catch (error) {
-    console.error('[Profile Update Error]:', error);
-    res.status(500).json({ error: 'Failed to update profile' });
-  }
-}
-
-/* retrieves current authenticated user context */
+/* ════════════════════════════════════════
+   CURRENT USER
+════════════════════════════════════════ */
 export async function getCurrentUser(req, res) {
   try {
     const user = await findById(req.session.userId);
@@ -216,6 +219,7 @@ export async function getCurrentUser(req, res) {
         fullName: user.full_name,
         role: sanitizeInput(user.role).toLowerCase(),
         firstLogin: user.first_login,
+        clan: user.clan,
       },
     });
   } catch (error) {
@@ -223,11 +227,47 @@ export async function getCurrentUser(req, res) {
   }
 }
 
-/* updated logout: Clears session and passport info */
+/* ════════════════════════════════════════
+   UPDATE PROFILE
+════════════════════════════════════════ */
+export async function updateUserProfile(req, res) {
+  try {
+    const userId = req.session.userId;
+    const updates = req.body;
+    const allowed = ['full_name', 'password'];
+    const safeUpdates = Object.fromEntries(
+      Object.entries(updates).filter(([k]) => allowed.includes(k))
+    );
+
+    if (Object.keys(safeUpdates).length === 0) {
+      return res.status(400).json({ error: 'No valid fields to update' });
+    }
+
+    const updated = await updateUserInDb(userId, safeUpdates);
+
+    res.json({
+      message: 'Profile updated',
+      user: {
+        id: updated.id,
+        email: updated.email,
+        fullName: updated.full_name,
+        role: updated.role,
+        clan: updated.clan,
+      },
+    });
+  } catch (error) {
+    console.error('[Profile Update Error]:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+}
+
+/* ════════════════════════════════════════
+   LOGOUT
+════════════════════════════════════════ */
 export async function logout(req, res) {
   if (req.logout) {
     req.logout((err) => {
-      if (err) console.error('Passport logout error');
+      if (err) console.error('Passport logout error:', err);
     });
   }
 
@@ -238,10 +278,13 @@ export async function logout(req, res) {
   });
 }
 
-/* simple session verification for frontend guards */
+/* ════════════════════════════════════════
+   CHECK AUTH
+════════════════════════════════════════ */
 export async function checkAuth(req, res) {
   res.json({
     authenticated: !!req.session.userId,
     role: req.session.role || null,
+    firstLogin: req.session.firstLogin ?? null,
   });
 }
