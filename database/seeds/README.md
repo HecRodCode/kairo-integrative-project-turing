@@ -1,11 +1,12 @@
 # 🌱 Seeds - Datos de Prueba
 
-Esta carpeta contiene scripts SQL para llenar la base de datos con datos de ejemplo para testing y desarrollo.
+Esta carpeta contiene scripts SQL para llenar la base de datos con datos de
+ejemplo para testing y desarrollo.
 
 ## 📄 Archivos
 
-| Archivo | Descripción |
-|---------|------------|
+| Archivo     | Descripción                                                 |
+| ----------- | ----------------------------------------------------------- |
 | `users.sql` | Usuarios, evaluaciones, módulos, temas y progreso académico |
 
 ## 🚀 Cómo usar
@@ -25,12 +26,14 @@ psql -U tu_usuario -d tu_db -f seeds/users.sql
 ### Opción 3: Parcial (descomenta secciones)
 
 Si ya tienes datos y solo quieres agregar más:
+
 - Descomenta la sección que necesites
 - Comenta el `TRUNCATE` al inicio si quieres preservar datos existentes
 
 ## 📊 Qué se crea
 
 ### 👥 8 Usuarios
+
 - 2 Team Leaders (María y Carlos)
 - 6 Coders distribuidos en 3 clanes:
   - **Clan Turing**: Juan, Ana
@@ -38,7 +41,9 @@ Si ya tienes datos y solo quieres agregar más:
   - **Clan McCarthy**: Luis, María
 
 ### 📈 Evaluaciones de Habilidades
+
 Cada coder tiene una evaluación inicial de:
+
 - Autonomía (1-5)
 - Gestión del tiempo (1-5)
 - Problem solving (1-5)
@@ -47,6 +52,7 @@ Cada coder tiene una evaluación inicial de:
 - Estilo de aprendizaje (visual, auditory, kinesthetic, mixed)
 
 ### 📚 6 Módulos Completos
+
 - Fundamentos de Python (4 semanas)
 - HTML y CSS (4 semanas)
 - JavaScript (4 semanas)
@@ -55,27 +61,31 @@ Cada coder tiene una evaluación inicial de:
 - React (4 semanas)
 
 ### 🎯 Temas por Módulo
-Cada módulo tiene 4 temas con categorías (Conceptos, Estructuras, Funciones, Avanzado, etc.)
+
+Cada módulo tiene 4 temas con categorías (Conceptos, Estructuras, Funciones,
+Avanzado, etc.)
 
 ### 📊 Progreso Académico
+
 - Coders en diferentes semanas
 - Scores variados (58-95)
 - Algunos completaron módulos, otros están en curso
 
 ### ⚠️ Temas con Dificultad
+
 - Juan: problemas con variables y funciones
 - Pedro: problemas con estructuras de datos
 - Luis: problemas generales (en riesgo)
 
 ## 🎯 Casos de Prueba
 
-| Usuario | Situación | Propósito |
-|---------|-----------|----------|
-| Juan | Baja autonomía (2) | Detectar riesgo automático |
-| Ana | Balance (4-5) | Caso normal |
-| Pedro | Baja time management (2) | Alerta específica |
-| Sofía | Excelente (5) | Caso exitoso |
-| Luis | Muy bajo (2) | RIESGO ALTO |
+| Usuario | Situación                | Propósito                  |
+| ------- | ------------------------ | -------------------------- |
+| Juan    | Baja autonomía (2)       | Detectar riesgo automático |
+| Ana     | Balance (4-5)            | Caso normal                |
+| Pedro   | Baja time management (2) | Alerta específica          |
+| Sofía   | Excelente (5)            | Caso exitoso               |
+| Luis    | Muy bajo (2)             | RIESGO ALTO                |
 
 ## 📋 Notas
 
@@ -86,7 +96,8 @@ Cada módulo tiene 4 temas con categorías (Conceptos, Estructuras, Funciones, A
 
 ## ✅ Verificar que funcionó
 
-Descomenta la sección "VERIFICAR DATOS INSERTADOS" al final del archivo y ejecuta las queries.
+Descomenta la sección "VERIFICAR DATOS INSERTADOS" al final del archivo y
+ejecuta las queries.
 
 O en Supabase SQL Editor:
 
@@ -137,4 +148,5 @@ INSERT INTO modules (name, description, total_weeks) VALUES
 
 ---
 
-**Recuerda**: Los seeds son solo para development. En producción, los datos vienen de formularios y la IA.
+**Recuerda**: Los seeds son solo para development. En producción, los datos
+vienen de formularios y la IA.

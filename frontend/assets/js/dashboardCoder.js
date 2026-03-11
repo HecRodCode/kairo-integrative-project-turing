@@ -6,10 +6,7 @@
  * Sin mock data. Sin spinners de carga — skeleton shimmer implícito en CSS.
  */
 
-import {
-  guards,
-  sessionManager,
-} from '../../src/core/auth/session.js';
+import { guards, sessionManager } from '../../src/core/auth/session.js';
 
 const API = 'http://localhost:3000/api';
 
@@ -65,8 +62,7 @@ async function loadDashboard() {
   } catch (err) {
     console.error('[Dashboard Coder]', err);
     el('error-banner').classList.remove('hidden');
-    el('error-msg').textContent =
-      err.message || 'No se pudo conectar con el servidor.';
+    el('error-msg').textContent = err.message || 'No se pudo conectar con el servidor.';
   } finally {
     el('loading-overlay').classList.add('hidden');
   }
@@ -107,22 +103,17 @@ function renderUser(user, plan, riskFlags) {
   }
 
   // Risk alert
-  const activeRisks = (riskFlags || []).filter(
-    (r) => r.level === 'high' || r.level === 'critical'
-  );
+  const activeRisks = (riskFlags || []).filter((r) => r.level === 'high' || r.level === 'critical');
   if (activeRisks.length > 0) {
     el('risk-alert').classList.remove('hidden');
     el('risk-msg').textContent =
-      activeRisks[0].reason ||
-      `Flag de riesgo activo (${activeRisks[0].level})`;
+      activeRisks[0].reason || `Flag de riesgo activo (${activeRisks[0].level})`;
   }
 }
 
 /* ── Topbar module info ── */
 function renderTopbar(user, progress) {
-  el('module-pill').textContent = user?.moduleName
-    ? truncate(user.moduleName, 22)
-    : '—';
+  el('module-pill').textContent = user?.moduleName ? truncate(user.moduleName, 22) : '—';
 
   const week = progress?.currentWeek ?? 1;
   el('topbar-week').textContent = user?.moduleTotalWeeks
@@ -132,9 +123,7 @@ function renderTopbar(user, progress) {
 
 /* ── Stats row ── */
 function renderStats(user, progress) {
-  el('st-module').textContent = user?.moduleName
-    ? truncate(user.moduleName, 14)
-    : '—';
+  el('st-module').textContent = user?.moduleName ? truncate(user.moduleName, 14) : '—';
 
   el('st-week').textContent = `Semana ${progress?.currentWeek ?? 1}`;
 
@@ -144,9 +133,7 @@ function renderStats(user, progress) {
       : 'Sin datos';
 
   el('st-weeks-done').textContent =
-    progress?.weeksCompletedCount != null
-      ? `${progress.weeksCompletedCount}`
-      : '0';
+    progress?.weeksCompletedCount != null ? `${progress.weeksCompletedCount}` : '0';
 }
 
 /* ── Module progress dots ── */
@@ -155,8 +142,7 @@ function renderModuleProgress(progress, user) {
   const current = progress?.currentWeek ?? 1;
   const done = progress?.weeksCompletedCount || 0;
 
-  el('progress-meta').textContent =
-    total > 0 ? `Semana ${current} de ${total}` : '—';
+  el('progress-meta').textContent = total > 0 ? `Semana ${current} de ${total}` : '—';
 
   if (!total) {
     el('week-dots').innerHTML =
@@ -231,9 +217,7 @@ function renderSoftSkills(ss) {
     teamwork: ss.teamwork,
   };
 
-  const weakestKey = Object.entries(scores).reduce((a, b) =>
-    a[1] < b[1] ? a : b
-  )[0];
+  const weakestKey = Object.entries(scores).reduce((a, b) => (a[1] < b[1] ? a : b))[0];
 
   el('skills-list').innerHTML = SKILL_DEFS.map(({ key, label }) => {
     const val = scores[key] || 0;
@@ -279,8 +263,7 @@ function renderSoftSkills(ss) {
   const desc = STYLE_DESCRIPTIONS[style] || '';
   if (desc) {
     const p = document.createElement('p');
-    p.style.cssText =
-      'font-size:11px;color:var(--text-muted);margin:6px 0 0;line-height:1.5';
+    p.style.cssText = 'font-size:11px;color:var(--text-muted);margin:6px 0 0;line-height:1.5';
     p.textContent = desc;
     el('style-block').appendChild(p);
   }
@@ -428,10 +411,7 @@ function applyTheme() {
 
 function wireTheme() {
   el('btn-theme').addEventListener('click', () => {
-    const next =
-      document.documentElement.getAttribute('data-theme') === 'dark'
-        ? 'light'
-        : 'dark';
+    const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', next);
     localStorage.setItem('kairo_theme', next);
     syncThemeIcon(next);

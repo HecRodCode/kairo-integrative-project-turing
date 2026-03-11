@@ -15,9 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }, 10);
 
   /* Fade out on navigation between login ↔ register */
-  const links = document.querySelectorAll(
-    'a[href*="login.html"], a[href*="register.html"]'
-  );
+  const links = document.querySelectorAll('a[href*="login.html"], a[href*="register.html"]');
 
   links.forEach((link) => {
     link.addEventListener('click', (e) => {

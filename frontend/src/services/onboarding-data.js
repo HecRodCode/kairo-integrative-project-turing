@@ -818,41 +818,41 @@ export const ONBOARDING_DATA = [
       {
         id: 20,
         text: {
-          es: 'Sueles ser una persona:',
-          en: 'You tend to be a person who is:',
+          es: 'Ante un reto nuevo, tiendes a:',
+          en: 'When facing a new challenge, you tend to:',
         },
         options: [
           {
             id: 'q20o1',
             text: {
-              es: 'Cuidadosa con los detalles',
-              en: 'Careful with details',
+              es: 'Lanzarte a la acción y aprender en el camino',
+              en: 'Jump into action and learn along the way',
             },
-            score: 'SNS',
+            score: 'ACT',
           },
           {
             id: 'q20o2',
             text: {
-              es: 'Rápida buscando nuevas formas',
-              en: 'Quick to look for new ways',
+              es: 'Tomarte tu tiempo para analizar antes de actuar',
+              en: 'Take your time to analyze before acting',
             },
-            score: 'INT',
+            score: 'REF',
           },
           {
             id: 'q20o3',
             text: {
-              es: 'Orientada a procedimientos claros',
-              en: 'Oriented toward clear procedures',
+              es: 'Buscar compañeros para discutir y resolver juntos',
+              en: 'Look for teammates to discuss and solve together',
             },
-            score: 'SNS',
+            score: 'ACT',
           },
           {
             id: 'q20o4',
             text: {
-              es: 'Atraída por ideas originales',
-              en: 'Drawn to original ideas',
+              es: 'Reflexionar en privado hasta tener claridad',
+              en: 'Reflect privately until you have clarity',
             },
-            score: 'INT',
+            score: 'REF',
           },
         ],
       },
@@ -1109,10 +1109,10 @@ export const ONBOARDING_DATA = [
           {
             id: 'q27o1',
             text: {
-              es: 'Práctico: aprendo haciendo',
-              en: 'Practical: I learn by doing',
+              es: 'Vivencial: aprendo desde la experiencia directa',
+              en: 'Experiential: I learn from direct experience',
             },
-            score: 'AE',
+            score: 'CE',
           },
           {
             id: 'q27o2',

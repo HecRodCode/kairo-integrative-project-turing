@@ -20,9 +20,7 @@ async function generarHash() {
     console.log('1. Ve a tu tabla "users" en Supabase.');
     console.log('2. Busca al Team Leader por su email.');
     console.log('3. Pega el HASH de arriba en la columna "password".');
-    console.log(
-      '4. Asegúrate de que "role" sea "tl" y "otp_verified" sea true.'
-    );
+    console.log('4. Asegúrate de que "role" sea "tl" y "otp_verified" sea true.');
     console.log('--------------------------------------------------');
   } catch (err) {
     console.error('❌ Error al generar el hash:', err);

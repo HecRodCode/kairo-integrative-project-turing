@@ -233,10 +233,7 @@ export async function getDashboardData(req, res) {
 
   try {
     // 1. Obtener info del TL (y su clan)
-    const tlResult = await query(
-      'SELECT full_name, clan FROM users WHERE id = $1',
-      [tlId]
-    );
+    const tlResult = await query('SELECT full_name, clan FROM users WHERE id = $1', [tlId]);
     const tl = tlResult.rows[0];
 
     if (!tl) return res.status(404).json({ error: 'TL not found' });
@@ -277,10 +274,7 @@ export async function getDashboardData(req, res) {
       clanAvgScore:
         totalCoders > 0
           ? (
-              coders.reduce(
-                (acc, c) => acc + parseFloat(c.average_score || 0),
-                0
-              ) / totalCoders
+              coders.reduce((acc, c) => acc + parseFloat(c.average_score || 0), 0) / totalCoders
             ).toFixed(1)
           : 0,
     };

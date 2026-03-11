@@ -36,9 +36,7 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        const email =
-          profile.emails?.[0]?.value ||
-          `github_${profile.id}@noreply.github.com`;
+        const email = profile.emails?.[0]?.value || `github_${profile.id}@noreply.github.com`;
 
         let user = await findByEmail(email);
 

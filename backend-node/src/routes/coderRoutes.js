@@ -10,11 +10,7 @@ import {
   updateActivityProgress,
   getModuleMilestones,
 } from '../controllers/coderControllers.js';
-import {
-  isAuthenticated,
-  hasRole,
-  checkOnboarding,
-} from '../middlewares/authMiddlewares.js';
+import { isAuthenticated, hasRole, checkOnboarding } from '../middlewares/authMiddlewares.js';
 
 const router = Router();
 

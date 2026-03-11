@@ -66,10 +66,7 @@ function setupInputs() {
         inputs[i - 1].classList.remove('filled');
         inputs[i - 1].focus();
       }
-      if (
-        !/^\d$/.test(e.key) &&
-        !['Backspace', 'Tab', 'ArrowLeft', 'ArrowRight'].includes(e.key)
-      ) {
+      if (!/^\d$/.test(e.key) && !['Backspace', 'Tab', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
         e.preventDefault();
       }
     });
@@ -77,10 +74,7 @@ function setupInputs() {
     // Paste full code
     input.addEventListener('paste', (e) => {
       e.preventDefault();
-      const pasted = e.clipboardData
-        .getData('text')
-        .replace(/\D/g, '')
-        .slice(0, 6);
+      const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
       if (pasted.length === 6) {
         inputs.forEach((inp, idx) => {
           inp.value = pasted[idx] ?? '';
@@ -141,10 +135,7 @@ function showError(msg) {
   msgError.style.display = 'block';
   inputs.forEach((i) => i.classList.add('error-digit'));
   document.querySelector('.otp-grid')?.classList.add('shake');
-  setTimeout(
-    () => document.querySelector('.otp-grid')?.classList.remove('shake'),
-    400
-  );
+  setTimeout(() => document.querySelector('.otp-grid')?.classList.remove('shake'), 400);
 }
 
 function clearError() {
@@ -164,13 +155,7 @@ function clearInputs() {
 function maskEmail(email) {
   const [local, domain] = email.split('@');
   if (!local || !domain) return email;
-  return (
-    local[0] +
-    '*'.repeat(Math.max(local.length - 2, 3)) +
-    local.slice(-1) +
-    '@' +
-    domain
-  );
+  return local[0] + '*'.repeat(Math.max(local.length - 2, 3)) + local.slice(-1) + '@' + domain;
 }
 
 /* ── VERIFY ─────────────────────────────────────────────────── */

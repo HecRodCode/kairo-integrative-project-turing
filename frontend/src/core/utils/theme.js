@@ -23,16 +23,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const sun = document.getElementById('sun-icon');
 
   /* Sincroniza íconos con el estado actual */
-  _syncIcons(
-    document.documentElement.getAttribute('data-theme') === 'dark',
-    moon,
-    sun
-  );
+  _syncIcons(document.documentElement.getAttribute('data-theme') === 'dark', moon, sun);
 
   if (btn) {
     btn.addEventListener('click', () => {
-      const isDark =
-        document.documentElement.getAttribute('data-theme') === 'dark';
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
       const newTheme = isDark ? 'light' : 'dark';
 
       document.documentElement.setAttribute('data-theme', newTheme);

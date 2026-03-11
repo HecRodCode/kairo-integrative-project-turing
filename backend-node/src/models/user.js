@@ -8,14 +8,7 @@ import bcrypt from 'bcrypt';
 
 const SALT_ROUNDS = 10;
 
-export async function create({
-  email,
-  password,
-  fullName,
-  role,
-  clan,
-  first_login = true,
-}) {
+export async function create({ email, password, fullName, role, clan, first_login = true }) {
   const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
   const queryText = `
     INSERT INTO users (email, password, full_name, role, clan, first_login)
@@ -23,14 +16,7 @@ export async function create({
     RETURNING id, email, full_name, role, clan, first_login, created_at
   `;
 
-  const values = [
-    email,
-    hashedPassword,
-    fullName,
-    role,
-    clan || null,
-    first_login,
-  ];
+  const values = [email, hashedPassword, fullName, role, clan || null, first_login];
 
   const result = await query(queryText, values);
   return result.rows[0];
@@ -89,17 +75,12 @@ export async function updateUserInDb(userId, updates) {
   const finalUpdates = { ...updates };
 
   if (finalUpdates.password) {
-    finalUpdates.password = await bcrypt.hash(
-      finalUpdates.password,
-      SALT_ROUNDS
-    );
+    finalUpdates.password = await bcrypt.hash(finalUpdates.password, SALT_ROUNDS);
   }
 
   const keys = Object.keys(finalUpdates);
   if (keys.length === 0) return null;
-  const setClause = keys
-    .map((field, index) => `${field} = $${index + 1}`)
-    .join(', ');
+  const setClause = keys.map((field, index) => `${field} = $${index + 1}`).join(', ');
 
   const values = [...Object.values(finalUpdates), userId];
 

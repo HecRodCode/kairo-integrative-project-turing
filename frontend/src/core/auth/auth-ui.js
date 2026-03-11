@@ -15,8 +15,7 @@ import { validator } from './validation.js';
 
 /* ── UI HELPERS ────────────────────────────────────────────────── */
 const ui = {
-  getLang: () =>
-    localStorage.getItem('kairo-lang') || document.documentElement.lang || 'es',
+  getLang: () => localStorage.getItem('kairo-lang') || document.documentElement.lang || 'es',
 
   showMessage(key, type = 'success', params = {}) {
     let message = typeof window.i18nT === 'function' ? window.i18nT(key) : key;
@@ -57,12 +56,9 @@ const ui = {
   setLoading(btn, isLoading, labelKey) {
     const lang = this.getLang();
     const loadingText = lang === 'es' ? 'Cargando...' : 'Loading...';
-    const label =
-      typeof window.i18nT === 'function' ? window.i18nT(labelKey) : labelKey;
+    const label = typeof window.i18nT === 'function' ? window.i18nT(labelKey) : labelKey;
     btn.disabled = isLoading;
-    btn.innerHTML = isLoading
-      ? `<span class="spinner"></span> ${loadingText}`
-      : label;
+    btn.innerHTML = isLoading ? `<span class="spinner"></span> ${loadingText}` : label;
   },
 
   updateStrengthUI(password, barId = 'strength-bar') {
@@ -157,10 +153,7 @@ async function handleLogin(e) {
       }, 1500);
     } else {
       validator.highlightError('password');
-      ui.showMessage(
-        data.errorKey || 'auth.alerts.invalid_credentials',
-        'error'
-      );
+      ui.showMessage(data.errorKey || 'auth.alerts.invalid_credentials', 'error');
     }
   } catch {
     ui.showMessage('auth.alerts.conn_error', 'error');
@@ -242,10 +235,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.querySelectorAll('input[type="password"]').forEach((input) => {
     input.addEventListener('input', (e) => {
-      const barId =
-        input.id === 'confirm-password'
-          ? 'strength-bar-confirm'
-          : 'strength-bar';
+      const barId = input.id === 'confirm-password' ? 'strength-bar-confirm' : 'strength-bar';
       ui.updateStrengthUI(e.target.value, barId);
     });
   });

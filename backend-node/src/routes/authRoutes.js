@@ -49,10 +49,7 @@ router.get(
 );
 
 /* ── Social Auth — GitHub ────────────────────────────────── */
-router.get(
-  '/github',
-  passport.authenticate('github', { scope: ['user:email'] })
-);
+router.get('/github', passport.authenticate('github', { scope: ['user:email'] }));
 router.get(
   '/github/callback',
   passport.authenticate('github', {
@@ -70,11 +67,6 @@ router.patch('/profile', isAuthenticated, updateUserProfile);
 
 /* ── Onboarding ──────────────────────────────────────────── */
 // FIX: hasRole('coder') restored — only coders complete onboarding
-router.patch(
-  '/complete-onboarding',
-  isAuthenticated,
-  hasRole('coder'),
-  updateFirstLoginStatus
-);
+router.patch('/complete-onboarding', isAuthenticated, hasRole('coder'), updateFirstLoginStatus);
 
 export default router;

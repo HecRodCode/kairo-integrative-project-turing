@@ -1,4 +1,5 @@
 # Sprint Planning — Azure DevOps
+
 ## Kairo — Plataforma de Aprendizaje Personalizado
 
 **Metodología:** Scrum  
@@ -9,13 +10,13 @@
 
 ## Épicas del Proyecto
 
-| ID | Épica | Descripción |
-|----|-------|-------------|
-| E1 | Core Platform | Autenticación, roles, onboarding, CRUD de usuarios |
-| E2 | Learning System | 6 Cards, planes de IA, actividades y progreso |
-| E3 | TL Dashboard | Dashboard global, filtro por clan, reportes |
-| E4 | Notifications | Feedback del TL, campana de notificaciones |
-| E5 | AI Integration | Integración con Python/Groq, generación de planes |
+| ID  | Épica           | Descripción                                        |
+| --- | --------------- | -------------------------------------------------- |
+| E1  | Core Platform   | Autenticación, roles, onboarding, CRUD de usuarios |
+| E2  | Learning System | 6 Cards, planes de IA, actividades y progreso      |
+| E3  | TL Dashboard    | Dashboard global, filtro por clan, reportes        |
+| E4  | Notifications   | Feedback del TL, campana de notificaciones         |
+| E5  | AI Integration  | Integración con Python/Groq, generación de planes  |
 
 ---
 
@@ -42,6 +43,7 @@ Sprint 1 Board
 ```
 
 **Criterios de salida del Sprint 1:**
+
 - [ ] Un coder puede registrarse e iniciar sesión
 - [ ] Al primer login, se muestra el quiz de onboarding
 - [ ] Al completar el quiz, se guarda `soft_skills_assessment`
@@ -78,6 +80,7 @@ Sprint 2 Board
 ```
 
 **Criterios de salida del Sprint 2:**
+
 - [ ] Python genera un plan real usando Groq API
 - [ ] Plan se guarda con `priority_level` (2H + 2M + 2L)
 - [ ] Coder ve sus 6 Cards ordenadas en el Dashboard
@@ -113,6 +116,7 @@ Sprint 3 Board
 ```
 
 **Criterios de salida del Sprint 3:**
+
 - [ ] TL puede enviar mensaje a un coder o a todo su clan
 - [ ] Coder ve punto rojo en campana cuando hay mensajes nuevos
 - [ ] Al leer el mensaje, desaparece el punto rojo
@@ -126,39 +130,39 @@ Sprint 3 Board
 
 ## Backlog Completo
 
-| ID | Historia | Épica | Story Points | Sprint | Estado |
-|----|----------|-------|:---:|:---:|--------|
-| US-F01 | Setup inicial del proyecto | E1 | 3 | 1 | ⬜ To Do |
-| US-F02 | Tabla users + clan_id + RLS | E1 | 2 | 1 | ⬜ To Do |
-| US-F03 | Registro e inicio de sesión | E1 | 5 | 1 | ⬜ To Do |
-| US-F04 | Middleware de autenticación | E1 | 3 | 1 | ⬜ To Do |
-| US-F05 | Ruta de onboarding condicional | E1 | 2 | 1 | ⬜ To Do |
-| ***US-02*** | Quiz 20 preguntas → soft_skills | E1 | 8 | 1 | ⬜ To Do |
-| US-F06 | Calcular learning_style | E1 | 3 | 1 | ⬜ To Do |
-| US-F07 | CRUD perfil de usuario | E1 | 3 | 1 | ⬜ To Do |
-| US-F08 | Políticas RLS completas | E1 | 3 | 1 | ⬜ To Do |
-| US-F09 | Módulos y temas en BD | E2 | 2 | 2 | ⬜ To Do |
-| US-F10 | Registrar moodle_progress | E2 | 3 | 2 | ⬜ To Do |
-| US-F11 | Detección automática de riesgo | E3 | 5 | 2 | ⬜ To Do |
-| US-F12 | Integración Python context | E5 | 5 | 2 | ⬜ To Do |
-| US-F13 | Prompt builder para IA | E5 | 8 | 2 | ⬜ To Do |
-| US-F14 | Guardar complementary_plans | E2 | 5 | 2 | ⬜ To Do |
-| US-F15 | Guardar plan_activities | E2 | 3 | 2 | ⬜ To Do |
-| ***US-01*** | Frontend: 6 Cards Dashboard | E2 | 8 | 2 | ⬜ To Do |
-| ***US-03*** | Marcar actividad completada | E2 | 5 | 2 | ⬜ To Do |
-| ***US-05*** | TL Dashboard + filtro clan | E3 | 8 | 2 | ⬜ To Do |
-| US-F16 | Vista v_coder_dashboard | E3 | 2 | 2 | ⬜ To Do |
-| US-F17 | Vista v_coder_risk_analysis | E3 | 2 | 2 | ⬜ To Do |
-| ***US-06*** | TL feedback a coder/clan | E4 | 5 | 3 | ⬜ To Do |
-| US-F18 | Frontend campana notificaciones | E4 | 5 | 3 | ⬜ To Do |
-| US-F19 | Marcar notificación como leída | E4 | 2 | 3 | ⬜ To Do |
-| ***US-04*** | Subir evidencia (file/link) | E2 | 3 | 3 | ⬜ To Do |
-| ***US-07*** | IA genera risk_flags | E5 | 5 | 3 | ⬜ To Do |
-| US-F20 | Generar ai_reports PDF | E5 | 8 | 3 | ⬜ To Do |
-| US-F21 | Analytics chart del clan | E3 | 5 | 3 | ⬜ To Do |
-| US-F22 | Despliegue en producción | E1 | 5 | 3 | ⬜ To Do |
-| US-F23 | Variables de entorno | E1 | 2 | 3 | ⬜ To Do |
-| US-F24 | Tests E2E críticos | E1 | 5 | 3 | ⬜ To Do |
+| ID          | Historia                        | Épica | Story Points | Sprint | Estado   |
+| ----------- | ------------------------------- | ----- | :----------: | :----: | -------- |
+| US-F01      | Setup inicial del proyecto      | E1    |      3       |   1    | ⬜ To Do |
+| US-F02      | Tabla users + clan_id + RLS     | E1    |      2       |   1    | ⬜ To Do |
+| US-F03      | Registro e inicio de sesión     | E1    |      5       |   1    | ⬜ To Do |
+| US-F04      | Middleware de autenticación     | E1    |      3       |   1    | ⬜ To Do |
+| US-F05      | Ruta de onboarding condicional  | E1    |      2       |   1    | ⬜ To Do |
+| **_US-02_** | Quiz 20 preguntas → soft_skills | E1    |      8       |   1    | ⬜ To Do |
+| US-F06      | Calcular learning_style         | E1    |      3       |   1    | ⬜ To Do |
+| US-F07      | CRUD perfil de usuario          | E1    |      3       |   1    | ⬜ To Do |
+| US-F08      | Políticas RLS completas         | E1    |      3       |   1    | ⬜ To Do |
+| US-F09      | Módulos y temas en BD           | E2    |      2       |   2    | ⬜ To Do |
+| US-F10      | Registrar moodle_progress       | E2    |      3       |   2    | ⬜ To Do |
+| US-F11      | Detección automática de riesgo  | E3    |      5       |   2    | ⬜ To Do |
+| US-F12      | Integración Python context      | E5    |      5       |   2    | ⬜ To Do |
+| US-F13      | Prompt builder para IA          | E5    |      8       |   2    | ⬜ To Do |
+| US-F14      | Guardar complementary_plans     | E2    |      5       |   2    | ⬜ To Do |
+| US-F15      | Guardar plan_activities         | E2    |      3       |   2    | ⬜ To Do |
+| **_US-01_** | Frontend: 6 Cards Dashboard     | E2    |      8       |   2    | ⬜ To Do |
+| **_US-03_** | Marcar actividad completada     | E2    |      5       |   2    | ⬜ To Do |
+| **_US-05_** | TL Dashboard + filtro clan      | E3    |      8       |   2    | ⬜ To Do |
+| US-F16      | Vista v_coder_dashboard         | E3    |      2       |   2    | ⬜ To Do |
+| US-F17      | Vista v_coder_risk_analysis     | E3    |      2       |   2    | ⬜ To Do |
+| **_US-06_** | TL feedback a coder/clan        | E4    |      5       |   3    | ⬜ To Do |
+| US-F18      | Frontend campana notificaciones | E4    |      5       |   3    | ⬜ To Do |
+| US-F19      | Marcar notificación como leída  | E4    |      2       |   3    | ⬜ To Do |
+| **_US-04_** | Subir evidencia (file/link)     | E2    |      3       |   3    | ⬜ To Do |
+| **_US-07_** | IA genera risk_flags            | E5    |      5       |   3    | ⬜ To Do |
+| US-F20      | Generar ai_reports PDF          | E5    |      8       |   3    | ⬜ To Do |
+| US-F21      | Analytics chart del clan        | E3    |      5       |   3    | ⬜ To Do |
+| US-F22      | Despliegue en producción        | E1    |      5       |   3    | ⬜ To Do |
+| US-F23      | Variables de entorno            | E1    |      2       |   3    | ⬜ To Do |
+| US-F24      | Tests E2E críticos              | E1    |      5       |   3    | ⬜ To Do |
 
 **Total Story Points:** ~138 puntos  
 **Promedio por Sprint:** ~46 puntos
@@ -180,18 +184,19 @@ Un item del backlog está **Done** cuando:
 
 ## Team & Roles
 
-| Rol | Responsabilidad |
-|-----|----------------|
-| **Frontend Dev** | HTML/CSS/JS, Vistas del Coder y TL |
-| **Backend Node Dev** | API REST, auth, controladores, BD |
+| Rol                    | Responsabilidad                           |
+| ---------------------- | ----------------------------------------- |
+| **Frontend Dev**       | HTML/CSS/JS, Vistas del Coder y TL        |
+| **Backend Node Dev**   | API REST, auth, controladores, BD         |
 | **Backend Python Dev** | Integración Groq, IA, análisis y reportes |
-| **Fullstack / DB** | Supabase, RLS, migraciones, seeds |
+| **Fullstack / DB**     | Supabase, RLS, migraciones, seeds         |
 
 ---
 
 ## Azure DevOps Quick Setup
 
 ### Crear Épicas
+
 ```
 1. Ir a Azure DevOps → Boards → Backlogs
 2. Crear Work Items tipo "Epic":
@@ -203,6 +208,7 @@ Un item del backlog está **Done** cuando:
 ```
 
 ### Crear Sprints
+
 ```
 1. Ir a Project Settings → Boards → Team → Iterations
 2. Crear:
@@ -212,6 +218,7 @@ Un item del backlog está **Done** cuando:
 ```
 
 ### Crear User Stories
+
 ```
 1. En cada Épica, crear Work Items tipo "User Story"
 2. Asignar Story Points, Sprint y responsable
@@ -219,6 +226,7 @@ Un item del backlog está **Done** cuando:
 ```
 
 ### Tablero Kanban por Sprint
+
 ```
 Columnas recomendadas:
 | Backlog | To Do | In Progress | In Review | Done |

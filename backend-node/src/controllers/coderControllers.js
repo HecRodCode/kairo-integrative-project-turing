@@ -200,9 +200,7 @@ export async function getCoderDashboard(req, res) {
       // averageScore null (no 0) para que el UI distinga "sin datos" de un 0 real.
       progress: {
         currentWeek: progress?.current_week ?? 1,
-        averageScore: progress
-          ? parseFloat(progress.average_score) || null
-          : null,
+        averageScore: progress ? parseFloat(progress.average_score) || null : null,
         strugglingTopics: progress?.struggling_topics || [],
         weeksCompleted: progress?.weeks_completed || [],
         weeksCompletedCount: weeksCompletedCount,

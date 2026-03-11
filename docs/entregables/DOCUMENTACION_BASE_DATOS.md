@@ -1,4 +1,5 @@
 # DOCUMENTACIÓN DEL MODELO DE BASE DE DATOS
+
 ## Proyecto: Ruta Formativa Personalizada con IA
 
 ---
@@ -20,7 +21,9 @@
 
 ### Contexto del Proyecto
 
-Este modelo de base de datos soporta una aplicación web educativa que genera rutas formativas personalizadas mediante inteligencia artificial. El sistema permite:
+Este modelo de base de datos soporta una aplicación web educativa que genera
+rutas formativas personalizadas mediante inteligencia artificial. El sistema
+permite:
 
 - Diagnóstico de habilidades blandas de estudiantes (coders)
 - Seguimiento del progreso académico en Moodle
@@ -31,7 +34,8 @@ Este modelo de base de datos soporta una aplicación web educativa que genera ru
 ### Tecnología
 
 - **Motor de Base de Datos:** PostgreSQL 14+
-- **Justificación:** Soporte nativo para JSONB, arrays, y consultas complejas necesarias para el sistema de IA
+- **Justificación:** Soporte nativo para JSONB, arrays, y consultas complejas
+  necesarias para el sistema de IA
 
 ---
 
@@ -40,24 +44,29 @@ Este modelo de base de datos soporta una aplicación web educativa que genera ru
 El modelo se organiza en **5 grupos funcionales:**
 
 ### 1. **Gestión de Usuarios**
+
 - `users`
 - `soft_skills_assessment`
 - `activity_progress`
 
 ### 2. **Estructura de Contenidos**
+
 - `modules`
 - `weeks`
 - `topics`
 
 ### 3. **Seguimiento Académico**
+
 - `moodle_progress`
 - `coder_struggling_topics`
 
 ### 4. **Planes Complementarios**
+
 - `complementary_plans`
 - `plan_activities`
 
 ### 5. **Feedback y Mentoría**
+
 - `tl_feedback`
 
 ---
@@ -66,23 +75,26 @@ El modelo se organiza en **5 grupos funcionales:**
 
 ### 1. USERS (Usuarios del Sistema)
 
-**Propósito:** Almacenar información de autenticación y perfil básico de usuarios.
+**Propósito:** Almacenar información de autenticación y perfil básico de
+usuarios.
 
 **Roles soportados:**
+
 - `coder`: Estudiantes que reciben rutas formativas
 - `tl`: Team Leaders que supervisan y dan feedback
 
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| id | SERIAL | Identificador único (PK) |
-| email | VARCHAR(100) | Email único del usuario (UK) |
-| password | VARCHAR(255) | Contraseña hasheada |
-| role | VARCHAR(20) | Rol del usuario (coder/tl) |
-| first_login | BOOLEAN | Indica si es el primer acceso |
-| created_at | TIMESTAMP | Fecha de creación |
-| updated_at | TIMESTAMP | Última actualización |
+| Campo       | Tipo         | Descripción                   |
+| ----------- | ------------ | ----------------------------- |
+| id          | SERIAL       | Identificador único (PK)      |
+| email       | VARCHAR(100) | Email único del usuario (UK)  |
+| password    | VARCHAR(255) | Contraseña hasheada           |
+| role        | VARCHAR(20)  | Rol del usuario (coder/tl)    |
+| first_login | BOOLEAN      | Indica si es el primer acceso |
+| created_at  | TIMESTAMP    | Fecha de creación             |
+| updated_at  | TIMESTAMP    | Última actualización          |
 
 **Relaciones:**
+
 - 1:N con `soft_skills_assessment`
 - 1:N con `moodle_progress`
 - 1:N con `complementary_plans`
@@ -94,26 +106,29 @@ El modelo se organiza en **5 grupos funcionales:**
 
 ### 2. SOFT_SKILLS_ASSESSMENT (Evaluación de Habilidades Blandas)
 
-**Propósito:** Almacenar el diagnóstico inicial de habilidades blandas del coder.
+**Propósito:** Almacenar el diagnóstico inicial de habilidades blandas del
+coder.
 
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| id | SERIAL | Identificador único (PK) |
-| coder_id | INT | Referencia a users (FK) |
-| autonomy | INT | Nivel de autonomía (1-5) |
-| time_management | INT | Gestión del tiempo (1-5) |
-| problem_solving | INT | Resolución de problemas (1-5) |
-| communication | INT | Comunicación (1-5) |
-| teamwork | INT | Trabajo en equipo (1-5) |
-| learning_style | VARCHAR(50) | Estilo de aprendizaje |
-| assessed_at | TIMESTAMP | Fecha de evaluación |
+| Campo           | Tipo        | Descripción                   |
+| --------------- | ----------- | ----------------------------- |
+| id              | SERIAL      | Identificador único (PK)      |
+| coder_id        | INT         | Referencia a users (FK)       |
+| autonomy        | INT         | Nivel de autonomía (1-5)      |
+| time_management | INT         | Gestión del tiempo (1-5)      |
+| problem_solving | INT         | Resolución de problemas (1-5) |
+| communication   | INT         | Comunicación (1-5)            |
+| teamwork        | INT         | Trabajo en equipo (1-5)       |
+| learning_style  | VARCHAR(50) | Estilo de aprendizaje         |
+| assessed_at     | TIMESTAMP   | Fecha de evaluación           |
 
 **Valores válidos para learning_style:**
+
 - `visual`
 - `auditory`
 - `kinesthetic`
 
 **Relaciones:**
+
 - N:1 con `users` (coder)
 
 ---
@@ -122,16 +137,17 @@ El modelo se organiza en **5 grupos funcionales:**
 
 **Propósito:** Catálogo de módulos del programa educativo.
 
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| id | SERIAL | Identificador único (PK) |
-| module_number | INT | Número del módulo (1, 2, 3...) |
-| name | VARCHAR(100) | Nombre del módulo |
-| description | TEXT | Descripción detallada |
-| total_weeks | INT | Total de semanas del módulo |
-| order_index | INT | Orden de presentación |
+| Campo         | Tipo         | Descripción                    |
+| ------------- | ------------ | ------------------------------ |
+| id            | SERIAL       | Identificador único (PK)       |
+| module_number | INT          | Número del módulo (1, 2, 3...) |
+| name          | VARCHAR(100) | Nombre del módulo              |
+| description   | TEXT         | Descripción detallada          |
+| total_weeks   | INT          | Total de semanas del módulo    |
+| order_index   | INT          | Orden de presentación          |
 
 **Ejemplo de datos:**
+
 ```sql
 -- Módulo 1: Fundamentos Python
 -- Módulo 2: HTML y CSS
@@ -140,6 +156,7 @@ El modelo se organiza en **5 grupos funcionales:**
 ```
 
 **Relaciones:**
+
 - 1:N con `weeks`
 - 1:N con `topics`
 - 1:N con `moodle_progress`
@@ -152,17 +169,18 @@ El modelo se organiza en **5 grupos funcionales:**
 
 **Propósito:** Detallar el contenido de cada semana dentro de un módulo.
 
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| id | SERIAL | Identificador único (PK) |
-| module_id | INT | Referencia a modules (FK) |
-| week_number | INT | Número de semana (1, 2, 3...) |
-| name | VARCHAR(100) | Nombre de la semana |
-| description | TEXT | Descripción del contenido |
-| user_story | TEXT | Historia de usuario a desarrollar |
-| topics | JSONB | Temas cubiertos en formato JSON |
+| Campo       | Tipo         | Descripción                       |
+| ----------- | ------------ | --------------------------------- |
+| id          | SERIAL       | Identificador único (PK)          |
+| module_id   | INT          | Referencia a modules (FK)         |
+| week_number | INT          | Número de semana (1, 2, 3...)     |
+| name        | VARCHAR(100) | Nombre de la semana               |
+| description | TEXT         | Descripción del contenido         |
+| user_story  | TEXT         | Historia de usuario a desarrollar |
+| topics      | JSONB        | Temas cubiertos en formato JSON   |
 
 **Ejemplo de topics (JSONB):**
+
 ```json
 {
   "main_topics": [
@@ -170,14 +188,12 @@ El modelo se organiza en **5 grupos funcionales:**
     "Relaciones muchos a muchos",
     "Joins en SQL"
   ],
-  "secondary_topics": [
-    "Subconsultas",
-    "Índices"
-  ]
+  "secondary_topics": ["Subconsultas", "Índices"]
 }
 ```
 
 **Relaciones:**
+
 - N:1 con `modules`
 
 ---
@@ -186,18 +202,19 @@ El modelo se organiza en **5 grupos funcionales:**
 
 **Propósito:** Seguimiento del avance del coder en la plataforma Moodle.
 
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| id | SERIAL | Identificador único (PK) |
-| coder_id | INT | Referencia a users (FK) |
-| module_id | INT | Referencia a modules (FK) |
-| current_week | INT | Semana actual del coder |
-| weeks_completed | JSONB | Detalle de semanas completadas |
-| struggling_topics | TEXT[] | Array de temas con dificultad |
-| average_score | DECIMAL(5,2) | Promedio general (0-100) |
-| updated_at | TIMESTAMP | Última actualización |
+| Campo             | Tipo         | Descripción                    |
+| ----------------- | ------------ | ------------------------------ |
+| id                | SERIAL       | Identificador único (PK)       |
+| coder_id          | INT          | Referencia a users (FK)        |
+| module_id         | INT          | Referencia a modules (FK)      |
+| current_week      | INT          | Semana actual del coder        |
+| weeks_completed   | JSONB        | Detalle de semanas completadas |
+| struggling_topics | TEXT[]       | Array de temas con dificultad  |
+| average_score     | DECIMAL(5,2) | Promedio general (0-100)       |
+| updated_at        | TIMESTAMP    | Última actualización           |
 
 **Ejemplo de weeks_completed (JSONB):**
+
 ```json
 {
   "week_1": {
@@ -219,6 +236,7 @@ El modelo se organiza en **5 grupos funcionales:**
 ```
 
 **Relaciones:**
+
 - N:1 con `users` (coder)
 - N:1 con `modules`
 
@@ -228,15 +246,16 @@ El modelo se organiza en **5 grupos funcionales:**
 
 **Propósito:** Catálogo de temas específicos que pueden causar dificultad.
 
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| id | SERIAL | Identificador único (PK) |
-| module_id | INT | Referencia a modules (FK) |
-| name | VARCHAR(200) | Nombre del tema |
-| description | TEXT | Descripción del tema |
-| category | VARCHAR(100) | Categoría del tema |
+| Campo       | Tipo         | Descripción               |
+| ----------- | ------------ | ------------------------- |
+| id          | SERIAL       | Identificador único (PK)  |
+| module_id   | INT          | Referencia a modules (FK) |
+| name        | VARCHAR(200) | Nombre del tema           |
+| description | TEXT         | Descripción del tema      |
+| category    | VARCHAR(100) | Categoría del tema        |
 
 **Ejemplos de categorías:**
+
 - `SQL`
 - `HTML/CSS`
 - `JavaScript`
@@ -244,6 +263,7 @@ El modelo se organiza en **5 grupos funcionales:**
 - `Git`
 
 **Relaciones:**
+
 - N:1 con `modules`
 - N:M con `users` (a través de `coder_struggling_topics`)
 
@@ -251,17 +271,19 @@ El modelo se organiza en **5 grupos funcionales:**
 
 ### 7. CODER_STRUGGLING_TOPICS (Temas de Dificultad del Coder)
 
-**Propósito:** Tabla intermedia que relaciona coders con temas donde tienen dificultad.
+**Propósito:** Tabla intermedia que relaciona coders con temas donde tienen
+dificultad.
 
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| id | SERIAL | Identificador único (PK) |
-| coder_id | INT | Referencia a users (FK) |
-| topic_id | INT | Referencia a topics (FK) |
-| module_id | INT | Referencia a modules (FK) |
-| reported_at | TIMESTAMP | Fecha del reporte |
+| Campo       | Tipo      | Descripción               |
+| ----------- | --------- | ------------------------- |
+| id          | SERIAL    | Identificador único (PK)  |
+| coder_id    | INT       | Referencia a users (FK)   |
+| topic_id    | INT       | Referencia a topics (FK)  |
+| module_id   | INT       | Referencia a modules (FK) |
+| reported_at | TIMESTAMP | Fecha del reporte         |
 
 **Relaciones:**
+
 - N:1 con `users` (coder)
 - N:1 con `topics`
 - N:1 con `modules`
@@ -272,19 +294,20 @@ El modelo se organiza en **5 grupos funcionales:**
 
 **Propósito:** Planes de aprendizaje personalizados generados por IA.
 
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| id | SERIAL | Identificador único (PK) |
-| coder_id | INT | Referencia a users (FK) |
-| module_id | INT | Referencia a modules (FK) |
-| week_number | INT | Semana del plan |
-| plan_content | TEXT | Contenido completo del plan (generado por IA) |
-| soft_skills_snapshot | JSONB | Estado de habilidades al momento de generar |
-| moodle_status_snapshot | JSONB | Estado de Moodle al momento de generar |
-| generated_at | TIMESTAMP | Fecha de generación |
-| is_active | BOOLEAN | Indica si es el plan activo actual |
+| Campo                  | Tipo      | Descripción                                   |
+| ---------------------- | --------- | --------------------------------------------- |
+| id                     | SERIAL    | Identificador único (PK)                      |
+| coder_id               | INT       | Referencia a users (FK)                       |
+| module_id              | INT       | Referencia a modules (FK)                     |
+| week_number            | INT       | Semana del plan                               |
+| plan_content           | TEXT      | Contenido completo del plan (generado por IA) |
+| soft_skills_snapshot   | JSONB     | Estado de habilidades al momento de generar   |
+| moodle_status_snapshot | JSONB     | Estado de Moodle al momento de generar        |
+| generated_at           | TIMESTAMP | Fecha de generación                           |
+| is_active              | BOOLEAN   | Indica si es el plan activo actual            |
 
 **Ejemplo de soft_skills_snapshot (JSONB):**
+
 ```json
 {
   "autonomy": 2,
@@ -297,18 +320,17 @@ El modelo se organiza en **5 grupos funcionales:**
 ```
 
 **Ejemplo de moodle_status_snapshot (JSONB):**
+
 ```json
 {
   "current_week": 2,
   "average_score": 75.5,
-  "struggling_topics": [
-    "Relaciones entre tablas",
-    "Consultas SQL complejas"
-  ]
+  "struggling_topics": ["Relaciones entre tablas", "Consultas SQL complejas"]
 }
 ```
 
 **Relaciones:**
+
 - N:1 con `users` (coder)
 - N:1 con `modules`
 - 1:N con `plan_activities`
@@ -320,24 +342,26 @@ El modelo se organiza en **5 grupos funcionales:**
 
 **Propósito:** Actividades diarias dentro de un plan complementario.
 
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| id | SERIAL | Identificador único (PK) |
-| plan_id | INT | Referencia a complementary_plans (FK) |
-| day_number | INT | Número de día (1-5) |
-| title | VARCHAR(200) | Título de la actividad |
-| description | TEXT | Descripción detallada |
-| estimated_time_minutes | INT | Tiempo estimado en minutos |
-| activity_type | VARCHAR(50) | Tipo de actividad |
-| resources | JSONB | Recursos sugeridos |
-| order_index | INT | Orden dentro del día |
+| Campo                  | Tipo         | Descripción                           |
+| ---------------------- | ------------ | ------------------------------------- |
+| id                     | SERIAL       | Identificador único (PK)              |
+| plan_id                | INT          | Referencia a complementary_plans (FK) |
+| day_number             | INT          | Número de día (1-5)                   |
+| title                  | VARCHAR(200) | Título de la actividad                |
+| description            | TEXT         | Descripción detallada                 |
+| estimated_time_minutes | INT          | Tiempo estimado en minutos            |
+| activity_type          | VARCHAR(50)  | Tipo de actividad                     |
+| resources              | JSONB        | Recursos sugeridos                    |
+| order_index            | INT          | Orden dentro del día                  |
 
 **Valores válidos para activity_type:**
+
 - `guided`: Actividad guiada paso a paso
 - `semi_guided`: Actividad con orientación parcial
 - `autonomous`: Actividad autónoma
 
 **Ejemplo de resources (JSONB):**
+
 ```json
 [
   {
@@ -355,6 +379,7 @@ El modelo se organiza en **5 grupos funcionales:**
 ```
 
 **Relaciones:**
+
 - N:1 con `complementary_plans`
 - 1:1 con `activity_progress`
 
@@ -364,24 +389,26 @@ El modelo se organiza en **5 grupos funcionales:**
 
 **Propósito:** Seguimiento del progreso en cada actividad del plan.
 
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| id | SERIAL | Identificador único (PK) |
-| activity_id | INT | Referencia a plan_activities (FK) |
-| coder_id | INT | Referencia a users (FK) |
-| completed | BOOLEAN | Estado de completitud |
-| reflection_text | TEXT | Reflexión escrita por el coder |
-| evidence_url | VARCHAR(500) | URL de evidencia |
-| evidence_type | VARCHAR(50) | Tipo de evidencia |
-| completed_at | TIMESTAMP | Fecha de completitud |
-| time_spent_minutes | INT | Tiempo real invertido |
+| Campo              | Tipo         | Descripción                       |
+| ------------------ | ------------ | --------------------------------- |
+| id                 | SERIAL       | Identificador único (PK)          |
+| activity_id        | INT          | Referencia a plan_activities (FK) |
+| coder_id           | INT          | Referencia a users (FK)           |
+| completed          | BOOLEAN      | Estado de completitud             |
+| reflection_text    | TEXT         | Reflexión escrita por el coder    |
+| evidence_url       | VARCHAR(500) | URL de evidencia                  |
+| evidence_type      | VARCHAR(50)  | Tipo de evidencia                 |
+| completed_at       | TIMESTAMP    | Fecha de completitud              |
+| time_spent_minutes | INT          | Tiempo real invertido             |
 
 **Valores válidos para evidence_type:**
+
 - `text`: Texto escrito
 - `link`: Enlace externo (GitHub, etc.)
 - `file`: Archivo adjunto
 
 **Relaciones:**
+
 - N:1 con `plan_activities`
 - N:1 con `users` (coder)
 
@@ -391,22 +418,24 @@ El modelo se organiza en **5 grupos funcionales:**
 
 **Propósito:** Retroalimentación de los Team Leaders a los coders.
 
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| id | SERIAL | Identificador único (PK) |
-| coder_id | INT | Referencia a users (FK) - receptor |
-| tl_id | INT | Referencia a users (FK) - autor |
-| plan_id | INT | Referencia a complementary_plans (FK) |
-| feedback_text | TEXT | Contenido del feedback |
-| feedback_type | VARCHAR(50) | Tipo de feedback |
-| created_at | TIMESTAMP | Fecha de creación |
+| Campo         | Tipo        | Descripción                           |
+| ------------- | ----------- | ------------------------------------- |
+| id            | SERIAL      | Identificador único (PK)              |
+| coder_id      | INT         | Referencia a users (FK) - receptor    |
+| tl_id         | INT         | Referencia a users (FK) - autor       |
+| plan_id       | INT         | Referencia a complementary_plans (FK) |
+| feedback_text | TEXT        | Contenido del feedback                |
+| feedback_type | VARCHAR(50) | Tipo de feedback                      |
+| created_at    | TIMESTAMP   | Fecha de creación                     |
 
 **Valores válidos para feedback_type:**
+
 - `weekly`: Feedback semanal general
 - `activity`: Feedback sobre actividad específica
 - `general`: Comentario general de mentoría
 
 **Relaciones:**
+
 - N:1 con `users` (coder - receptor)
 - N:1 con `users` (tl - autor)
 - N:1 con `complementary_plans`
@@ -417,30 +446,31 @@ El modelo se organiza en **5 grupos funcionales:**
 
 ### Relaciones 1:N (Uno a Muchos)
 
-| Tabla Padre | Tabla Hija | Descripción |
-|-------------|------------|-------------|
-| users | soft_skills_assessment | Un usuario puede tener múltiples evaluaciones |
-| users | moodle_progress | Un usuario tiene progreso en múltiples módulos |
-| users | complementary_plans | Un usuario puede tener múltiples planes |
-| users | coder_struggling_topics | Un usuario reporta múltiples temas de dificultad |
-| users | activity_progress | Un usuario registra progreso en múltiples actividades |
-| modules | weeks | Un módulo contiene múltiples semanas |
-| modules | topics | Un módulo tiene múltiples temas |
-| modules | moodle_progress | Un módulo es seguido por múltiples usuarios |
-| modules | complementary_plans | Un módulo genera múltiples planes |
-| complementary_plans | plan_activities | Un plan tiene múltiples actividades |
-| complementary_plans | tl_feedback | Un plan recibe múltiples feedbacks |
-| plan_activities | activity_progress | Una actividad puede ser realizada por múltiples usuarios |
+| Tabla Padre         | Tabla Hija              | Descripción                                              |
+| ------------------- | ----------------------- | -------------------------------------------------------- |
+| users               | soft_skills_assessment  | Un usuario puede tener múltiples evaluaciones            |
+| users               | moodle_progress         | Un usuario tiene progreso en múltiples módulos           |
+| users               | complementary_plans     | Un usuario puede tener múltiples planes                  |
+| users               | coder_struggling_topics | Un usuario reporta múltiples temas de dificultad         |
+| users               | activity_progress       | Un usuario registra progreso en múltiples actividades    |
+| modules             | weeks                   | Un módulo contiene múltiples semanas                     |
+| modules             | topics                  | Un módulo tiene múltiples temas                          |
+| modules             | moodle_progress         | Un módulo es seguido por múltiples usuarios              |
+| modules             | complementary_plans     | Un módulo genera múltiples planes                        |
+| complementary_plans | plan_activities         | Un plan tiene múltiples actividades                      |
+| complementary_plans | tl_feedback             | Un plan recibe múltiples feedbacks                       |
+| plan_activities     | activity_progress       | Una actividad puede ser realizada por múltiples usuarios |
 
 ### Relaciones N:M (Muchos a Muchos)
 
-| Tabla 1 | Tabla Intermedia | Tabla 2 | Descripción |
-|---------|------------------|---------|-------------|
-| users (coders) | coder_struggling_topics | topics | Los coders pueden tener dificultad en múltiples temas, y un tema puede ser difícil para múltiples coders |
+| Tabla 1        | Tabla Intermedia        | Tabla 2 | Descripción                                                                                              |
+| -------------- | ----------------------- | ------- | -------------------------------------------------------------------------------------------------------- |
+| users (coders) | coder_struggling_topics | topics  | Los coders pueden tener dificultad en múltiples temas, y un tema puede ser difícil para múltiples coders |
 
 ### Relaciones Especiales
 
 **TL_FEEDBACK - Doble Relación con USERS:**
+
 - `coder_id` → Usuario que RECIBE el feedback (role = 'coder')
 - `tl_id` → Usuario que DA el feedback (role = 'tl')
 
@@ -504,12 +534,12 @@ END;
 $$ language 'plpgsql';
 
 -- Aplicar a tablas relevantes
-CREATE TRIGGER update_users_updated_at 
-    BEFORE UPDATE ON users 
+CREATE TRIGGER update_users_updated_at
+    BEFORE UPDATE ON users
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_moodle_progress_updated_at 
-    BEFORE UPDATE ON moodle_progress 
+CREATE TRIGGER update_moodle_progress_updated_at
+    BEFORE UPDATE ON moodle_progress
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 ```
 
@@ -532,14 +562,14 @@ BEGIN
             week_count := week_count + 1;
         END IF;
     END LOOP;
-    
+
     -- Calcular promedio
     IF week_count > 0 THEN
         NEW.average_score := total_score / week_count;
     ELSE
         NEW.average_score := 0;
     END IF;
-    
+
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -557,12 +587,12 @@ CREATE OR REPLACE FUNCTION deactivate_old_plans()
 RETURNS TRIGGER AS $$
 BEGIN
     -- Desactivar planes anteriores del mismo coder y módulo
-    UPDATE complementary_plans 
-    SET is_active = FALSE 
-    WHERE coder_id = NEW.coder_id 
-      AND module_id = NEW.module_id 
+    UPDATE complementary_plans
+    SET is_active = FALSE
+    WHERE coder_id = NEW.coder_id
+      AND module_id = NEW.module_id
       AND id != NEW.id;
-    
+
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -580,7 +610,7 @@ CREATE TRIGGER deactivate_previous_plans
 
 ```sql
 CREATE VIEW v_coder_dashboard AS
-SELECT 
+SELECT
     u.id AS coder_id,
     u.email,
     ssa.autonomy,
@@ -595,7 +625,7 @@ SELECT
     COUNT(DISTINCT pa.id) AS total_activities,
     COUNT(DISTINCT CASE WHEN ap.completed = TRUE THEN ap.id END) AS completed_activities,
     ROUND(
-        (COUNT(DISTINCT CASE WHEN ap.completed = TRUE THEN ap.id END)::NUMERIC / 
+        (COUNT(DISTINCT CASE WHEN ap.completed = TRUE THEN ap.id END)::NUMERIC /
          NULLIF(COUNT(DISTINCT pa.id), 0)) * 100, 2
     ) AS completion_percentage
 FROM users u
@@ -614,12 +644,12 @@ GROUP BY u.id, u.email, ssa.autonomy, ssa.time_management, ssa.learning_style,
 
 ```sql
 CREATE VIEW v_tl_coders_overview AS
-SELECT 
+SELECT
     u.id AS coder_id,
     u.email,
     ssa.autonomy,
     ssa.time_management,
-    CASE 
+    CASE
         WHEN ssa.autonomy = (SELECT MIN(autonomy) FROM soft_skills_assessment WHERE coder_id = u.id)
         THEN 'autonomy'
         WHEN ssa.time_management = (SELECT MIN(time_management) FROM soft_skills_assessment WHERE coder_id = u.id)
@@ -644,13 +674,13 @@ GROUP BY u.id, u.email, ssa.autonomy, ssa.time_management, mp.average_score;
 
 ```sql
 CREATE VIEW v_coder_risk_analysis AS
-SELECT 
+SELECT
     u.id AS coder_id,
     u.email,
     ssa.autonomy,
     ssa.time_management,
     mp.average_score,
-    CASE 
+    CASE
         WHEN ssa.autonomy <= 2 AND mp.average_score < 70 THEN 'HIGH_RISK'
         WHEN ssa.autonomy <= 2 OR mp.average_score < 70 THEN 'MEDIUM_RISK'
         ELSE 'LOW_RISK'
@@ -689,7 +719,8 @@ Ver archivo: `seed_data.sql`
 
 ### Consideraciones de Rendimiento
 
-1. **JSONB vs Tablas:** JSONB se usa para datos flexibles y no frecuentemente consultados
+1. **JSONB vs Tablas:** JSONB se usa para datos flexibles y no frecuentemente
+   consultados
 2. **Paginación:** Implementar LIMIT/OFFSET en queries grandes
 3. **Caché:** Considerar Redis para vistas frecuentes como dashboards
 

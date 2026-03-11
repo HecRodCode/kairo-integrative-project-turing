@@ -175,9 +175,7 @@ function renderTable(coders) {
       const id = parseInt(row.dataset.id);
       const coder = dashboardData.coders.find((c) => c.id === id);
       if (!coder) return;
-      tbody
-        .querySelectorAll('tr')
-        .forEach((r) => r.classList.remove('selected'));
+      tbody.querySelectorAll('tr').forEach((r) => r.classList.remove('selected'));
       row.classList.add('selected');
       selectedCoder = coder;
       renderDetail(coder);
@@ -203,13 +201,10 @@ function renderDetail(c) {
   el('d-name').textContent = c.full_name;
   el('d-clan').textContent = cap(c.clan || '—');
   el('d-email').textContent = c.email;
-  el('d-week').textContent =
-    c.current_week > 0 ? `Semana ${c.current_week}` : '—';
+  el('d-week').textContent = c.current_week > 0 ? `Semana ${c.current_week}` : '—';
   el('d-score').textContent =
     c.average_score > 0 ? `${parseFloat(c.average_score).toFixed(1)}%` : '—';
-  el('d-style').textContent = c.learning_style
-    ? cap(c.learning_style)
-    : 'Sin diagnóstico';
+  el('d-style').textContent = c.learning_style ? cap(c.learning_style) : 'Sin diagnóstico';
 
   const isRisk = c.risk_level === 'high' || c.risk_level === 'critical';
   el('d-risk').classList.toggle('hidden', !isRisk);
@@ -314,19 +309,10 @@ function generatePDF(c) {
     ['Nombre', c.full_name],
     ['Email', c.email],
     ['Clan', cap(c.clan || '—')],
-    [
-      'Score promedio',
-      c.average_score > 0 ? `${parseFloat(c.average_score).toFixed(1)}%` : '—',
-    ],
+    ['Score promedio', c.average_score > 0 ? `${parseFloat(c.average_score).toFixed(1)}%` : '—'],
     ['Semana actual', c.current_week > 0 ? `Semana ${c.current_week}` : '—'],
-    [
-      'Estilo de aprendizaje',
-      c.learning_style ? cap(c.learning_style) : 'Sin diagnóstico',
-    ],
-    [
-      'Estado de riesgo',
-      c.risk_level ? `${cap(c.risk_level)}` : 'Sin flags activos',
-    ],
+    ['Estilo de aprendizaje', c.learning_style ? cap(c.learning_style) : 'Sin diagnóstico'],
+    ['Estado de riesgo', c.risk_level ? `${cap(c.risk_level)}` : 'Sin flags activos'],
     ['—————————', '—————————'],
     ['Autonomía', c.autonomy ? `${c.autonomy}/5` : '—'],
     ['Gestión tiempo', c.time_management ? `${c.time_management}/5` : '—'],
@@ -347,9 +333,7 @@ function generatePDF(c) {
   doc.setFontSize(8);
   doc.setTextColor(150, 150, 150);
   doc.text(`Generado: ${new Date().toLocaleString('es-CO')}`, 14, 280);
-  doc.save(
-    `reporte-${c.id}-${c.full_name.toLowerCase().replace(/\s+/g, '-')}.pdf`
-  );
+  doc.save(`reporte-${c.id}-${c.full_name.toLowerCase().replace(/\s+/g, '-')}.pdf`);
 }
 
 /* Logout */
@@ -384,11 +368,8 @@ function syncThemeIcon(theme) {
 /* HELPERS */
 function applyFilter(coders) {
   if (activeFilter === 'risk')
-    return coders.filter(
-      (c) => c.risk_level === 'high' || c.risk_level === 'critical'
-    );
-  if (activeFilter === 'pending')
-    return coders.filter((c) => c.first_login === true);
+    return coders.filter((c) => c.risk_level === 'high' || c.risk_level === 'critical');
+  if (activeFilter === 'pending') return coders.filter((c) => c.first_login === true);
   return coders;
 }
 
@@ -400,9 +381,7 @@ function avgSoftSkills(c) {
     c.communication,
     c.teamwork,
   ].filter(Boolean);
-  return vals.length
-    ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1)
-    : null;
+  return vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1) : null;
 }
 
 function showBanner(msg) {

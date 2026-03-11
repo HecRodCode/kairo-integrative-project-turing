@@ -1,16 +1,17 @@
 # 📚 Base de Datos - Kairo
 
-La base de datos de Kairo usa **PostgreSQL** (en Supabase) con políticas de seguridad RLS para controlar el acceso a datos según el rol del usuario.
+La base de datos de Kairo usa **PostgreSQL** (en Supabase) con políticas de
+seguridad RLS para controlar el acceso a datos según el rol del usuario.
 
 ## 📂 Archivos en esta carpeta
 
-| Archivo | Descripción |
-|---------|-------------|
-| `schema.sql` | Definición completa de todas las tablas y vistas |
-| `rls_policies.sql` | Políticas de seguridad (quién ve qué datos) |
+| Archivo                 | Descripción                                            |
+| ----------------------- | ------------------------------------------------------ |
+| `schema.sql`            | Definición completa de todas las tablas y vistas       |
+| `rls_policies.sql`      | Políticas de seguridad (quién ve qué datos)            |
 | `MIGRATION_GUIDE_ES.md` | Paso a paso: agregar clan_id, priority_level e is_read |
-| `ENDPOINTS_GUIDE.md` | Ejemplos de cómo consultar cada tabla |
-| `migrations/` | Archivos versionados de cambios a la BD |
+| `ENDPOINTS_GUIDE.md`    | Ejemplos de cómo consultar cada tabla                  |
+| `migrations/`           | Archivos versionados de cambios a la BD                |
 
 ---
 
@@ -42,16 +43,19 @@ psql -U tu_usuario -d tu_db -f migrations/001_add_clans_and_priority_and_notific
 ## 🎯 Tablas Principales
 
 ### 👥 Usuarios
+
 - `users` - Coders y Team Leaders
 - `soft_skills_assessment` - Evaluación inicial de cada coder
 - Campos: autonomía, time management, problem solving, comunicación, teamwork
 
 ### 📚 Contenido Académico
+
 - `modules` - Módulos del bootcamp
 - `topics` - Temas dentro de cada módulo
 - `moodle_progress` - Progreso académico de cada coder
 
 ### 🎨 Sistema de Planes Personalizados
+
 - `complementary_plans` - Las **6 Cards** generadas por IA
   - Contiene `priority_level` (high, medium, low)
   - Ordenadas: 2 High, 2 Medium, 2 Low
@@ -59,12 +63,14 @@ psql -U tu_usuario -d tu_db -f migrations/001_add_clans_and_priority_and_notific
 - `activity_progress` - Seguimiento: qué completó cada coder
 
 ### 💬 Comunicación y Notificaciones
+
 - `tl_feedback` - Mensajes del TL hacia coders
   - Contiene `is_read` para saber cuándo mostrar punto rojo 🔴
 - `evidence_submissions` - Evidencia subida por coders
 - `risk_flags` - Alertas automáticas de riesgo
 
 ### 📊 Análisis y Reportes
+
 - `ai_reports` - Reportes ejecutivos para el TL
 - `ai_generation_log` - Auditoría de llamadas a IA
 
@@ -73,11 +79,13 @@ psql -U tu_usuario -d tu_db -f migrations/001_add_clans_and_priority_and_notific
 ## 🔐 Seguridad (RLS)
 
 Cada tabla tiene políticas que controlan:
+
 - Qué datos ve cada usuario (coder vs TL)
 - Qué datos puede editar (solo su propio contenido)
 - Quién puede crear/eliminar (normalmente solo TL)
 
-**Ejemplo:** Un coder solo ve su propio progreso, no el de otros. El TL ve a todos.
+**Ejemplo:** Un coder solo ve su propio progreso, no el de otros. El TL ve a
+todos.
 
 ---
 
@@ -106,16 +114,19 @@ TEAM LEADERS (usuarios con role='tl')
 ## 🎯 Campos Clave
 
 ### clan_id (users)
+
 - Valores: "Turing", "Tesla", "McCarthy"
 - Permite al TL filtrar coders por clan
 - Índice: `idx_users_clan_id`
 
 ### priority_level (complementary_plans)
+
 - Valores: "high", "medium", "low"
 - Ordena las 6 cards automáticamente
 - Índice: `idx_plans_priority`
 
 ### is_read (tl_feedback)
+
 - Boolean: true/false
 - Indica si el coder leyó el mensaje
 - false = punto rojo en la campana 🔴
@@ -126,13 +137,17 @@ TEAM LEADERS (usuarios con role='tl')
 ## 📈 Vistas útiles
 
 ### v_coder_dashboard
+
 Resumen del progreso de cada coder:
+
 - Autonomía, time management, estilo de aprendizaje
 - Módulo actual, semana, promedio
 - Total de actividades y % completadas
 
 ### v_coder_risk_analysis
+
 Análisis de riesgo:
+
 - Nivel de riesgo (bajo, medio, alto)
 - Autonomía vs promedio académico
 - Indicadores de alerta
@@ -166,29 +181,33 @@ Análisis de riesgo:
 ## 🛠️ Queries Comunes
 
 ### Ver coders de mi clan (TL)
+
 ```sql
-SELECT * FROM users 
+SELECT * FROM users
 WHERE clan_id = 'Turing' AND role = 'coder';
 ```
 
 ### Ver las 6 cards de un coder (ordenadas)
+
 ```sql
-SELECT * FROM complementary_plans 
+SELECT * FROM complementary_plans
 WHERE coder_id = 123 AND is_active = true
 ORDER BY priority_level DESC;
 ```
 
 ### Ver notificaciones no leídas
+
 ```sql
-SELECT * FROM tl_feedback 
+SELECT * FROM tl_feedback
 WHERE coder_id = 123 AND is_read = false
 ORDER BY created_at DESC;
 ```
 
 ### Marcar notificación como leída
+
 ```sql
-UPDATE tl_feedback 
-SET is_read = true 
+UPDATE tl_feedback
+SET is_read = true
 WHERE id = 456;
 ```
 
@@ -205,8 +224,9 @@ WHERE id = 456;
 
 ## ⚡ Tips de Performance
 
-- Usa los índices: búsquedas por email, clan_id, role, priority_level son rápidas
-- Evita SELECT * sin WHERE: especifica las columnas que necesitas
+- Usa los índices: búsquedas por email, clan_id, role, priority_level son
+  rápidas
+- Evita SELECT \* sin WHERE: especifica las columnas que necesitas
 - Agrupa por coder_id cuando obtengas estadísticas
 - Usa LIMIT cuando pidas muchos registros
 
@@ -215,13 +235,17 @@ WHERE id = 456;
 ## 🚨 Troubleshooting
 
 ### "Permission denied" en una tabla
+
 → Revisa `rls_policies.sql` para el rol del usuario
 
 ### Las 6 cards no aparecen ordenadas
+
 → Verifica que `priority_level` tenga un valor (default es 'medium')
 
 ### Notificaciones no aparecen
+
 → Asegúrate que `is_read = false` en `tl_feedback`
 
 ### No veo datos del TL
+
 → Verifica tu rol en la tabla `users` (debe ser 'tl')

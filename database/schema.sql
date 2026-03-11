@@ -91,6 +91,7 @@ CREATE TABLE soft_skills_assessment (
   communication INT NOT NULL CHECK (communication BETWEEN 1 AND 5),
   teamwork INT NOT NULL CHECK (teamwork BETWEEN 1 AND 5),
   learning_style learning_style_enum NOT NULL,
+  raw_answers JSONB,
   assessed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (coder_id) REFERENCES users(id) ON DELETE CASCADE
 );

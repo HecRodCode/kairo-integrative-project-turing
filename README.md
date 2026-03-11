@@ -1,31 +1,47 @@
 # 🚀 Riwi Learning Platform: AI-Powered Personalized Growth
 
-The **Riwi Learning Platform** is an intelligent ecosystem designed to bridge the gap between intensive bootcamps and individual learning paces. By leveraging a hybrid architecture of Node.js and Python, the platform transforms academic data and soft skills assessments into dynamic, personalized 4-week growth paths.
+The **Riwi Learning Platform** is an intelligent ecosystem designed to bridge
+the gap between intensive bootcamps and individual learning paces. By leveraging
+a hybrid architecture of Node.js and Python, the platform transforms academic
+data and soft skills assessments into dynamic, personalized 4-week growth paths.
 
 ## 🎯 The Vision
 
-Riwi's intensive 11-month program moves at a lightning pace. This platform ensures no Coder is left behind by analyzing technical performance and soft skills to build a curriculum that adapts to the human, not just the code.
+Riwi's intensive 11-month program moves at a lightning pace. This platform
+ensures no Coder is left behind by analyzing technical performance and soft
+skills to build a curriculum that adapts to the human, not just the code.
 
 ## 💡 Key Solution Pillars
 
-- **Adaptive Learning:** Generates custom 4-week study plans based on Moodle data and self-assessments.
-- **Holistic Growth:** Integrates soft skills (emotional intelligence, communication) directly into technical reinforcement tasks.
-- **Proactive Mentorship:** Provides Team Leaders (TL) with an analytics dashboard to identify at-risk students before academic failure occurs.
-- **Hybrid Intelligence:** Uses Node.js for robust orchestration and Python/FastAPI for advanced local AI processing.
+- **Adaptive Learning:** Generates custom 4-week study plans based on Moodle
+  data and self-assessments.
+- **Holistic Growth:** Integrates soft skills (emotional intelligence,
+  communication) directly into technical reinforcement tasks.
+- **Proactive Mentorship:** Provides Team Leaders (TL) with an analytics
+  dashboard to identify at-risk students before academic failure occurs.
+- **Hybrid Intelligence:** Uses Node.js for robust orchestration and
+  Python/FastAPI for advanced local AI processing.
 
 ---
 
 ## 📂 High-Level Project Structure
 
-The repository is organized into independent modules that work together as a distributed system:
+The repository is organized into independent modules that work together as a
+distributed system:
 
-- **`/backend-node`**: The core API Gateway (Express.js). Responsible for business logic, security, user authentication, and serving EJS templates.
-- **`/backend-python`**: AI & Data Science microservice (FastAPI). Specialized in local LLM inference and predictive analytics.
-- **`/frontend`**: The user interface (Multi-Page Application) serving both Coders and Team Leaders via Vanilla JS and Bootstrap 5.
-- **`/database`**: Contains SQL schemas and DDL scripts, including custom enumerated types for roles, risk levels, and AI agents.
-- **`/docs`**: Centralized documentation including architecture diagrams and project management assets.
+- **`/backend-node`**: The core API Gateway (Express.js). Responsible for
+  business logic, security, user authentication, and serving EJS templates.
+- **`/backend-python`**: AI & Data Science microservice (FastAPI). Specialized
+  in local LLM inference and predictive analytics.
+- **`/frontend`**: The user interface (Multi-Page Application) serving both
+  Coders and Team Leaders via Vanilla JS and Bootstrap 5.
+- **`/database`**: Contains SQL schemas and DDL scripts, including custom
+  enumerated types for roles, risk levels, and AI agents.
+- **`/docs`**: Centralized documentation including architecture diagrams and
+  project management assets.
 
-> _Note: Each directory contains its own `README.md` with specific implementation details and internal logic documentation._
+> _Note: Each directory contains its own `README.md` with specific
+> implementation details and internal logic documentation._
 
 ---
 
@@ -35,11 +51,13 @@ The repository is organized into independent modules that work together as a dis
 
 - **HTML5 / CSS3 / JavaScript (Vanilla):** Core structure and interactivity.
 - **Bootstrap 5:** Responsive layout and rapid UI components.
-- **EJS (Embedded JavaScript Templates):** Server-side rendering to inject educational paths directly into the HTML.
+- **EJS (Embedded JavaScript Templates):** Server-side rendering to inject
+  educational paths directly into the HTML.
 
 ### ⚙️ Backend (Hybrid Architecture)
 
-- **Node.js + Express:** Main server managing users, authentication, and business logic.
+- **Node.js + Express:** Main server managing users, authentication, and
+  business logic.
 - **Python + FastAPI:** AI Microservice connecting directly to the local model.
 
 ### 🧠 Artificial Intelligence
@@ -49,18 +67,24 @@ The repository is organized into independent modules that work together as a dis
 
 ### 🗄️ Database
 
-- **PostgreSQL (Supabase):** Storage for user profiles, technical foundations, and AI-generated learning plans.
-- **Custom Logic:** Uses specialized enumerated types (e.g., `role_enum`, `risk_level_enum`, `ai_agent_enum`) to maintain data integrity.
+- **PostgreSQL (Supabase):** Storage for user profiles, technical foundations,
+  and AI-generated learning plans.
+- **Custom Logic:** Uses specialized enumerated types (e.g., `role_enum`,
+  `risk_level_enum`, `ai_agent_enum`) to maintain data integrity.
 
 ---
 
 ## 🛠️ Setup & Execution Guide
 
-To ensure the **Kairo** ecosystem functions correctly, both backend engines must be active simultaneously. Node.js acts as the **System Orchestrator**, while Python serves as the **AI Brain**.
+To ensure the **Kairo** ecosystem functions correctly, both backend engines must
+be active simultaneously. Node.js acts as the **System Orchestrator**, while
+Python serves as the **AI Brain**.
 
 ### 1. Environment Configuration (`.env`)
 
-You must create specific environment files in the root of their respective directories. **Note:** These files contain sensitive keys and should never be committed to version control.
+You must create specific environment files in the root of their respective
+directories. **Note:** These files contain sensitive keys and should never be
+committed to version control.
 
 #### 📁 `backend-node/.env`
 
@@ -139,7 +163,8 @@ FRONTEND_URL=http://localhost:5500
 
 ### 2. Spinning Up the Engines
 
-Open three independent terminal instances in your Ubuntu environment and execute the following commands in order:
+Open three independent terminal instances in your Ubuntu environment and execute
+the following commands in order:
 
 #### Terminal A: The Orchestrator (Node.js)
 

@@ -121,19 +121,13 @@ async function startServer() {
 
     app.listen(PORT, '0.0.0.0', () => {
       console.log('DONE');
-      console.log(
-        '------------------------------------------------------------'
-      );
+      console.log('------------------------------------------------------------');
       console.log('🚀 KAIRO API GATEWAY STARTED SUCCESSFULLY');
-      console.log(
-        '------------------------------------------------------------'
-      );
+      console.log('------------------------------------------------------------');
       console.log(`📡 URL      : http://localhost:${PORT}`);
       console.log(`🌐 Origins  : ${ALLOWED_ORIGINS.join(', ')}`);
       console.log(`🛠️  ENV      : ${process.env.NODE_ENV || 'development'}`);
-      console.log(
-        '------------------------------------------------------------'
-      );
+      console.log('------------------------------------------------------------');
     });
   } catch (error) {
     // Aquí es donde el servidor se detiene y te chismea qué pasó
