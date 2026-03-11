@@ -16,6 +16,51 @@
  */
 
 import { create, findByCoderId, getAll } from '../models/softSkills.js';
+import { findById } from '../models/user.js';
+
+const PYTHON_API = process.env.PYTHON_API_URL || 'http://localhost:8000';
+
+/**
+ * Fire-and-forget: asks the Python microservice to generate the first
+ * interpretive plan for a coder right after their onboarding completes.
+ *
+ * We don't await this — the 201 response goes back to the frontend
+ * immediately. The plan gets saved in the background to complementary_plans.
+ *
+ * @param {number} coderId
+ * @param {number} moduleId   - user.current_module_id (default 4)
+ * @param {number} currentWeek - moodle_progress.current_week (default 1)
+ */
+async function _triggerInterpretivePlan(coderId, moduleId, currentWeek = 1) {
+  try {
+    const res = await fetch(`${PYTHON_API}/generate-plan`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        coder_id: coderId,
+        module_id: moduleId,
+        plan_type: 'interpretive',
+        current_week: currentWeek,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error(`[Plan Gen] Python returned ${res.status}:`, data);
+    } else {
+      console.log(
+        `[Plan Gen] Interpretive plan generated OK — plan_id=${data.plan_id} coder=${coderId}`
+      );
+    }
+  } catch (err) {
+    // Never crash the main flow — plan generation is async / best-effort
+    console.error(
+      '[Plan Gen] Could not reach Python microservice:',
+      err.message
+    );
+  }
+}
 
 /* ════════════════════════════════════════
    SCORING ENGINE
@@ -39,9 +84,12 @@ function tallyScores(answers) {
  * Returns one of: 'visual' | 'auditory' | 'reading' | 'kinesthetic' | 'mixed'
  */
 function deriveLearningStyle(tally) {
+  // VARK pure tags + ILS equivalents:
+  //   VIS (ILS visual)  reinforces V
+  //   VRB (ILS verbal)  reinforces A (auditory/verbal learners)
   const vark = {
-    visual: tally['V'] || 0,
-    auditory: tally['A'] || 0,
+    visual: (tally['V'] || 0) + (tally['VIS'] || 0),
+    auditory: (tally['A'] || 0) + (tally['VRB'] || 0),
     reading: tally['R'] || 0,
     kinesthetic: tally['K'] || 0,
   };
@@ -51,32 +99,53 @@ function deriveLearningStyle(tally) {
 
   if (total === 0) return 'mixed';
 
-  // If the dominant style is less than 40% of VARK answers → mixed
+  // Dominant style must represent >= 35% of all VARK+ILS answers
   const dominant = Object.entries(vark).find(([, v]) => v === max);
-  if (!dominant || max / total < 0.4) return 'mixed';
+  if (!dominant || max / total < 0.35) return 'mixed';
 
-  return dominant[0]; // 'visual' | 'auditory' | 'reading' | 'kinesthetic'
+  return dominant[0];
 }
 
 /**
- * Maps ILS + Kolb patterns to 1-5 soft skill scores.
- * Each skill counts how many relevant tags appeared, then maps to 1-5.
+ * Maps ILS + Kolb + VARK patterns to 1-5 soft skill scores.
+ *
+ * Full tag inventory from onboarding-data.js:
+ *   VARK:  V, A, R, K
+ *   ILS:   ACT, REF, SNS, INT, VIS, VRB, SEQ, GLO
+ *   Kolb:  CE, RO, AC, AE
+ *
+ * Psychological mappings:
+ *   autonomy        <- REF + AC + RO  (reflective, abstract, independent)
+ *   time_management <- SEQ + AE + SNS (structured, methodical, sensing)
+ *   problem_solving <- GLO + AC + INT (big-picture, abstract, intuitive)
+ *   communication   <- ACT + CE + VRB (expressive, collaborative, verbal)
+ *   teamwork        <- ACT + CE + SNS (active, concrete, sensing)
  */
 function deriveSoftSkillScores(tally) {
   const scale = (count, max) =>
     Math.min(5, Math.max(1, Math.round((count / max) * 4) + 1));
 
   return {
-    // Autonomy: reflective + abstract thinkers tend to work independently
-    autonomy: scale((tally['REF'] || 0) + (tally['AC'] || 0), 8),
-    // Time management: sequential + active experimenters are more structured
-    time_management: scale((tally['SEQ'] || 0) + (tally['AE'] || 0), 8),
-    // Problem solving: global thinkers + abstract conceptualization
-    problem_solving: scale((tally['GLO'] || 0) + (tally['AC'] || 0), 8),
-    // Communication: active participants + concrete experience (collaborative)
-    communication: scale((tally['ACT'] || 0) + (tally['CE'] || 0), 8),
-    // Teamwork: same signals as communication
-    teamwork: scale((tally['ACT'] || 0) + (tally['CE'] || 0), 8),
+    autonomy: scale(
+      (tally['REF'] || 0) + (tally['AC'] || 0) + (tally['RO'] || 0),
+      12
+    ),
+    time_management: scale(
+      (tally['SEQ'] || 0) + (tally['AE'] || 0) + (tally['SNS'] || 0),
+      14
+    ),
+    problem_solving: scale(
+      (tally['GLO'] || 0) + (tally['AC'] || 0) + (tally['INT'] || 0),
+      14
+    ),
+    communication: scale(
+      (tally['ACT'] || 0) + (tally['CE'] || 0) + (tally['VRB'] || 0),
+      14
+    ),
+    teamwork: scale(
+      (tally['ACT'] || 0) + (tally['CE'] || 0) + (tally['SNS'] || 0),
+      14
+    ),
   };
 }
 
@@ -112,11 +181,13 @@ export async function saveDiagnostic(req, res) {
       communication: skills.communication,
       teamwork: skills.teamwork,
       learningStyle,
-      rawAnswers: answers, // stored in raw_answers JSONB column
+      rawAnswers: answers,
     });
 
+    // ── Respond immediately — don't block on plan generation ──────────────
     res.status(201).json({
       message: 'Diagnostic saved successfully',
+      planRequested: true, // lets the frontend show "tu plan está siendo generado..."
       diagnostic: {
         coderId: diagnostic.coder_id,
         autonomy: diagnostic.autonomy,
@@ -128,6 +199,14 @@ export async function saveDiagnostic(req, res) {
         assessedAt: diagnostic.assessed_at,
       },
     });
+
+    // ── Fire-and-forget: generate first interpretive plan in background ────
+    // Fetch the user to get current_module_id (default 4 = Base de Datos)
+    const user = await findById(req.session.userId).catch(() => null);
+    const moduleId = user?.current_module_id ?? 4;
+    const currentWeek = 1; // onboarding → always week 1 of the module
+
+    _triggerInterpretivePlan(req.session.userId, moduleId, currentWeek);
   } catch (error) {
     console.error('[Diagnostic Creation Error]:', error);
     res.status(500).json({ error: 'Failed to save diagnostic' });
