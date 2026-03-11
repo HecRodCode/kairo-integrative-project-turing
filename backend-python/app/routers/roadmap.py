@@ -1,16 +1,6 @@
 """
 app/routers/roadmap.py
 POST /generate-plan
-
-Plan type logic:
-  · "interpretive" → first plan after onboarding. Node sends it with no
-    weekly performance data. Python reads only the soft_skills + module.
-  · "analytical"   → every subsequent plan (Mondays). Node sends
-    average_score, struggling_topics and weeks_completed from moodle_progress.
-
-Architecture: Slim Communication
-  Node sends only: IDs + dynamic weekly data.
-  Python owns all data retrieval from Supabase.
 """
 
 import time

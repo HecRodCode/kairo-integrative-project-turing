@@ -1,9 +1,5 @@
 """
 app/models/coder_profile.py
-Data models for coder profile, soft skills, and academic status.
-
-FIX: Migrated from Pydantic v1 (class Config) to Pydantic v2 (model_config).
-     Without this, aliases like 'timeManagement' silently fail at parse time.
 """
 
 from pydantic import BaseModel, Field, model_validator

@@ -6,6 +6,7 @@
  *   module info, TL feedback (notifications), active plan status.
  */
 
+import 'dotenv/config';
 import { query } from '../config/database.js';
 
 /* ════════════════════════════════════════
@@ -314,9 +315,174 @@ export async function updateActivityProgress(req, res) {
   }
 }
 
+/* ══ GET ACTIVE PLAN  —  GET /api/coder/plan ═══ */
+export async function getActivePlan(req, res) {
+  try {
+    const userId = req.session.userId;
+
+    const result = await query(
+      `
+      SELECT
+        id, coder_id, module_id, plan_content,
+        soft_skills_snapshot, moodle_status_snapshot,
+        targeted_soft_skill, is_active, generated_at,
+        COALESCE(completed_days, '{}'::jsonb) AS completed_days
+      FROM complementary_plans
+      WHERE coder_id = $1 AND is_active = true
+      ORDER BY generated_at DESC
+      LIMIT 1
+    `,
+      [userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.json({ hasPlan: false, plan: null });
+    }
+
+    const row = result.rows[0];
+    const completedDays = row.completed_days || {};
+    const completedCount = Object.keys(completedDays).length;
+
+    // Primer día sin completar entre 1 y 20
+    let currentDay = 1;
+    for (let d = 1; d <= 20; d++) {
+      if (!completedDays[String(d)]) {
+        currentDay = d;
+        break;
+      }
+    }
+
+    res.json({
+      hasPlan: true,
+      plan: {
+        id: row.id,
+        moduleId: row.module_id,
+        planContent: row.plan_content,
+        softSkillsSnapshot: row.soft_skills_snapshot,
+        moodleStatusSnapshot: row.moodle_status_snapshot,
+        targetedSoftSkill: row.targeted_soft_skill,
+        generatedAt: row.generated_at,
+        completedDays,
+        currentDay,
+        completedCount,
+        isComplete: completedCount >= 20,
+      },
+    });
+  } catch (error) {
+    console.error('[getActivePlan]', error);
+    res.status(500).json({ error: 'Failed to load plan' });
+  }
+}
+
 /* ════════════════════════════════════════
-   MODULE MILESTONES  —  GET /api/coder/milestones
+   COMPLETE DAY  —  POST /api/coder/plan/:planId/day/:day/complete
 ════════════════════════════════════════ */
+
+export async function completeDay(req, res) {
+  try {
+    const userId = req.session.userId;
+    const planId = parseInt(req.params.planId);
+    const dayNum = parseInt(req.params.day);
+
+    if (!dayNum || dayNum < 1 || dayNum > 20) {
+      return res
+        .status(400)
+        .json({ error: 'Día inválido. Debe ser entre 1 y 20.' });
+    }
+
+    // Verificar que el plan pertenece al coder
+    const check = await query(
+      `
+      SELECT id, completed_days
+      FROM complementary_plans
+      WHERE id = $1 AND coder_id = $2 AND is_active = true
+    `,
+      [planId, userId]
+    );
+
+    if (check.rows.length === 0) {
+      return res.status(404).json({ error: 'Plan no encontrado o inactivo.' });
+    }
+
+    const current = check.rows[0].completed_days || {};
+    current[String(dayNum)] = { completedAt: new Date().toISOString() };
+
+    await query(
+      `
+      UPDATE complementary_plans
+      SET completed_days = $1::jsonb
+      WHERE id = $2
+    `,
+      [JSON.stringify(current), planId]
+    );
+
+    const completedCount = Object.keys(current).length;
+
+    // Siguiente día sin completar
+    let nextDay = null;
+    for (let d = dayNum + 1; d <= 20; d++) {
+      if (!current[String(d)]) {
+        nextDay = d;
+        break;
+      }
+    }
+
+    res.json({
+      success: true,
+      completedDays: current,
+      completedCount,
+      nextDay,
+      isComplete: completedCount >= 20,
+    });
+  } catch (error) {
+    console.error('[completeDay]', error);
+    res.status(500).json({ error: 'Failed to complete day' });
+  }
+}
+
+/* ══ REQUEST PLAN === */
+const PYTHON_API = process.env.PYTHON_API_URL || 'http://localhost:8000';
+
+export async function requestPlan(req, res) {
+  try {
+    const userId = req.session.userId;
+
+    // Obtener module_id del coder
+    const userResult = await query(
+      `
+      SELECT current_module_id FROM users WHERE id = $1
+    `,
+      [userId]
+    );
+
+    const moduleId = userResult.rows[0]?.current_module_id ?? 4;
+    const planType = req.body.plan_type || 'interpretive';
+    const currentWeek = req.body.current_week || 1;
+
+    // Responder inmediatamente
+    res.json({
+      requested: true,
+      message: 'Plan en generación. Reintenta en unos segundos.',
+    });
+
+    // Fire-and-forget hacia Python
+    fetch(`${PYTHON_API}/generate-plan`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        coder_id: userId,
+        module_id: moduleId,
+        plan_type: planType,
+        current_week: currentWeek,
+      }),
+    }).catch((err) =>
+      console.error('[requestPlan] Python unreachable:', err.message)
+    );
+  } catch (error) {
+    console.error('[requestPlan]', error);
+    res.status(500).json({ error: 'Failed to request plan' });
+  }
+}
 
 export async function getModuleMilestones(req, res) {
   try {

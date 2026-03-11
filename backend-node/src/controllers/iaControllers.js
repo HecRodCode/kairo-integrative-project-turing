@@ -74,7 +74,7 @@ export const generatePlan = async (req, res) => {
         agent_type: 'plan_generator',
         input_payload: payload,
         output_payload: { plan_id: aiResponse.metadata?.plan_id ?? null },
-        model_name: 'gpt-4o-mini',
+        model_name: process.env.MODEL_NAME || 'llama-3.3-70b-versatile',
         success: aiResponse.success ?? true,
       })
       .catch(() => {}); // non-blocking
