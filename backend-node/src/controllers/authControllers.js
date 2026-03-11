@@ -75,11 +75,7 @@ export const login = async (req, res) => {
     if (!validPassword)
       return res.status(401).json({ error: 'Credenciales inválidas.' });
 
-    // ── BUG FIX 2: Block unverified manual accounts ────────────
-    // OAuth users (Google/GitHub) are always considered verified.
-    // Manual users must complete OTP before accessing the app.
     if (!user.otp_verified) {
-      // Re-send a fresh OTP so the user doesn't have to click resend
       try {
         await _createAndSendOtp(email, user.full_name);
       } catch (e) {
@@ -93,13 +89,14 @@ export const login = async (req, res) => {
       });
     }
 
-    // ── BUG FIX 3: Include firstLogin + clan in response ───────
-    req.session.userId = user.id;
-    req.session.save((err) => {
+    req.login(user, (err) => {
       if (err) {
-        console.error('[login] Session save error:', err);
+        console.error('[login] Passport login error:', err);
         return res.status(500).json({ error: 'Error al iniciar sesión.' });
       }
+
+      req.session.userId = user.id;
+
       return res.status(200).json({
         success: true,
         user: {
@@ -108,7 +105,7 @@ export const login = async (req, res) => {
           fullName: user.full_name,
           role: user.role,
           clan: user.clan,
-          firstLogin: user.first_login, // ← redirectByRole uses this
+          firstLogin: user.first_login,
         },
       });
     });
@@ -205,10 +202,9 @@ export const verifyOtp = async (req, res) => {
 
     if (!user) return res.status(404).json({ error: 'Usuario no encontrado.' });
 
-    req.session.userId = user.id;
-    req.session.save((err) => {
+    req.login(user, (err) => {
       if (err) {
-        console.error('[verifyOtp] Session save error:', err);
+        console.error('[verifyOtp] Passport login error:', err);
         return res.status(500).json({ error: 'Error al iniciar sesión.' });
       }
       return res.status(200).json({
@@ -359,14 +355,12 @@ async function _createAndSendOtp(email, userName = '') {
     .eq('is_used', false);
 
   // Insert fresh code
-  await supabase
-    .from('otp_verifications')
-    .insert({
-      user_email: email,
-      otp_code: code,
-      expires_at: expiresAt,
-      attempts: 0,
-    });
+  await supabase.from('otp_verifications').insert({
+    user_email: email,
+    otp_code: code,
+    expires_at: expiresAt,
+    attempts: 0,
+  });
 
   // Send via Resend
   await sendOtpEmail(email, code, userName);

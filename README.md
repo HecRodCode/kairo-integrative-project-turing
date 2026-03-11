@@ -101,6 +101,9 @@ GITHUB_CLIENT_SECRET=your_client_secret
 GOOGLE_CLIENT_ID=your_client
 GOOGLE_CLIENT_SECRET=your_client_secret
 
+# AUTHENTICATION RESEND
+RESEND_API_KEY=your_resend_key
+
 # API KEY AI
 RIWI_IA_KEY=your_ia_key
 

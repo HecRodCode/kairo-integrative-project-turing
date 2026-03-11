@@ -224,3 +224,108 @@ export async function getRiskReports(req, res) {
     res.status(500).json({ error: 'Failed to fetch risk reports' });
   }
 }
+
+/* ════════════════════════════════════════
+   DASHBOARD DATA (MAIN)
+   ════════════════════════════════════════ */
+export async function getDashboardData(req, res) {
+  const tlId = req.session.userId;
+
+  try {
+    // 1. Obtener info del TL (y su clan)
+    const tlResult = await query(
+      'SELECT full_name, clan FROM users WHERE id = $1',
+      [tlId]
+    );
+    const tl = tlResult.rows[0];
+
+    if (!tl) return res.status(404).json({ error: 'TL not found' });
+
+    // 2. Obtener todos los coders del mismo clan con su progreso y habilidades
+    // Nota: Usamos LEFT JOIN para no excluir a quienes no han iniciado sesión o no tienen evaluación
+    const codersResult = await query(
+      `
+      SELECT 
+        u.id, u.full_name, u.email, u.first_login, u.clan,
+        mp.average_score, mp.current_week,
+        ss.autonomy, ss.time_management, ss.problem_solving, ss.communication, ss.teamwork, ss.learning_style,
+        rf.risk_level
+      FROM users u
+      LEFT JOIN moodle_progress mp ON u.id = mp.coder_id
+      LEFT JOIN soft_skills_assessment ss ON u.id = ss.coder_id
+      LEFT JOIN risk_flags rf ON u.id = rf.coder_id AND rf.resolved = false
+      WHERE u.role = 'coder' AND u.clan = $1
+      ORDER BY u.full_name ASC
+    `,
+      [tl.clan]
+    );
+
+    const coders = codersResult.rows;
+
+    // 3. Calcular estadísticas generales (Overview)
+    const totalCoders = coders.length;
+    const completedOnboarding = coders.filter((c) => !c.first_login).length;
+    const highRiskCoders = coders.filter(
+      (c) => c.risk_level === 'high' || c.risk_level === 'critical'
+    ).length;
+
+    const overview = {
+      totalCoders,
+      completedOnboarding,
+      pendingOnboarding: totalCoders - completedOnboarding,
+      highRiskCoders,
+      clanAvgScore:
+        totalCoders > 0
+          ? (
+              coders.reduce(
+                (acc, c) => acc + parseFloat(c.average_score || 0),
+                0
+              ) / totalCoders
+            ).toFixed(1)
+          : 0,
+    };
+
+    // 4. Calcular promedios de Habilidades Blandas del Clan
+    const softSkillsAverage = {
+      autonomy: 0,
+      time_management: 0,
+      problem_solving: 0,
+      communication: 0,
+      teamwork: 0,
+    };
+
+    // Filtramos solo los que tienen el test realizado para no sesgar el promedio hacia abajo
+    const codersWithSkills = coders.filter((c) => c.learning_style !== null);
+
+    if (codersWithSkills.length > 0) {
+      codersWithSkills.forEach((c) => {
+        softSkillsAverage.autonomy += parseFloat(c.autonomy || 0);
+        softSkillsAverage.time_management += parseFloat(c.time_management || 0);
+        softSkillsAverage.problem_solving += parseFloat(c.problem_solving || 0);
+        softSkillsAverage.communication += parseFloat(c.communication || 0);
+        softSkillsAverage.teamwork += parseFloat(c.teamwork || 0);
+      });
+
+      // Dividir y formatear
+      Object.keys(softSkillsAverage).forEach((key) => {
+        softSkillsAverage[key] = parseFloat(
+          (softSkillsAverage[key] / codersWithSkills.length).toFixed(1)
+        );
+      });
+    }
+
+    // 5. Respuesta final estructurada para el frontend
+    res.json({
+      tl: {
+        fullName: tl.full_name,
+        clan: tl.clan,
+      },
+      coders: coders,
+      overview: overview,
+      softSkillsAverage: softSkillsAverage,
+    });
+  } catch (error) {
+    console.error('[Dashboard Data Error]:', error);
+    res.status(500).json({ error: 'Error loading dashboard data' });
+  }
+}

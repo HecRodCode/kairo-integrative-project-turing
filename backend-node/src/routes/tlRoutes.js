@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import {
+  getDashboardData,
   getAllCodersByClan,
   getCoderFullDetail,
   submitFeedback,
@@ -10,12 +11,15 @@ import { isAuthenticated, hasRole } from '../middlewares/authMiddlewares.js';
 
 const router = Router();
 
+router.get('/dashboard', isAuthenticated, hasRole('tl'), getDashboardData);
+
 router.get(
   '/coders/clan/:clan_id',
   isAuthenticated,
   hasRole('tl'),
   getAllCodersByClan
 );
+
 router.get(
   '/metrics/clan/:clan_id',
   isAuthenticated,
