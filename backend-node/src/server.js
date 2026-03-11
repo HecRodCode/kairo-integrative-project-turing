@@ -1,10 +1,5 @@
 /**
  * app.js — Kairo API Gateway
- *
- * FIXES:
- *  - CORS: added explicit methods and headers so OPTIONS preflight passes
- *  - CORS: unified allowed origins (localhost only, no 127.0.0.1 mix)
- *  - Session cookie: sameSite kept as 'lax' in dev (correct for cross-origin fetches)
  */
 
 import 'dotenv/config';
@@ -26,21 +21,11 @@ const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 
 /* ════════════════════════════════════════
-   CORS
-   FIX: unified to localhost only — mixing localhost/127.0.0.1 breaks cookies.
-        Added explicit methods + headers so OPTIONS preflight never fails.
-════════════════════════════════════════ */
-/* ════════════════════════════════════════
    CORS - FIX DINÁMICO
 ════════════════════════════════════════ */
 const ALLOWED_ORIGINS = isProduction
   ? [process.env.FRONTEND_URL].filter(Boolean)
-  : [
-      'http://127.0.0.1:5500',
-      'http://127.0.0.1:5501', // Agregamos el puerto que te está dando error
-      'http://localhost:5500',
-      'http://localhost:5501',
-    ];
+  : ['http://localhost:5500'];
 
 app.use(
   cors({
@@ -143,7 +128,7 @@ async function startServer() {
       console.log(
         '------------------------------------------------------------'
       );
-      console.log(`📡 URL      : http://127.0.0.1:${PORT}`);
+      console.log(`📡 URL      : http://localhost:${PORT}`);
       console.log(`🌐 Origins  : ${ALLOWED_ORIGINS.join(', ')}`);
       console.log(`🛠️  ENV      : ${process.env.NODE_ENV || 'development'}`);
       console.log(
