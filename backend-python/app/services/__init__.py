@@ -1,12 +1,9 @@
-# app/services/__init__.py
-from .ia_services import generate_plan_with_openai, get_fallback_plan, extract_json
-from .prompt_builder import build_prompt
+from .ia_services import generate_plan_with_ai, _fallback_plan, _extract_json
 from .supabase_service import db_manager
 
 __all__ = [
-    "generate_plan_with_openai",
-    "get_fallback_plan",
-    "extract_json",
-    "build_prompt",
+    "generate_plan_with_ai",
+    "_fallback_plan",
+    "_extract_json",
     "db_manager",
 ]

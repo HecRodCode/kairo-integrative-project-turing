@@ -1,7 +1,5 @@
 """
 app/routers/chat.py
-AI Tutor chat endpoint.
-Migrated from Groq to OpenAI. Added proper error handling.
 """
 
 import os

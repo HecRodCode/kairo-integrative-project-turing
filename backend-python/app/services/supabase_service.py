@@ -1,8 +1,4 @@
-"""
-app/services/supabase_service.py
-Singleton Supabase client. SERVICE_ROLE key — bypasses RLS.
-Python owns all data retrieval (Slim Communication architecture).
-"""
+""" app/services/supabase_service.py """
 
 import os
 import logging
@@ -12,7 +8,6 @@ from dotenv import load_dotenv
 
 logger = logging.getLogger("kairo-supabase")
 load_dotenv()
-
 
 class SupabaseManager:
     def __init__(self):
@@ -24,7 +19,6 @@ class SupabaseManager:
         logger.info("Supabase client initialized.")
 
     # ── READ ───────────────────────────────────────────────────
-
     def get_soft_skills(self, coder_id: int) -> Optional[Dict]:
         try:
             r = self.client.table("soft_skills_assessment") \
@@ -74,7 +68,6 @@ class SupabaseManager:
             return []
 
     # ── WRITE ──────────────────────────────────────────────────
-
     def deactivate_plans(self, coder_id: int) -> None:
         """
         Marks all existing active plans for a coder as inactive
@@ -146,6 +139,52 @@ class SupabaseManager:
             }).execute()
         except Exception as e:
             logger.error(f"Failed to log generation: {e}")
+
+    # ── EXERCISES ──────────────────────────────────────────────
+
+    def get_exercise(self, plan_id: int, day_number: int) -> Optional[Dict]:
+        """Returns cached exercise for a plan day, or None if not yet generated."""
+        try:
+            r = self.client.table("exercises")                 .select("id, title, description, language, starter_code, solution, hints, topic, difficulty, expected_output")                 .eq("plan_id", plan_id)                 .eq("day_number", day_number)                 .single()                 .execute()
+            return r.data
+        except Exception:
+            return None
+
+    def save_exercise(self, plan_id: int, coder_id: int, day_number: int,
+                      exercise: Dict) -> Optional[int]:
+        """Inserts exercise; on conflict (plan_id, day_number) does nothing and returns existing id."""
+        try:
+            r = self.client.table("exercises").upsert({
+                "plan_id":        plan_id,
+                "coder_id":       coder_id,
+                "day_number":     day_number,
+                "title":          exercise.get("title", ""),
+                "description":    exercise.get("description", ""),
+                "language":       exercise.get("language", "sql"),
+                "starter_code":   exercise.get("starter_code", ""),
+                "solution":       exercise.get("solution", ""),
+                "hints":          exercise.get("hints", []),
+                "topic":          exercise.get("topic", ""),
+                "difficulty":     exercise.get("difficulty", "intermediate"),
+                "expected_output": exercise.get("expected_output", ""),
+            }, on_conflict="plan_id,day_number").execute()
+            return r.data[0]["id"] if r.data else None
+        except Exception as e:
+            logger.error(f"Failed to save exercise: {e}")
+            return None
+
+    def save_submission(self, exercise_id: int, coder_id: int, code: str) -> Optional[int]:
+        try:
+            r = self.client.table("exercise_submissions").insert({
+                "exercise_id":    exercise_id,
+                "coder_id":       coder_id,
+                "code_submitted": code,
+            }).execute()
+            return r.data[0]["id"] if r.data else None
+        except Exception as e:
+            logger.error(f"Failed to save submission: {e}")
+            return None
+
 
 
 db_manager = SupabaseManager()

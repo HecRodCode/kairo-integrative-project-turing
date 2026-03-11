@@ -1,8 +1,5 @@
 """
 app/routers/cards.py
-Generates 6 smart focus cards (2 High, 2 Medium, 2 Low priority)
-for the coder dashboard "Focus AI" section.
-Each card has: theory, practice exercise, pro tips.
 """
 
 import os

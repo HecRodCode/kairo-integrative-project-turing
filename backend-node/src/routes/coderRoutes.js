@@ -1,15 +1,21 @@
 /**
  * routes/coderRoutes.js
- * Rutas del coder — Kairo Project.
  */
-
 import { Router } from 'express';
 import {
   getCoderDashboard,
   getPlanDetails,
   updateActivityProgress,
   getModuleMilestones,
+  getActivePlan,
+  completeDay,
+  requestPlan,
 } from '../controllers/coderControllers.js';
+import {
+  generateExercise,
+  submitExercise,
+  getSubmissions,
+} from '../controllers/exerciseControllers.js';
 import {
   isAuthenticated,
   hasRole,
@@ -17,20 +23,24 @@ import {
 } from '../middlewares/authMiddlewares.js';
 
 const router = Router();
-
-/* Todas las rutas del coder requieren sesión activa + rol coder + onboarding completo */
 router.use(isAuthenticated, hasRole('coder'), checkOnboarding);
 
-/* Dashboard principal */
+/* Dashboard */
 router.get('/dashboard', getCoderDashboard);
 
-/* Planes de aprendizaje */
+/* Plan activo del AI Trainer */
+router.get('/plan', getActivePlan);
+router.post('/plan/request', requestPlan);
+router.post('/plan/:planId/day/:day/complete', completeDay);
 router.get('/plans/:planId', getPlanDetails);
 
-/* Progreso de actividades */
-router.patch('/activities/:id/complete', updateActivityProgress);
+/* Ejercicios del AI Trainer */
+router.post('/exercise/generate', generateExercise);
+router.post('/exercise/:exerciseId/submit', submitExercise);
+router.get('/exercise/:exerciseId/submissions', getSubmissions);
 
-/* Hitos del módulo */
+/* Legacy */
+router.patch('/activities/:id/complete', updateActivityProgress);
 router.get('/milestones', getModuleMilestones);
 
 export default router;
