@@ -1,5 +1,9 @@
 /**
- * Riwi Learning Platform - Validation Utilities
+ * utils/validators.js
+ * Server-side validation utilities.
+ *
+ * FIX: validateRole now includes 'admin' to match the role_enum in the DB.
+ *      Without it, any admin registration attempt failed validation silently.
  */
 
 export function validateEmail(email) {
@@ -8,20 +12,18 @@ export function validateEmail(email) {
 }
 
 export function validatePassword(password) {
-  return password && password.length >= 6;
+  return typeof password === 'string' && password.length >= 6;
 }
 
 /**
- * Validates that the role matches our DB ENUM
+ * Must match role_enum: 'coder' | 'tl' | 'admin'
+ * FIX: 'admin' was missing.
  */
 export function validateRole(role) {
-  const allowedRoles = ['coder', 'tl'];
+  const allowedRoles = ['coder', 'tl', 'admin'];
   return allowedRoles.includes(role?.toLowerCase().trim());
 }
 
-/**
- * Basic name validation (not empty and reasonable length)
- */
 export function validateFullName(name) {
   return typeof name === 'string' && name.trim().length >= 3;
 }

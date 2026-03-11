@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kairo | Verifica tu correo</title>
+    <link rel="stylesheet" href="./../../../assets/css/auth.css" />
+    <link rel="stylesheet" href="./../../../assets/css/global.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <script src="../../../src/core/utils/theme.js" defer></script>
+    <script src="https://unpkg.com/i18next@23.11.5/dist/umd/i18next.min.js"></script>
+    <script src="./../../core/utils/i18n.js"></script>
+
+    <style>
+      /* ── OTP-specific styles — usa los tokens de global.css ─── */
+
+      .otp-header-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 16px;
+        background: var(--accent-dim);
+        border: 1px solid var(--accent-border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+      }
+
+      .otp-header-icon svg {
+        width: 26px;
+        height: 26px;
+        stroke: var(--accent);
+      }
+
+      .otp-email-target {
+        color: var(--accent);
+        font-weight: 600;
+        word-break: break-all;
+      }
+
+      /* Fila de 6 inputs OTP */
+      .otp-grid {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+
+      .otp-digit {
+        flex: 1;
+        height: 58px;
+        text-align: center;
+        font-family: 'Inter', monospace;
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--input-text);
+        background: var(--input-bg);
+        border: 1px solid var(--border-glass);
+        border-radius: 10px;
+        outline: none;
+        transition:
+          border-color 0.2s ease,
+          box-shadow 0.2s ease,
+          background 0.2s ease;
+        /* Quitar flechas de input number */
+        -moz-appearance: textfield;
+        appearance: textfield;
+      }
+
+      .otp-digit::-webkit-outer-spin-button,
+      .otp-digit::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+      }
+
+      .otp-digit:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--primary-glow);
+        background: rgba(30, 41, 59, 0.75);
+      }
+
+      .otp-digit.filled {
+        border-color: var(--accent-border);
+        background: var(--accent-dim);
+      }
+
+      .otp-digit.error-digit {
+        border-color: var(--color-error) !important;
+        background: rgba(239, 68, 68, 0.05);
+      }
+
+      /* Timer */
+      .timer-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 6px 0 20px;
+      }
+
+      .timer-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        background: rgba(239, 68, 68, 0.08);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        border-radius: 8px;
+        padding: 5px 12px;
+      }
+
+      .timer-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--color-error);
+        animation: blink-dot 1s step-start infinite;
+      }
+
+      @keyframes blink-dot {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.15;
+        }
+      }
+
+      .timer-badge.expired {
+        background: rgba(100, 116, 139, 0.08);
+        border-color: rgba(100, 116, 139, 0.2);
+      }
+      .timer-badge.expired .timer-dot {
+        background: var(--text-muted);
+        animation: none;
+      }
+      .timer-badge.expired #timer-display {
+        color: var(--text-muted);
+      }
+
+      #timer-display {
+        font-family: 'Inter', monospace;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--color-error);
+        letter-spacing: 0.05em;
+      }
+
+      .resend-wrap {
+        font-size: 13px;
+        color: var(--text-muted);
+      }
+
+      .resend-wrap button {
+        background: none;
+        border: none;
+        color: var(--accent);
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 0;
+        transition: color 0.2s;
+      }
+
+      .resend-wrap button:hover:not(:disabled) {
+        color: var(--purple-light);
+      }
+
+      .resend-wrap button:disabled {
+        color: var(--text-muted);
+        cursor: not-allowed;
+      }
+
+      /* Intentos restantes */
+      .attempts-hint {
+        font-size: 12px;
+        color: var(--text-muted);
+        text-align: center;
+        margin-top: 8px;
+        min-height: 18px;
+      }
+
+      /* Sobreescribe .link para el volver */
+      .link-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        color: var(--text-muted);
+        text-decoration: none;
+        transition: color 0.2s;
+        margin-top: 4px;
+      }
+
+      .link-back:hover {
+        color: var(--text-main);
+      }
+    </style>
+  </head>
+
+  <body class="body-content">
+    <main class="card-content">
+      <!-- ── Logo panel (igual que login/register) ── -->
+      <section class="content-logo">
+        <div class="container">
+          <img src="./../../../assets/img/logo.png" alt="Riwi Logo" />
+        </div>
+      </section>
+
+      <!-- ── Form panel ── -->
+      <section class="content-form">
+        <!-- Ícono de escudo -->
+        <div class="otp-header-icon">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="1.5"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6
+               11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623
+               5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152
+               c-3.196 0-6.1-1.248-8.25-3.285z"
+            />
+          </svg>
+        </div>
+
+        <header class="header">
+          <h1 data-i18n="auth.otp_title">Verifica tu correo</h1>
+          <p data-i18n="auth.otp_p">
+            Enviamos un código de 6 dígitos a<br />
+            <span class="otp-email-target" id="display-email">tu correo</span>
+          </p>
+        </header>
+
+        <!-- Mensajes de error / éxito -->
+        <span
+          class="error-text"
+          id="msg-error"
+          style="display: none; text-align: center; margin-bottom: 10px"
+        ></span>
+
+        <!-- 6 inputs OTP -->
+        <div class="otp-grid" id="otp-inputs">
+          <input
+            class="otp-digit"
+            type="number"
+            min="0"
+            max="9"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            placeholder="·"
+          />
+          <input
+            class="otp-digit"
+            type="number"
+            min="0"
+            max="9"
+            inputmode="numeric"
+            placeholder="·"
+          />
+          <input
+            class="otp-digit"
+            type="number"
+            min="0"
+            max="9"
+            inputmode="numeric"
+            placeholder="·"
+          />
+          <input
+            class="otp-digit"
+            type="number"
+            min="0"
+            max="9"
+            inputmode="numeric"
+            placeholder="·"
+          />
+          <input
+            class="otp-digit"
+            type="number"
+            min="0"
+            max="9"
+            inputmode="numeric"
+            placeholder="·"
+          />
+          <input
+            class="otp-digit"
+            type="number"
+            min="0"
+            max="9"
+            inputmode="numeric"
+            placeholder="·"
+          />
+        </div>
+
+        <!-- Timer + reenviar -->
+        <div class="timer-row">
+          <div class="timer-badge" id="timer-badge">
+            <span class="timer-dot"></span>
+            <span id="timer-display">05:00</span>
+          </div>
+          <p class="resend-wrap">
+            ¿No llegó?
+            <button id="resend-btn" disabled data-i18n="auth.resend_code">
+              Reenviar
+            </button>
+          </p>
+        </div>
+
+        <!-- Hint de intentos -->
+        <p class="attempts-hint" id="attempts-hint"></p>
+
+        <!-- Botón verificar -->
+        <button
+          type="button"
+          class="btn-auth btn-submit"
+          id="verify-btn"
+          data-i18n="auth.btn_verify"
+        >
+          Verificar código
+        </button>
+
+        <!-- Volver -->
+        <p class="link" style="margin-top: 20px">
+          <a href="./register.html" class="link-back">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="13"
+              height="13"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2.5"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"
+              />
+            </svg>
+            <span data-i18n="auth.back_register">Volver al registro</span>
+          </a>
+        </p>
+      </section>
+    </main>
+
+    <!-- Theme / Language toggles (idéntico a login) -->
+    <div class="theme-switch-wrapper">
+      <button
+        id="language-toggle"
+        class="theme-btn me-2"
+        title="Change Language"
+      >
+        <svg
+          id="lang-icon"
+          class="theme-icon"
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="m5 8 6 6" />
+          <path d="m4 14 6-6 2-3" />
+          <path d="M2 5h12" />
+          <path d="M7 2h1" />
+          <path d="m22 22-5-10-5 10" />
+          <path d="M14 18h6" />
+        </svg>
+      </button>
+      <button id="theme-toggle" class="theme-btn" title="Toggle Theme">
+        <svg
+          id="moon-icon"
+          class="theme-icon"
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+        </svg>
+        <svg
+          id="sun-icon"
+          class="theme-icon"
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          style="display: none"
+        >
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 2v2" />
+          <path d="M12 20v2" />
+          <path d="m4.93 4.93 1.41 1.41" />
+          <path d="m17.66 17.66 1.41 1.41" />
+          <path d="M2 12h2" />
+          <path d="M20 12h2" />
+          <path d="m6.34 17.66-1.41 1.41" />
+          <path d="m19.07 4.93-1.41 1.41" />
+        </svg>
+      </button>
+    </div>
+
+    <script src="../../../src/core/utils/transition.js"></script>
+    <script type="module" src="../../../src/core/auth/otp-ui.js"></script>
+  </body>
+</html>

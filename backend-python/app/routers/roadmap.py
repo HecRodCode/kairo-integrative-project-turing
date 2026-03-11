@@ -1,125 +1,158 @@
-import os
-import json
+"""
+app/routers/roadmap.py
+POST /generate-plan
+
+Plan type logic:
+  · "interpretive" → first plan after onboarding. Node sends it with no
+    weekly performance data. Python reads only the soft_skills + module.
+  · "analytical"   → every subsequent plan (Mondays). Node sends
+    average_score, struggling_topics and weeks_completed from moodle_progress.
+
+Architecture: Slim Communication
+  Node sends only: IDs + dynamic weekly data.
+  Python owns all data retrieval from Supabase.
+"""
+
 import time
 import logging
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from groq import Groq
-from supabase import create_client
+from typing import List, Optional
 
-# Initialize professional logging for Riwi AI Service
-logger = logging.getLogger("riwi-ai-roadmap")
+from app.services.ia_services     import generate_plan_with_ai
+from app.services.supabase_service import db_manager
 
-router = APIRouter(prefix="/roadmap", tags=["Learning Paths"])
+logger = logging.getLogger("kairo-roadmap")
+router = APIRouter(tags=["Learning Plans"])
 
-# --- Data Transfer Objects (DTOs) ---
-class RoadmapRequest(BaseModel):
+
+# ── DTO ──────────────────────────────────────────────────────────────────────
+
+class GeneratePlanRequest(BaseModel):
+    coder_id:          int
+    module_id:         int
+    plan_type:         str = "interpretive"   # "interpretive" | "analytical"
+
+    # Only required for analytical plans (sent from Monday cron / weekly close)
+    current_week:      Optional[int]   = 1
+    average_score:     Optional[float] = 0.0
+    struggling_topics: List[str]       = []
+    weeks_completed:   List[dict]      = []   # [{week, average_score, struggling_topics}]
+
+
+# ── Endpoint ─────────────────────────────────────────────────────────────────
+
+@router.post("/generate-plan")
+async def generate_plan(req: GeneratePlanRequest):
     """
-    Schema for generating personalized roadmaps.
-    Integrates coder profiling and module-specific constraints.
+    Flow:
+      1. Validate plan_type
+      2. Fetch soft_skills, module, weeks, coder from Supabase
+      3. Deactivate any existing active plan for this coder
+      4. Build context dict (add weekly data for analytical)
+      5. Call AI service (selects correct prompt internally)
+      6. Persist plan + log generation
     """
-    topic: str
-    coder_id: int
-    module_id: int
+    start = time.time()
 
-# --- Business Logic Helpers ---
-def get_module_context(module_id: int):
-    """
-    Returns specific Riwi curriculum constraints based on the module ID.
-    This ensures the AI respects the 3-week or 4-week structure.
-    """
-    curriculum = {
-        1: {"name": "Python Fundamentals", "weeks": 3, "critical": False},
-        2: {"name": "HTML & CSS", "weeks": 3, "critical": False},
-        3: {"name": "JavaScript", "weeks": 4, "critical": True},
-        4: {"name": "Databases", "weeks": 3, "critical": False}
-    }
-    return curriculum.get(module_id, {"name": "Software Development", "weeks": 3, "critical": False})
-
-# --- Main Endpoint ---
-@router.post("/generate")
-async def generate_roadmap(request: RoadmapRequest):
-    """
-    Generates a module-aligned roadmap that cross-references technical goals
-    with onboarding soft skills and Riwi's specific timeframes.
-    """
-    execution_start = time.time()
-    module_info = get_module_context(request.module_id)
-    
-    try:
-        # 1. Initialize Cloud Service Clients
-        groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-        supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_KEY"))
-
-        # 2. Fetch Coder Onboarding Data (Soft Skills)
-        # This aligns the AI output with the "Life Skills" objective.
-        coder_data = supabase.table("soft_skills_assessment").select("*").eq("coder_id", request.coder_id).single().execute()
-        soft_skills = coder_data.data if coder_data.data else {}
-        
-        # 3. Construct the Professional Pedagogical Prompt
-        # We explicitly tell the AI about the 3/4 week limit and the performance test.
-        prompt = f"""
-        You are a Senior Technical Mentor at Riwi. 
-        Student Profile: Learning Style: {soft_skills.get('learning_style', 'Mixed')}, 
-        Autonomy: {soft_skills.get('autonomy', 3)}/5, Time Management: {soft_skills.get('time_management', 3)}/5.
-        
-        Task: Create a COMPLEMENTARY roadmap for '{request.topic}' within Module {request.module_id} ({module_info['name']}).
-        
-        Constraints:
-        - Duration: Exactly {module_info['weeks']} weeks.
-        - Week {module_info['weeks']} must focus on 'Performance Test Simulation'.
-        - Level: {'Advanced & Rigorous' if module_info['critical'] else 'Foundational'}.
-        
-        Return ONLY a JSON object:
-        {{
-            "title": "{request.topic}",
-            "targeted_soft_skill": "Based on onboarding, e.g., Time Management",
-            "weeks": [
-                {{
-                    "week_number": 1,
-                    "focus": "Topic",
-                    "activities": ["Task 1", "Task 2"],
-                    "estimated_hours": 5
-                }}
-            ]
-        }}
-        """
-
-        # 4. AI Inference
-        completion = groq_client.chat.completions.create(
-            model=os.getenv("MODEL_NAME", "llama-3.3-70b-versatile"),
-            messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"}
+    if req.plan_type not in ("interpretive", "analytical"):
+        raise HTTPException(
+            status_code=400,
+            detail=f"plan_type must be 'interpretive' or 'analytical', got '{req.plan_type}'"
         )
-        
-        roadmap_json = json.loads(completion.choices[0].message.content)
 
-        # 5. Persistence in Database
-        # Saving the plan and logging the AI generation for TL auditing.
-        plan_insert = supabase.table("complementary_plans").insert({
-            "coder_id": request.coder_id,
-            "module_id": request.module_id,
-            "plan_content": roadmap_json,
-            "targeted_soft_skill": roadmap_json.get("targeted_soft_skill"),
-            "is_active": True
-        }).execute()
+    # ── 1. Soft skills ────────────────────────────────────────────────────────
+    soft_skills = db_manager.get_soft_skills(req.coder_id)
+    if not soft_skills:
+        raise HTTPException(
+            status_code=400,
+            detail=f"No diagnostic found for coder {req.coder_id}. Complete onboarding first."
+        )
 
-        execution_time_ms = int((time.time() - execution_start) * 1000)
-        supabase.table("ai_generation_log").insert({
-            "coder_id": request.coder_id,
-            "agent_type": "learning_plan",
-            "input_payload": {"topic": request.topic, "module": module_info['name']},
-            "output_payload": roadmap_json,
-            "execution_time_ms": execution_time_ms,
-            "success": True
-        }).execute()
+    # ── 2. Module + weeks ─────────────────────────────────────────────────────
+    module = db_manager.get_module(req.module_id)
+    if not module:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Module {req.module_id} not found. Run seed_modules.sql first."
+        )
+    weeks = db_manager.get_weeks(req.module_id)
 
-        return {
-            "status": "success",
-            "module_context": module_info,
-            "data": roadmap_json
-        }
+    # ── 3. Coder info ─────────────────────────────────────────────────────────
+    coder = db_manager.get_coder(req.coder_id)
+    coder_name = coder.get("full_name", "Estudiante") if coder else "Estudiante"
 
-    except Exception as e:
-        logger.error(f"Roadmap generation failed: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Internal Logic Error: {str(e)}")
+    # ── 4. Deactivate previous active plan ───────────────────────────────────
+    db_manager.deactivate_plans(req.coder_id)
+
+    # ── 5. Build context ──────────────────────────────────────────────────────
+    context = {
+        "plan_type":   req.plan_type,
+        "coder_id":    req.coder_id,
+        "coder_name":  coder_name,
+        "soft_skills": soft_skills,
+        "module":      module,
+        "weeks":       weeks,
+        "current_week": req.current_week,
+    }
+
+    # Analytical-only fields
+    if req.plan_type == "analytical":
+        context.update({
+            "average_score":     req.average_score,
+            "struggling_topics": req.struggling_topics,
+            "weeks_completed":   req.weeks_completed,
+        })
+
+    # ── 6. Generate plan ──────────────────────────────────────────────────────
+    plan = await generate_plan_with_ai(context)
+    exec_ms = int((time.time() - start) * 1000)
+
+    # ── 7. Persist ────────────────────────────────────────────────────────────
+    moodle_snapshot = {
+        "plan_type":         req.plan_type,
+        "current_week":      req.current_week,
+        "module_name":       module.get("name"),
+        "total_weeks":       module.get("total_weeks"),
+        # analytical extras
+        **({"average_score":     req.average_score,
+            "struggling_topics": req.struggling_topics}
+           if req.plan_type == "analytical" else {}),
+    }
+
+    plan_id = db_manager.save_plan(
+        coder_id=req.coder_id,
+        module_id=req.module_id,
+        plan=plan,
+        soft_skills_snapshot=soft_skills,
+        moodle_status_snapshot=moodle_snapshot,
+        targeted_soft_skill=plan.get("targeted_soft_skill"),
+    )
+
+    db_manager.log_generation(
+        coder_id=req.coder_id,
+        agent_type="plan_generator",
+        input_payload={
+            "plan_type":         req.plan_type,
+            "module_id":         req.module_id,
+            "current_week":      req.current_week,
+            "struggling_topics": req.struggling_topics,
+        },
+        output_payload={"plan_id": plan_id, "status": plan.get("status", "ok")},
+        execution_time_ms=exec_ms,
+        success=plan.get("status") != "fallback",
+    )
+
+    return {
+        "success": True,
+        "plan_id": plan_id,
+        "plan":    plan,
+        "metadata": {
+            "plan_type":    req.plan_type,
+            "coder_id":     req.coder_id,
+            "module_id":    req.module_id,
+            "module_name":  module.get("name"),
+            "current_week": req.current_week,
+            "execution_ms": exec_ms,
+        },
+    }

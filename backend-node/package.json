@@ -24,15 +24,20 @@
     "url": "git+https://github.com/Riwi-Project-C6/Learning-Platform.git"
   },
   "license": "MIT",
-  "author": "Héctor",
+  "author": "Kairo Team",
   "dependencies": {
+    "@supabase/supabase-js": "^2.98.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "express-session": "^1.19.0",
     "morgan": "^1.10.1",
-    "pg": "^8.18.0"
+    "passport": "^0.7.0",
+    "passport-github2": "^0.1.12",
+    "passport-google-oauth20": "^2.0.0",
+    "pg": "^8.18.0",
+    "resend": "^6.9.3"
   },
   "devDependencies": {
     "nodemon": "^3.1.11"

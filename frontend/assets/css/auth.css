@@ -1,0 +1,314 @@
+/* =====================================================
+   AUTH.CSS — Login & Register pages only
+   Requires: global.css loaded first
+   ===================================================== */
+
+/* ── Card layout ── */
+.body-content {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 20px;
+}
+
+.auth-container {
+  animation: slideUp 0.4s cubic-bezier(0.23, 1, 0.32, 1) both;
+  background-color: var(--bg-card);
+}
+
+.card-content {
+  width: 75%;
+  min-height: 650px;
+  height: auto;
+  border-radius: 24px;
+  background: var(--bg-card);
+  backdrop-filter: blur(15px);
+  border: 1px solid var(--border-glass);
+  display: flex;
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.25),
+    0 0 50px var(--primary-glow);
+  overflow: hidden;
+  transition:
+    background 0.4s ease,
+    border 0.4s ease;
+}
+
+/* ── Logo panel ── */
+.content-logo {
+  width: 45%;
+  padding: 2rem;
+  background: var(--bg-logo);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid var(--border-glass);
+  transition: background 0.4s ease;
+}
+
+.content-logo img {
+  max-width: 240px;
+  width: 85%;
+  z-index: 2;
+  filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.2));
+  transition: transform 0.5s ease;
+}
+
+.content-logo::after {
+  content: '';
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+  filter: blur(60px);
+  opacity: 0.3;
+  z-index: 1;
+}
+
+/* ── Form panel ── */
+.content-form {
+  width: 55%;
+  padding: 30px 50px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* ── Header ── */
+.header {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.header h1 {
+  font-size: 32px;
+  margin-bottom: 8px;
+  background: linear-gradient(to right, var(--text-main), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.header p {
+  color: var(--text-muted);
+}
+
+/* ── Social auth ── */
+.social-auth-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.btn-social {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 600;
+  background: var(--btn-social-bg);
+  border: 1px solid var(--border-glass);
+  color: var(--text-main);
+  transition: 0.3s;
+}
+
+.btn-social:hover {
+  background: var(--primary-glow);
+  transform: translateY(-2px);
+}
+
+/* ── Separator ── */
+.separator {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 20px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.separator::before,
+.separator::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--border-glass);
+}
+
+.separator span {
+  padding: 0 15px;
+}
+
+/* ── Form & inputs ── */
+.form-1 {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+label {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-left: 4px;
+}
+
+input,
+.custom-select {
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border-glass);
+  background: var(--input-bg);
+  color: var(--input-text);
+  outline: none;
+  transition: 0.3s;
+  width: 100%;
+  font-family: inherit;
+}
+
+input:focus,
+.custom-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 15px var(--primary-glow);
+}
+
+/* ── Custom select ── */
+.custom-select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1.2em;
+}
+
+/* ── Password row (register) ── */
+.password-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+}
+
+.password-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.password-wrapper input {
+  padding-right: 45px !important;
+  position: relative;
+  z-index: 1;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 45px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  color: var(--text-muted);
+  outline: none;
+}
+
+.toggle-password:hover {
+  opacity: 0.8;
+  color: var(--accent);
+}
+.toggle-password svg {
+  pointer-events: none;
+  width: 20px;
+  height: 20px;
+}
+
+/* ── Submit button ── */
+.btn-auth {
+  margin-top: 10px;
+  padding: 15px;
+  border-radius: 14px;
+  border: none;
+  font-weight: 700;
+  font-size: 15px;
+  color: #fff;
+  background: linear-gradient(
+    135deg,
+    var(--purple-mid) 0%,
+    var(--purple-deep) 100%
+  );
+  cursor: pointer;
+  transition: 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  font-family: inherit;
+}
+
+.btn-auth:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px var(--primary-glow);
+}
+
+/* ── Footer link ── */
+.link {
+  text-align: center;
+  margin-top: 20px;
+  color: var(--text-muted);
+}
+
+.link a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+/* ── Password strength bar ── */
+.strength-put {
+  height: 4px;
+  width: 100%;
+  background: #334155;
+  margin-top: 4px;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.strength-bar {
+  height: 100%;
+  width: 0;
+  transition: all 0.5s ease;
+}
+.strength-weak {
+  width: 33%;
+  background: var(--color-error);
+}
+.strength-medium {
+  width: 66%;
+  background: var(--color-warning);
+}
+.strength-strong {
+  width: 100%;
+  background: var(--color-success);
+}
