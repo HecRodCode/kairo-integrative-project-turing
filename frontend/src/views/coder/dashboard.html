@@ -1,339 +1,307 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
-    <title>Kairo Dashboard</title>
-    <link rel="stylesheet" href="./../../../assets/css/dashboard_coder.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard · Kairo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
     <link
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
       rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
     />
+    <link rel="stylesheet" href="../../../assets/css/global.css" />
+    <link rel="stylesheet" href="../../../assets/css/dashboardCoder.css" />
   </head>
+
   <body>
-    <!-- Sidebar -->
-    <aside class="sidebar">
-      <div class="logo d-flex justify-content-center align-items-center">
-        <img
-          class="rounded-3"
-          src="./../../views/tl/assets/logo.png"
-          alt="logo"
-          style="width: 9rem; height: 9rem; box-shadow: 0px 6px 32px #dedede"
-        />
+    <!-- Loading overlay — visible while dashboard data is being fetched -->
+    <div class="loading-overlay hidden" id="loading-overlay">
+      <div class="loading-box">
+        <div class="loading-spinner"></div>
+        <p class="loading-text">
+          Cargando tu dashboard<span class="loading-dots"></span>
+        </p>
       </div>
-      <ul>
-        <li class="active">
-          <i
-            class="fa-solid fa-chart-pie"
-            style="font-weight: 900; font-size: 1.5rem; margin-right: 0.5rem"
-          ></i>
-          Dashboard
-        </li>
-        <li>
-          <a href="./profile.html"
-            ><i
-              class="fa-solid fa-coins"
-              style="font-weight: 900; font-size: 1.5rem; margin-right: 0.5rem"
-            ></i>
-            Profile</a
-          >
-        </li>
-        <li>
-          <a href="./skills.html"
-            ><i
-              class="fa-solid fa-message"
-              style="font-weight: 900; font-size: 1.5rem; margin-right: 0.5rem"
-            ></i>
-            Skills</a
-          >
-        </li>
-        <li>
-          <a href="#"
-            ><i
-              class="fa-solid fa-calendar"
-              style="font-weight: 900; font-size: 1.5rem; margin-right: 0.5rem"
-            ></i>
-            Discord</a
-          >
-        </li>
-        <li>
-          <a href="#"
-            ><i
-              class="fa-solid fa-calendar"
-              style="font-weight: 900; font-size: 1.5rem; margin-right: 0.5rem"
-            ></i>
-            AI</a
-          >
-        </li>
-      </ul>
-    </aside>
+    </div>
 
-    <!-- MAIN -->
-    <main class="main">
-      <!-- Topbar -->
-      <div class="topbar mb-4">
-        <strong>COMPANY NAME</strong>
-        <div class="d-flex align-items-center gap-3">
-          <span>NAME CODER</span>
-          <i class="fa-solid fa-user fs-4"></i>
-          <i class="fa-regular fa-bell fs-4"></i>
-          <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" id="btnTheme" />
+    <div class="shell">
+      <!-- ══════════════ SIDEBAR ══════════════ -->
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <img
+            src="../../../assets/img/logo.png"
+            alt="Kairo"
+            class="sidebar-logo"
+          />
+        </div>
+
+        <nav class="sidebar-nav">
+          <a class="nav-link active" href="#">
+            <span class="nav-icon"><i class="fa-solid fa-grid-2"></i></span>
+            Dashboard
+          </a>
+          <a class="nav-link" href="./aiTrainer.html">
+            <span class="nav-icon"
+              ><i class="fa-solid fa-brain-circuit"></i
+            ></span>
+            AI Trainer
+          </a>
+          <a class="nav-link" href="./progress.html">
+            <span class="nav-icon"><i class="fa-solid fa-chart-line"></i></span>
+            Mi Progreso
+          </a>
+        </nav>
+
+        <!-- Coder identity + logout at bottom -->
+        <div class="sidebar-profile">
+          <div class="coder-info">
+            <span class="coder-name" id="sidebar-name">—</span>
+            <span class="coder-clan" id="sidebar-clan">—</span>
           </div>
+          <button class="btn-logout" id="btn-logout" title="Cerrar sesión">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          </button>
         </div>
-      </div>
-      <!-- ------------------ CHANGE MOD ----------------- -->
-      <script>
-        const btnTheme = document.getElementById('btnTheme');
-        const currentTheme = localStorage.getItem('theme');
+      </aside>
 
-        if (currentTheme === 'light') {
-          document.documentElement.setAttribute('data-theme', 'light');
-          btnTheme.checked = true;
-        }
-
-        btnTheme.addEventListener('change', () => {
-          if (btnTheme.checked) {
-            document.documentElement.setAttribute('data-theme', 'light');
-            localStorage.setItem('theme', 'light');
-          } else {
-            document.documentElement.removeAttribute('data-theme');
-            localStorage.setItem('theme', 'dark');
-          }
-        });
-      </script>
-
-      <!-- HERO -->
-      <section class="hero">
-        <div class="hero-left">
-          <div class="hero-avatar"></div>
-        </div>
-
-        <div class="hero-right">
-          <div class="hero-number">86</div>
-          <div class="hero-text">
-            <h2>your skills level</h2>
-            <h3>points</h3>
-            <p>Clan Turing</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- SKILLS -->
-      <section class="skills-box">
-        <div class="score">
-          <div class="score-circle">
-            <h2>86</h2>
-            <span>Points</span>
-          </div>
-        </div>
-
-        <div class="bars">
-          <div class="skill">
-            <span>Programming</span>
-            <div class="progress">
-              <div style="width: 87%"></div>
-              <small>87%</small>
+      <!-- ══════════════ MAIN ══════════════ -->
+      <main class="main">
+        <!-- Topbar -->
+        <header class="topbar">
+          <div class="topbar-left">
+            <div class="topbar-module" id="topbar-module">
+              <span class="module-pill" id="module-pill">—</span>
+              <span class="topbar-sep">·</span>
+              <span class="topbar-week" id="topbar-week">—</span>
             </div>
-            <!-- <small>87%</small> -->
+            <p class="topbar-date" id="topbar-date">—</p>
           </div>
 
-          <div class="skill">
-            <span>Inglés</span>
-            <div class="progress">
-              <div style="width: 87%"></div>
-              <small>87%</small>
+          <div class="topbar-right">
+            <!-- Notification bell -->
+            <div class="notif-wrapper">
+              <button class="icon-btn" id="btn-notif" title="Notificaciones">
+                <i class="fa-solid fa-bell"></i>
+                <span class="notif-dot hidden" id="notif-dot"></span>
+              </button>
+              <!-- Dropdown -->
+              <div class="notif-dropdown hidden" id="notif-dropdown">
+                <p class="notif-header">Notificaciones</p>
+                <div id="notif-list">
+                  <p class="notif-empty">Sin notificaciones nuevas</p>
+                </div>
+              </div>
             </div>
-            <!-- <small>87%</small> -->
-          </div>
 
-          <div class="skill">
-            <span>Socio-emotional skills</span>
-            <div class="progress">
-              <div style="width: 87%"></div>
-              <small>87%</small>
+            <!-- Language toggle -->
+            <button class="icon-btn" id="btn-lang" title="Idioma">
+              <i class="fa-solid fa-earth-americas"></i>
+            </button>
+
+            <!-- Theme toggle -->
+            <button class="icon-btn" id="btn-theme" title="Cambiar tema">
+              <i class="fa-solid fa-moon" id="icon-moon"></i>
+              <i
+                class="fa-solid fa-sun"
+                id="icon-sun"
+                style="display: none"
+              ></i>
+            </button>
+
+            <!-- Profile button -->
+            <a
+              href="./profile.html"
+              class="topbar-profile-btn"
+              id="topbar-profile-btn"
+            >
+              <div class="topbar-avatar"><i class="fa-solid fa-user"></i></div>
+              <span id="topbar-name">—</span>
+            </a>
+          </div>
+        </header>
+
+        <!-- Error banner -->
+        <div class="error-banner hidden" id="error-banner">
+          <i class="fa-solid fa-plug-circle-xmark"></i>
+          <div>
+            <strong>No se pudo conectar con el servidor</strong>
+            <p id="error-msg">Verifica que el backend esté corriendo.</p>
+          </div>
+          <button class="btn-retry" onclick="loadDashboard()">
+            <i class="fa-solid fa-rotate-right"></i> Reintentar
+          </button>
+        </div>
+
+        <!-- ══════════════ CONTENT ══════════════ -->
+        <section class="content-grid">
+          <!-- ── Columna izquierda ── -->
+          <div class="col-main">
+            <!-- Welcome card -->
+            <div class="welcome-card glass-card" id="welcome-card">
+              <div class="welcome-left">
+                <p class="welcome-greeting">Bienvenido de vuelta,</p>
+                <h2 class="welcome-name" id="welcome-name">—</h2>
+                <div class="welcome-tags">
+                  <span class="cohort-badge" id="cohort-badge">
+                    <i class="fa-solid fa-users"></i> Cohorte 6
+                  </span>
+                  <span class="clan-badge" id="clan-badge">—</span>
+                  <span class="plan-badge hidden" id="plan-badge">
+                    <i class="fa-solid fa-microchip-ai"></i> Plan activo
+                  </span>
+                </div>
+              </div>
+              <div class="welcome-right">
+                <!-- Risk alert — only shows if active -->
+                <div class="risk-alert hidden" id="risk-alert">
+                  <i class="fa-solid fa-triangle-exclamation"></i>
+                  <span id="risk-msg">Tienes un flag activo</span>
+                </div>
+              </div>
             </div>
-            <!-- <small>87%</small> -->
+
+            <!-- Stats row -->
+            <div class="stats-row">
+              <div class="stat-card">
+                <span class="stat-icon purple"
+                  ><i class="fa-solid fa-graduation-cap"></i
+                ></span>
+                <div class="stat-body">
+                  <span class="stat-value" id="st-module">—</span>
+                  <span class="stat-label">Módulo actual</span>
+                </div>
+              </div>
+
+              <div class="stat-card">
+                <span class="stat-icon blue"
+                  ><i class="fa-solid fa-calendar-week"></i
+                ></span>
+                <div class="stat-body">
+                  <span class="stat-value" id="st-week">—</span>
+                  <span class="stat-label">Semana en curso</span>
+                </div>
+              </div>
+
+              <div class="stat-card">
+                <span class="stat-icon green"
+                  ><i class="fa-solid fa-percent"></i
+                ></span>
+                <div class="stat-body">
+                  <span class="stat-value" id="st-score">—</span>
+                  <span class="stat-label">Score en Moodle</span>
+                </div>
+              </div>
+
+              <div class="stat-card">
+                <span class="stat-icon amber"
+                  ><i class="fa-solid fa-flag-checkered"></i
+                ></span>
+                <div class="stat-body">
+                  <span class="stat-value" id="st-weeks-done">—</span>
+                  <span class="stat-label">Semanas completadas</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Module progress bar -->
+            <div class="glass-card">
+              <div class="card-head">
+                <h3 class="card-title">Progreso en el módulo</h3>
+                <span class="card-meta" id="progress-meta">Semana — de —</span>
+              </div>
+              <div class="module-progress">
+                <div class="week-dots" id="week-dots">
+                  <!-- populated by JS -->
+                </div>
+              </div>
+              <div class="module-progress-labels">
+                <span>Inicio</span>
+                <span id="progress-percent">—</span>
+                <span>Fin del módulo</span>
+              </div>
+            </div>
+
+            <!-- Performance tests history -->
+            <div class="glass-card" id="perf-card">
+              <div class="card-head">
+                <h3 class="card-title">Pruebas de desempeño</h3>
+              </div>
+              <div id="perf-list">
+                <p class="empty-state">Sin pruebas registradas aún.</p>
+              </div>
+            </div>
+
+            <!-- TL Feedback / recent -->
+            <div class="glass-card" id="feedback-card">
+              <div class="card-head">
+                <h3 class="card-title">Últimos comentarios de tu TL</h3>
+              </div>
+              <div id="feedback-list">
+                <p class="empty-state">Sin feedback recibido aún.</p>
+              </div>
+            </div>
           </div>
-        </div>
-      </section>
 
-      <!-- COURSES -->
-      <section class="courses">
-        <div class="course">
-          <h4>PYTHON</h4>
-          <hr />
-          <p>Nivel Básico - En progreso</p>
-          <div class="progress"><div style="width: 80%"></div></div>
+          <!-- ── Columna derecha — perfil estático ── -->
+          <aside class="col-aside">
+            <!-- Score ring -->
+            <div class="glass-card ring-card">
+              <p
+                class="card-title"
+                style="text-align: center; margin-bottom: 20px"
+              >
+                Tu perfil de habilidades
+              </p>
 
-          <div class="checks">
-            <span>✔ 24 clases</span>
-            <span>✔ 5 proyectos</span>
-            <span>✔ 12 retos</span>
-          </div>
+              <div class="ring-wrapper">
+                <div class="score-ring" id="score-ring">
+                  <span class="ring-value" id="ring-value">—</span>
+                  <span class="ring-label">/ 5</span>
+                </div>
+                <p class="ring-caption">Promedio habilidades blandas</p>
+              </div>
 
-          <p class="skills">[Variables][If][Loops][List]</p>
-          <small>Próximo: Funciones</small>
-        </div>
+              <!-- Learning style -->
+              <div class="style-block" id="style-block">
+                <span class="style-icon"
+                  ><i class="fa-solid fa-brain"></i
+                ></span>
+                <div>
+                  <p class="style-title">Estilo de aprendizaje</p>
+                  <p class="style-value" id="style-value">—</p>
+                </div>
+              </div>
+            </div>
 
-        <div class="course">
-          <h4>PYTHON</h4>
-          <hr />
-          <p>Nivel Básico - En progreso</p>
-          <div class="progress"><div style="width: 80%"></div></div>
+            <!-- Soft skills bars -->
+            <div class="glass-card">
+              <div class="card-head">
+                <h3 class="card-title">Habilidades blandas</h3>
+                <span class="card-meta">Diagnóstico inicial</span>
+              </div>
+              <div class="skills-list" id="skills-list">
+                <!-- populated by JS -->
+              </div>
+              <p class="skills-note" id="skills-note"></p>
+            </div>
 
-          <div class="checks">
-            <span>✔ 24 clases</span>
-            <span>✔ 5 proyectos</span>
-            <span>✔ 12 retos</span>
-          </div>
-
-          <p class="skills">[Variables][If][Loops][List]</p>
-          <small>Próximo: Funciones</small>
-        </div>
-
-        <div class="course">
-          <h4>PYTHON</h4>
-          <hr />
-          <p>Nivel Básico - En progreso</p>
-          <div class="progress"><div style="width: 80%"></div></div>
-
-          <div class="checks">
-            <span>✔ 24 clases</span>
-            <span>✔ 5 proyectos</span>
-            <span>✔ 12 retos</span>
-          </div>
-
-          <p class="skills">[Variables][If][Loops][List]</p>
-          <small>Próximo: Funciones</small>
-        </div>
-
-        <div class="course">
-          <h4>PYTHON</h4>
-          <hr />
-          <p>Nivel Básico - En progreso</p>
-          <div class="progress"><div style="width: 80%"></div></div>
-
-          <div class="checks">
-            <span>✔ 24 clases</span>
-            <span>✔ 5 proyectos</span>
-            <span>✔ 12 retos</span>
-          </div>
-
-          <p class="skills">[Variables][If][Loops][List]</p>
-          <small>Próximo: Funciones</small>
-        </div>
-
-        <div class="course">
-          <h4>PYTHON</h4>
-          <hr />
-          <p>Nivel Básico - En progreso</p>
-          <div class="progress"><div style="width: 80%"></div></div>
-
-          <div class="checks">
-            <span>✔ 24 clases</span>
-            <span>✔ 5 proyectos</span>
-            <span>✔ 12 retos</span>
-          </div>
-
-          <p class="skills">[Variables][If][Loops][List]</p>
-          <small>Próximo: Funciones</small>
-        </div>
-      </section>
-
-      <!-- skill recommended -->
-      <section class="recommended">
-        <h2>Recommended skills</h2>
-
-        <div class="skills-scroll">
-          <script>
-            const skills = [
-              { icon: '👍', title: 'Debugging', subtitle: 'Learn Skill' },
-              { icon: '💻', title: 'JavaScript', subtitle: 'Practice ES6' },
-              { icon: '🎨', title: 'UI Design', subtitle: 'Improve Design' },
-              { icon: '⚙️', title: 'Backend', subtitle: 'Build APIs' },
-              { icon: '🧠', title: 'Algorithms', subtitle: 'Problem Solving' },
-              { icon: '🚀', title: 'Deployment', subtitle: 'Go Live' },
-            ];
-
-            const container = document.querySelector('.skills-scroll');
-
-            skills.forEach((skill) => {
-              const card = document.createElement('div');
-              card.classList.add('skill-card');
-
-              card.innerHTML = `
-    <div class="icon">${skill.icon}</div>
-    <div class="text">
-      <small>${skill.title}</small>
-      <strong>${skill.subtitle}</strong>
+            <!-- Struggling topics (if any) -->
+            <div class="glass-card hidden" id="struggling-card">
+              <div class="card-head">
+                <h3 class="card-title">Temas con dificultades</h3>
+                <span class="card-meta">Esta semana</span>
+              </div>
+              <div id="struggling-list"></div>
+            </div>
+          </aside>
+        </section>
+      </main>
     </div>
-  `;
-
-              container.appendChild(card);
-            });
-          </script>
-
-          <!-- <div class="skill-card">
-      <div class="icon">👍</div>
-      <div class="text">
-        <small>Clear Syntax</small>
-        <strong>Learn Skill</strong>
-      </div>
-    </div>
-
-    <div class="skill-card">
-      <div class="icon">👍</div>
-      <div class="text">
-        <small>Git + GitHub</small>
-        <strong>Learn Skill</strong>
-      </div>
-    </div>
-
-    <div class="skill-card">
-      <div class="icon">👍</div>
-      <div class="text">
-        <small>Clean Code</small>
-        <strong>Learn Skill</strong>
-      </div>
-    </div>
-
-    <div class="skill-card">
-      <div class="icon">👍</div>
-      <div class="text">
-        <small>Debugging</small>
-        <strong>Learn Skill</strong>
-      </div>
-    </div>
-
-    <div class="skill-card">
-      <div class="icon">👍</div>
-      <div class="text">
-        <small>Debugging</small>
-        <strong>Learn Skill</strong>
-      </div>
-    </div>
-
-    <div class="skill-card">
-      <div class="icon">👍</div>
-      <div class="text">
-        <small>Debugging</small>
-        <strong>Learn Skill</strong>
-      </div>
-    </div>
-
-    <div class="skill-card">
-      <div class="icon">👍</div>
-      <div class="text">
-        <small>Debugging</small>
-        <strong>Learn Skill</strong>
-      </div>
-    </div> -->
-        </div>
-      </section>
-    </main>
+    <script src="../../../assets/js/dashboardCoder.js" type="module"></script>
   </body>
 </html>

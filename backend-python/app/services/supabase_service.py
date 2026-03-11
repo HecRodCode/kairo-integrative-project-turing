@@ -75,6 +75,39 @@ class SupabaseManager:
 
     # ── WRITE ──────────────────────────────────────────────────
 
+    def deactivate_plans(self, coder_id: int) -> None:
+        """
+        Marks all existing active plans for a coder as inactive
+        before inserting a new one. Ensures only one plan is active at a time.
+        """
+        try:
+            self.client.table("complementary_plans") \
+                .update({"is_active": False}) \
+                .eq("coder_id", coder_id) \
+                .eq("is_active", True) \
+                .execute()
+            logger.info(f"Deactivated previous plans for coder {coder_id}")
+        except Exception as e:
+            logger.warning(f"Could not deactivate plans for coder {coder_id}: {e}")
+
+    def get_moodle_progress(self, coder_id: int) -> Optional[Dict]:
+        """
+        Fetches the current moodle_progress row for a coder.
+        Used by the Monday analytical plan trigger to get
+        current_week, average_score, struggling_topics, weeks_completed.
+        """
+        try:
+            r = self.client.table("moodle_progress") \
+                .select("current_week, average_score, struggling_topics, weeks_completed") \
+                .eq("coder_id", coder_id) \
+                .order("updated_at", desc=True) \
+                .limit(1) \
+                .execute()
+            return r.data[0] if r.data else None
+        except Exception as e:
+            logger.warning(f"moodle_progress not found for coder {coder_id}: {e}")
+            return None
+
     def save_plan(self, coder_id: int, module_id: int, plan: Dict,
                   soft_skills_snapshot: Optional[Dict] = None,
                   moodle_status_snapshot: Optional[Dict] = None,

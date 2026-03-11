@@ -1,34 +1,36 @@
+/**
+ * routes/coderRoutes.js
+ * Rutas del coder — Kairo Project.
+ */
+
 import { Router } from 'express';
 import {
-  register,
-  login,
-  checkAuth,
-  logout,
-  getCurrentUser,
-  updateFirstLoginStatus,
-  updateUserProfile,
-} from '../controllers/authControllers.js';
-import { isAuthenticated } from '../middlewares/authMiddlewares.js';
+  getCoderDashboard,
+  getPlanDetails,
+  updateActivityProgress,
+  getModuleMilestones,
+} from '../controllers/coderControllers.js';
+import {
+  isAuthenticated,
+  hasRole,
+  checkOnboarding,
+} from '../middlewares/authMiddlewares.js';
 
 const router = Router();
 
-/**
- * Public authentication endpoints
- */
-router.post('/register', register);
-router.post('/login', login);
-router.get('/check', checkAuth);
+/* Todas las rutas del coder requieren sesión activa + rol coder + onboarding completo */
+router.use(isAuthenticated, hasRole('coder'), checkOnboarding);
 
-/**
- * Protected user profile endpoints
- */
-router.post('/logout', isAuthenticated, logout);
-router.get('/me', isAuthenticated, getCurrentUser);
-router.put('/update-profile', isAuthenticated, updateUserProfile);
+/* Dashboard principal */
+router.get('/dashboard', getCoderDashboard);
 
-/**
- * Onboarding status update for coders
- */
-router.patch('/complete-onboarding', isAuthenticated, updateFirstLoginStatus);
+/* Planes de aprendizaje */
+router.get('/plans/:planId', getPlanDetails);
+
+/* Progreso de actividades */
+router.patch('/activities/:id/complete', updateActivityProgress);
+
+/* Hitos del módulo */
+router.get('/milestones', getModuleMilestones);
 
 export default router;
