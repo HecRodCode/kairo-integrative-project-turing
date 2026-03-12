@@ -9,6 +9,7 @@ import session from 'express-session';
 import morgan from 'morgan';
 import passport from './config/passport.js';
 import { pool, testConnection } from './config/database.js';
+import { connectMongo } from './config/mongodb.js';
 
 import authRoutes from './routes/authRoutes.js';
 import diagnosticRoutes from './routes/diagnosticRoutes.js';
@@ -114,6 +115,7 @@ async function startServer() {
     process.stdout.write('🔄 Initializing Kairo services... ');
 
     await testConnection();
+    await connectMongo();
 
     if (!process.env.RESEND_API_KEY) {
       throw new Error('MAILER: RESEND_API_KEY is missing in .env');
