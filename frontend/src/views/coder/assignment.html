@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="es" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Actividades · Kairo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+    <link rel="stylesheet" href="../../../assets/css/global.css" />
+    <link rel="stylesheet" href="../../../assets/css/dashboardCoder.css" />
+    <link rel="stylesheet" href="../../../assets/css/activitiesCoder.css" />
+  </head>
+
+  <body>
+    <div class="shell">
+      <!-- ══════════════ SIDEBAR ══════════════ -->
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <img
+            src="../../../assets/img/logo.png"
+            alt="Kairo"
+            class="sidebar-logo"
+          />
+        </div>
+
+        <nav class="sidebar-nav">
+          <a class="nav-link" href="./dashboard.html">
+            <span class="nav-icon"
+              ><i class="fa-solid fa-table-columns"></i
+            ></span>
+            Dashboard
+          </a>
+          <a class="nav-link" href="./IAtrainer.html">
+            <span class="nav-icon"><i class="fa-solid fa-microchip"></i></span>
+            AI Trainer
+          </a>
+          <a class="nav-link active" href="#">
+            <span class="nav-icon"
+              ><i class="fa-solid fa-clipboard-list"></i
+            ></span>
+            Actividades
+          </a>
+          <a class="nav-link" href="./progress.html">
+            <span class="nav-icon"><i class="fa-solid fa-chart-line"></i></span>
+            Mi Progreso
+          </a>
+        </nav>
+
+        <div class="sidebar-profile">
+          <div class="coder-info"></div>
+          <button class="btn-logout" id="btn-logout" title="Cerrar sesión">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          </button>
+        </div>
+      </aside>
+
+      <!-- ══════════════ MAIN ══════════════ -->
+      <main class="main">
+        <!-- Topbar -->
+        <header class="topbar">
+          <div class="topbar-left">
+            <h1 class="page-title-act">
+              <i class="fa-solid fa-clipboard-list"></i> Actividades
+            </h1>
+            <p class="topbar-date" id="topbar-date">—</p>
+          </div>
+          <div class="topbar-right">
+            <!-- Notification bell -->
+            <div class="notif-wrapper">
+              <button class="icon-btn" id="btn-notif" title="Notificaciones">
+                <i class="fa-solid fa-bell"></i>
+                <span class="notif-dot hidden" id="notif-dot"></span>
+              </button>
+              <div class="notif-dropdown hidden" id="notif-dropdown">
+                <p class="notif-header">Notificaciones</p>
+                <div id="notif-list">
+                  <p class="notif-empty">Sin notificaciones nuevas</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Theme toggle -->
+            <button class="icon-btn" id="btn-theme" title="Cambiar tema">
+              <i class="fa-solid fa-moon" id="icon-moon"></i>
+              <i
+                class="fa-solid fa-sun"
+                id="icon-sun"
+                style="display: none"
+              ></i>
+            </button>
+
+            <!-- Profile -->
+            <a
+              href="./profile.html"
+              class="topbar-profile-btn"
+              id="topbar-profile-btn"
+            >
+              <div class="topbar-avatar"><i class="fa-solid fa-user"></i></div>
+              <span id="topbar-name">—</span>
+            </a>
+          </div>
+        </header>
+
+        <!-- Error banner -->
+        <div class="error-banner hidden" id="error-banner">
+          <i class="fa-solid fa-plug-circle-xmark"></i>
+          <div>
+            <strong>No se pudo cargar las actividades</strong>
+            <p id="error-msg">Verifica que el backend esté corriendo.</p>
+          </div>
+          <button class="btn-retry" onclick="window.loadActivities()">
+            <i class="fa-solid fa-rotate-right"></i> Reintentar
+          </button>
+        </div>
+
+        <!-- Filters -->
+        <div class="act-filter-bar">
+          <div>
+            <h2 class="section-title-act">Mis actividades</h2>
+            <p class="section-sub-act" id="act-count">Cargando...</p>
+          </div>
+          <div class="filter-chips" id="act-filter-row">
+            <button class="chip active" data-filter="all">Todas</button>
+            <button class="chip" data-filter="pending">Pendientes</button>
+            <button class="chip" data-filter="overdue">Vencidas</button>
+          </div>
+        </div>
+
+        <!-- Loading skeleton -->
+        <div id="act-loading" class="act-loading">
+          <div class="skeleton-act-card"></div>
+          <div class="skeleton-act-card"></div>
+          <div class="skeleton-act-card"></div>
+        </div>
+
+        <!-- Empty state -->
+        <div class="act-empty hidden" id="act-empty">
+          <div class="act-empty-icon">
+            <i class="fa-solid fa-clipboard-list"></i>
+          </div>
+          <h3>Sin actividades por ahora</h3>
+          <p>Tu TL aún no ha publicado actividades para tu clan.</p>
+        </div>
+
+        <!-- Activities grid -->
+        <div class="act-grid hidden" id="act-grid"></div>
+      </main>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast-coder hidden" id="toast">
+      <i class="fa-solid fa-circle-check" id="toast-icon"></i>
+      <span id="toast-msg">—</span>
+    </div>
+
+    <script type="module" src="../../../assets/js/activitiesCoder.js"></script>
+  </body>
+</html>

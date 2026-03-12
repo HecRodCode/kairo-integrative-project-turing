@@ -1,12 +1,6 @@
 /**
  * src/core/auth/auth-ui.js
  * UI Orchestrator for Authentication — Kairo Project.
- *
- * Depends on:
- *   - auth-service.js  (API calls)
- *   - session.js       (session management + guards)
- *   - validation.js    (validators)
- *   - i18n.js          (must be loaded before this module — exposes window.i18nT)
  */
 
 import { authService } from './auth-service.js';

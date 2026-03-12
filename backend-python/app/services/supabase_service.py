@@ -1,4 +1,8 @@
-""" app/services/supabase_service.py """
+"""
+app/services/supabase_service.py
+Singleton Supabase client. SERVICE_ROLE key — bypasses RLS.
+Python owns all data retrieval (Slim Communication architecture).
+"""
 
 import os
 import logging
@@ -8,6 +12,7 @@ from dotenv import load_dotenv
 
 logger = logging.getLogger("kairo-supabase")
 load_dotenv()
+
 
 class SupabaseManager:
     def __init__(self):
@@ -19,6 +24,7 @@ class SupabaseManager:
         logger.info("Supabase client initialized.")
 
     # ── READ ───────────────────────────────────────────────────
+
     def get_soft_skills(self, coder_id: int) -> Optional[Dict]:
         try:
             r = self.client.table("soft_skills_assessment") \
@@ -68,6 +74,7 @@ class SupabaseManager:
             return []
 
     # ── WRITE ──────────────────────────────────────────────────
+
     def deactivate_plans(self, coder_id: int) -> None:
         """
         Marks all existing active plans for a coder as inactive
@@ -184,6 +191,62 @@ class SupabaseManager:
         except Exception as e:
             logger.error(f"Failed to save submission: {e}")
             return None
+
+
+    # ── RESOURCES (RAG) ────────────────────────────────────────
+
+    def save_resource(self, module_id, title, storage_path, file_name,
+                      preview_text, embedding, uploaded_by, clan_id=None) -> int | None:
+        try:
+            r = self.client.table("resources").insert({
+                "module_id":    module_id,
+                "title":        title,
+                "storage_path": storage_path,
+                "file_name":    file_name,
+                "preview_text": preview_text,
+                "embedding":    embedding,   # list[float] → Supabase convierte a vector
+                "uploaded_by":  uploaded_by,
+                "clan_id":      clan_id,
+                "is_active":    True,
+            }).execute()
+            return r.data[0]["id"] if r.data else None
+        except Exception as e:
+            logger.error(f"Failed to save resource: {e}")
+            return None
+
+    def search_resources(self, embedding: list, module_id: int = 0,
+                         clan_id: str = None, limit: int = 3) -> list:
+        """
+        Llama a la función pgvector search_resources definida en la migración.
+        """
+        try:
+            r = self.client.rpc("search_resources", {
+                "query_embedding":  embedding,
+                "target_module_id": module_id,
+                "target_clan_id":   clan_id,
+                "match_count":      limit,
+            }).execute()
+            return r.data or []
+        except Exception as e:
+            logger.warning(f"search_resources RPC failed: {e}")
+            return []
+
+    def delete_resource(self, resource_id: int, uploaded_by: int) -> bool:
+        try:
+            self.client.table("resources")                 .update({"is_active": False})                 .eq("id", resource_id)                 .eq("uploaded_by", uploaded_by)                 .execute()
+            return True
+        except Exception as e:
+            logger.warning(f"delete_resource failed: {e}")
+            return False
+
+    def get_resources_by_module(self, module_id: int) -> list:
+        """Lista todos los recursos activos de un módulo (para el TL dashboard)."""
+        try:
+            r = self.client.table("resources")                 .select("id, title, file_name, preview_text, uploaded_at")                 .eq("module_id", module_id)                 .eq("is_active", True)                 .order("uploaded_at", desc=True)                 .execute()
+            return r.data or []
+        except Exception as e:
+            logger.warning(f"get_resources_by_module failed: {e}")
+            return []
 
 
 

@@ -264,6 +264,29 @@
           </div>
 
           <!-- Completed overlay (shows when current day is done) -->
+          <!-- ── Recursos del TL (RAG) ── -->
+          <div class="resources-section" id="resources-section">
+            <div class="resources-section-header">
+              <span class="resources-section-title">
+                <i class="fa-solid fa-folder-open"></i>
+                Recursos del TL para este tema
+              </span>
+              <span
+                class="resources-loading-badge hidden"
+                id="resources-loading-badge"
+              >
+                <i class="fa-solid fa-spinner fa-spin fa-xs"></i> Buscando...
+              </span>
+            </div>
+            <!-- Cards populated by JS -->
+            <div class="resources-cards" id="resources-cards"></div>
+            <!-- Empty state -->
+            <p class="resources-empty hidden" id="resources-empty">
+              <i class="fa-regular fa-folder-open"></i>
+              Tu TL aún no ha subido recursos para este tema.
+            </p>
+          </div>
+
           <div class="day-completed-banner hidden" id="day-completed-banner">
             <i class="fa-solid fa-circle-check"></i>
             <span>¡Día completado! Sigue avanzando con el siguiente día.</span>
