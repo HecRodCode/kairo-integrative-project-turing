@@ -23,10 +23,12 @@ import tlRoutes from './routes/tlRoutes.js';
 import aiRoutes from './routes/iaRoutes.js';
 import assignmentRoutes from './routes/assignmentRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import basicRoutes from './routes/basicRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
+const isBasicMode = String(process.env.BASIC_BACKEND || '').toLowerCase() === 'true';
 
 /* ════════════════════════════════════════
    CORS
@@ -84,13 +86,17 @@ app.use(passport.session());
 /* ════════════════════════════════════════
    ROUTES
 ════════════════════════════════════════ */
-app.use('/api/auth', authRoutes);
-app.use('/api/diagnostics', diagnosticRoutes);
-app.use('/api/coder', coderRoutes);
-app.use('/api/tl', tlRoutes);
-app.use('/api/ai', aiRoutes);
-app.use('/api/notifications', notificationRoutes);
-app.use('/api', assignmentRoutes);
+if (isBasicMode) {
+  app.use('/api', basicRoutes);
+} else {
+  app.use('/api/auth', authRoutes);
+  app.use('/api/diagnostics', diagnosticRoutes);
+  app.use('/api/coder', coderRoutes);
+  app.use('/api/tl', tlRoutes);
+  app.use('/api/ai', aiRoutes);
+  app.use('/api/notifications', notificationRoutes);
+  app.use('/api', assignmentRoutes);
+}
 
 app.get('/api/health', async (req, res) => {
   try {
@@ -122,7 +128,9 @@ app.use((err, req, res, next) => {
 async function startServer() {
   try {
     process.stdout.write('🔄 Initializing Kairo services... ');
-    await testConnection();
+    if (!isBasicMode) {
+      await testConnection();
+    }
     app.listen(PORT, '0.0.0.0', () => {
       console.log('DONE');
       console.log('------------------------------------------------------------');
@@ -131,6 +139,9 @@ async function startServer() {
       console.log(`📡 URL      : http://localhost:${PORT}`);
       console.log(`🌐 Origins  : ${ALLOWED_ORIGINS.join(', ')}`);
       console.log(`🛠️  ENV      : ${process.env.NODE_ENV || 'development'}`);
+      if (isBasicMode) {
+        console.log('🧪 MODE     : basic (mock endpoints enabled)');
+      }
       console.log('------------------------------------------------------------');
     });
   } catch (error) {
