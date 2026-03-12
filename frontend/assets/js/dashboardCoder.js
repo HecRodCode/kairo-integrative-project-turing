@@ -6,6 +6,7 @@
  * Sin mock data. Sin spinners de carga — skeleton shimmer implícito en CSS.
  */
 import { guards, sessionManager } from '../../src/core/auth/session.js';
+
 const API = 'http://localhost:3000/api';
 /* ── State ── */
 let dashData = null;
@@ -17,7 +18,6 @@ const el = (id) => document.getElementById(id);
 ══════════════════════════════════════ */
 (async function init() {
   wireLang();
-  wireNotifToggle();
   wireLogout();
   setDate();
   // requireCompleted: verifica sesión activa + firstLogin === false.
@@ -27,6 +27,7 @@ const el = (id) => document.getElementById(id);
     sessionManager.redirectByRole(session.user);
     return;
   }
+  
   await loadDashboard();
 })();
 
@@ -64,7 +65,6 @@ function renderAll(d) {
   renderPerformanceTests(d.performanceTests);
   renderFeedback(d.notifications);
   renderStrugglingTopics(d.progress);
-  renderNotifications(d.notifications);
 }
 
 /* ── User / welcome ── */
@@ -281,17 +281,42 @@ function renderFeedback(notifications) {
         }[f.type] ||
         f.type ||
         'Feedback';
+      const isReadCls = f.isRead ? 'read' : 'unread';
       return `
-      <div class="feedback-item">
+      <div class="feedback-item ${isReadCls}" id="feedback-row-${f.id}">
         <div class="feedback-meta">
           <span class="feedback-type-tag ${f.type || ''}">${typeLabel}</span>
-          <span class="feedback-tl-name">De: ${f.tlName || 'Tu TL'}</span>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span class="feedback-tl-name">De: ${f.tlName || 'Tu TL'}</span>
+            ${!f.isRead ? `<button class="btn-mark-read" data-id="${f.id}" onclick="markAsRead('${f.id}')">Marcar leído</button>` : ''}
+          </div>
         </div>
         <p class="feedback-text">${f.text}</p>
       </div>`;
     })
     .join('');
 }
+
+/* ── Mark as read logic ── */
+window.markAsRead = async (id) => {
+  try {
+    const res = await fetch(`${API}/coder/feedback/${id}/read`, {
+      method: 'PATCH',
+      credentials: 'include',
+    });
+    if (res.ok) {
+      const row = el(`feedback-row-${id}`);
+      if (row) {
+        row.classList.remove('unread');
+        row.classList.add('read');
+        const btn = row.querySelector('.btn-mark-read');
+        if (btn) btn.remove();
+      }
+    }
+  } catch (err) {
+    console.error('[markAsRead]', err);
+  }
+};
 /* ── Struggling topics ── */
 function renderStrugglingTopics(progress) {
   const topics = progress?.strugglingTopics || [];
@@ -305,43 +330,9 @@ function renderStrugglingTopics(progress) {
     .join('');
 }
 /* ── Notification dropdown ── */
-function renderNotifications(notifications) {
-  const items = notifications?.items || [];
-  const unread = notifications?.unread || 0;
-  if (unread > 0) {
-    el('notif-dot').classList.remove('hidden');
-  }
-  if (items.length === 0) return;
-  el('notif-list').innerHTML = items
-    .map((f) => {
-      const typeLabel =
-        {
-          encouragement: '💚 Motivación',
-          improvement: '🟡 Área de mejora',
-          achievement: '💜 Logro',
-          warning: '🔴 Advertencia',
-        }[f.type] || '📨 Feedback';
-      return `
-      <div class="notif-item">
-        <p class="notif-tl">${typeLabel} · ${f.tlName || 'Tu TL'}</p>
-        <p class="notif-text">${truncate(f.text, 80)}</p>
-        <p class="notif-time">${formatDate(f.createdAt)}</p>
-      </div>`;
-    })
-    .join('');
-}
 /* ══════════════════════════════════════
    INTERACTIONS
 ══════════════════════════════════════ */
-function wireNotifToggle() {
-  el('btn-notif').addEventListener('click', (e) => {
-    e.stopPropagation();
-    el('notif-dropdown').classList.toggle('hidden');
-  });
-  document.addEventListener('click', () => {
-    el('notif-dropdown').classList.add('hidden');
-  });
-}
 function wireLogout() {
   el('btn-logout').addEventListener('click', () => sessionManager.logout());
 }

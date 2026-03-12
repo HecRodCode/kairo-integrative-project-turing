@@ -15,8 +15,6 @@ import {
   deleteAssignment,
   listAssignmentsCoder,
   getAssignmentDownload,
-  getNotifications,
-  markNotificationsRead,
 } from '../controllers/assignmentControllers.js';
 
 const router = Router();
@@ -64,9 +62,5 @@ router.get(
   hasRole('coder'),
   getAssignmentDownload
 );
-
-/* ── Shared ── */
-router.get('/notifications', isAuthenticated, getNotifications);
-router.post('/notifications/read', isAuthenticated, markNotificationsRead);
 
 export default router;

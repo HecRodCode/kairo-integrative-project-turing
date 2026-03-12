@@ -38,11 +38,11 @@ let _toastTimer = null;
   }
 
   // Wire UI before any fetches — buttons must work even if backend is slow
+  
   wireLogout();
   setDate();
   wireAddModal();
   wireRagModal();
-  wireNotifBell();
   el('btn-retry').addEventListener('click', loadAll);
 
   await loadAll();
@@ -575,58 +575,6 @@ async function doUpload() {
     btn.disabled = false;
     btn.innerHTML = '<i class="fa-solid fa-upload"></i> Subir PDF';
   }
-}
-
-/* ══════════════════════════════════════
-   NOTIFICATIONS
-══════════════════════════════════════ */
-function wireNotifBell() {
-  const btn = el('btn-notif');
-  const dropdown = el('notif-dropdown');
-  if (!btn) return;
-
-  btn.addEventListener('click', async (e) => {
-    e.stopPropagation();
-    dropdown.classList.toggle('hidden');
-    if (dropdown.classList.contains('hidden')) return;
-
-    try {
-      const res = await fetch(`${API}/notifications`, {
-        credentials: 'include',
-      });
-      if (!res.ok) return;
-      const data = await res.json();
-
-      el('notif-dot').classList.toggle('hidden', data.unread === 0);
-      if (data.unread > 0)
-        el('notif-dot').textContent = data.unread > 9 ? '9+' : data.unread;
-
-      el('notif-list').innerHTML = data.notifications?.length
-        ? data.notifications
-            .slice(0, 10)
-            .map(
-              (n) => `
-            <div class="notif-item">
-              <p class="notif-title">${esc(n.title)}</p>
-              <p class="notif-time">${relativeTime(n.created_at)}</p>
-            </div>`
-            )
-            .join('')
-        : '<p class="notif-empty">Sin notificaciones nuevas</p>';
-
-      fetch(`${API}/notifications/read`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-    } catch {
-      /* non-critical */
-    }
-  });
-
-  document.addEventListener('click', (e) => {
-    if (!dropdown.contains(e.target) && e.target !== btn)
-      dropdown.classList.add('hidden');
-  });
 }
 
 /* ══════════════════════════════════════

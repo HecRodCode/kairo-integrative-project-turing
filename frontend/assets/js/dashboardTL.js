@@ -4,6 +4,7 @@
  * Conectado al endpoint real GET /api/tl/dashboard.
  */
 import { guards, sessionManager } from '../../src/core/auth/session.js';
+
 const API = 'http://localhost:3000/api';
 /* ── State ── */
 let dashboardData = null;
@@ -24,6 +25,7 @@ const el = (id) => document.getElementById(id);
     sessionManager.redirectByRole(session.user);
     return;
   }
+  
   // Wire static interactions
   wireFilters();
   wireFeedback();

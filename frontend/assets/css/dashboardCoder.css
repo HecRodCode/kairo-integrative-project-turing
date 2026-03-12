@@ -574,6 +574,38 @@
   line-height: 1.5;
 }
 
+/* Read / Unread states */
+.feedback-item.read {
+  opacity: 0.6;
+  filter: grayscale(0.5);
+  transition: opacity 0.3s ease;
+}
+
+.feedback-item.read:hover {
+  opacity: 0.9;
+  filter: grayscale(0);
+}
+
+.btn-mark-read {
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 6px;
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  color: var(--accent);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-mark-read:hover {
+  background: var(--accent);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--primary-glow);
+}
+
 /* ════════════════════════════════════
    SCORE RING (aside)
 ════════════════════════════════════ */
