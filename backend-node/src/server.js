@@ -14,6 +14,7 @@ import session from 'express-session';
 import morgan from 'morgan';
 import passport from './config/passport.js';
 import { pool, testConnection } from './config/database.js';
+import { connectMongo } from './config/mongodb.js';
 
 import authRoutes from './routes/authRoutes.js';
 import diagnosticRoutes from './routes/diagnosticRoutes.js';
@@ -21,6 +22,7 @@ import coderRoutes from './routes/coderRoutes.js';
 import tlRoutes from './routes/tlRoutes.js';
 import aiRoutes from './routes/iaRoutes.js';
 import assignmentRoutes from './routes/assignmentRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -87,7 +89,8 @@ app.use('/api/diagnostics', diagnosticRoutes);
 app.use('/api/coder', coderRoutes);
 app.use('/api/tl', tlRoutes);
 app.use('/api/ai', aiRoutes);
-app.use('/api/assignment', assignmentRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api', assignmentRoutes);
 
 app.get('/api/health', async (req, res) => {
   try {

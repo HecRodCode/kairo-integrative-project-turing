@@ -10,42 +10,49 @@ import { generateOtpCode, sendOtpEmail } from '../services/email.service.js';
 export const register = async (req, res) => {
   const { email, password, fullName, role, clan } = req.body;
   try {
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const { data: newUser, error } = await supabase
+    // Check if user already exists in DB
+    const { data: existingUser } = await supabase
       .from('users')
-      .insert({
-        email,
-        password: hashedPassword,
-        full_name: fullName,
-        role: role || 'coder',
-        clan,
-        first_login: true,
-      })
-      .select('id, email, full_name, role, clan, first_login')
+      .select('id')
+      .eq('email', email)
       .single();
 
-    if (error) {
-      // 23505 = unique_violation (email already exists)
-      if (error.code === '23505')
-        return res.status(409).json({ error: 'El correo ya está registrado.' });
-      throw error;
+    if (existingUser) {
+      return res.status(409).json({ error: 'El correo ya está registrado.' });
     }
 
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const code = generateOtpCode();
+    const expiresAt = Date.now() + 15 * 60 * 1000; // 15 mins
+
+    // Stage registration in session
+    req.session.pendingRegistration = {
+      email,
+      password: hashedPassword,
+      fullName,
+      role: role || 'coder',
+      clan,
+      otp: {
+        code,
+        expiresAt,
+        attempts: 0
+      }
+    };
+
     try {
-      await _createAndSendOtp(email, fullName);
+      await sendOtpEmail(email, code, fullName);
     } catch (emailErr) {
-      console.error('[register] OTP send failed (non-fatal):', emailErr.message);
-      // Non-blocking — user can request resend on the OTP page
+      console.error('[register] OTP send failed:', emailErr.message);
+      // We still proceed, user can resend from the UI
     }
 
     return res.status(201).json({
-      message: 'Cuenta creada. Verifica tu correo.',
-      email: newUser.email,
+      message: 'Código enviado. Verifica tu correo para completar el registro.',
+      email
     });
   } catch (error) {
     console.error('[register]', error.message);
-    return res.status(500).json({ error: 'Error al registrar el usuario.' });
+    return res.status(500).json({ error: 'Error al iniciar el registro.' });
   }
 };
 
@@ -146,9 +153,66 @@ export const verifyOtp = async (req, res) => {
   const { email, code } = req.body;
 
   if (!email || !code || code.length !== 6)
-    return res.status(400).json({ error: 'Email y código de 6 dígitos son requeridos.' });
+    return res.status(400).json({ error: 'Email y código son requeridos.' });
 
   try {
+    const pending = req.session.pendingRegistration;
+
+    // CASE 1: Pending registration in session
+    if (pending && pending.email === email) {
+      if (pending.otp.code !== code) {
+        pending.otp.attempts++;
+        if (pending.otp.attempts >= 5) {
+          delete req.session.pendingRegistration;
+          return res.status(429).json({ error: 'Demasiados intentos. Regístrate de nuevo.' });
+        }
+        return res.status(400).json({ error: 'Código incorrecto.' });
+      }
+
+      if (Date.now() > pending.otp.expiresAt) {
+        return res.status(400).json({ error: 'El código ha expirado.' });
+      }
+
+      // CODE VALID -> Create user in DB
+      const { data: newUser, error: insertError } = await supabase
+        .from('users')
+        .insert({
+          email: pending.email,
+          password: pending.password,
+          full_name: pending.fullName,
+          role: pending.role,
+          clan: pending.clan,
+          otp_verified: true,
+          first_login: true
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      // START SESSION
+      req.login(newUser, (err) => {
+        if (err) return res.status(500).json({ error: 'Error al iniciar sesión.' });
+        
+        req.session.userId = newUser.id;
+        delete req.session.pendingRegistration;
+
+        return res.status(200).json({
+          success: true,
+          user: {
+            id: newUser.id,
+            email: newUser.email,
+            fullName: newUser.full_name,
+            role: newUser.role,
+            clan: newUser.clan,
+            firstLogin: newUser.first_login
+          }
+        });
+      });
+      return;
+    }
+
+    // CASE 2: User already exists, just verifying unverified account (legacy/login fallback)
     const { data: record, error } = await supabase
       .from('otp_verifications')
       .select('*')
@@ -156,47 +220,19 @@ export const verifyOtp = async (req, res) => {
       .eq('otp_code', code)
       .eq('is_used', false)
       .gte('expires_at', new Date().toISOString())
-      .order('created_at', { ascending: false })
-      .limit(1)
       .single();
 
     if (error || !record) return res.status(400).json({ error: 'Código incorrecto o expirado.' });
 
-    // Check attempt limit (stored in DB)
-    if ((record.attempts || 0) >= 5)
-      return res.status(429).json({ error: 'Demasiados intentos. Solicita un nuevo código.' });
-
-    // Mark OTP as used
     await supabase.from('otp_verifications').update({ is_used: true }).eq('id', record.id);
-
-    // Mark user as verified
     await supabase.from('users').update({ otp_verified: true }).eq('email', email);
 
-    // Fetch full user to start session
-    const { data: user } = await supabase
-      .from('users')
-      .select('id, email, full_name, role, clan, first_login')
-      .eq('email', email)
-      .single();
-
-    if (!user) return res.status(404).json({ error: 'Usuario no encontrado.' });
+    const { data: user } = await supabase.from('users').select('*').eq('email', email).single();
 
     req.login(user, (err) => {
-      if (err) {
-        console.error('[verifyOtp] Passport login error:', err);
-        return res.status(500).json({ error: 'Error al iniciar sesión.' });
-      }
-      return res.status(200).json({
-        success: true,
-        user: {
-          id: user.id,
-          email: user.email,
-          fullName: user.full_name,
-          role: user.role,
-          clan: user.clan,
-          firstLogin: user.first_login,
-        },
-      });
+      if (err) return res.status(500).json({ error: 'Error al iniciar sesión.' });
+      req.session.userId = user.id;
+      return res.status(200).json({ success: true, user });
     });
   } catch (error) {
     console.error('[verifyOtp]', error.message);
@@ -213,6 +249,19 @@ export const resendOtp = async (req, res) => {
   if (!email) return res.status(400).json({ error: 'Email requerido.' });
 
   try {
+    // Check pending session first
+    const pending = req.session.pendingRegistration;
+    if (pending && pending.email === email) {
+      const code = generateOtpCode();
+      pending.otp.code = code;
+      pending.otp.expiresAt = Date.now() + 15 * 60 * 1000;
+      pending.otp.attempts = 0;
+
+      await sendOtpEmail(email, code, pending.fullName);
+      return res.status(200).json({ success: true, message: 'OTP reenviado.' });
+    }
+
+    // Fallback to DB for existing users
     const { data: user } = await supabase
       .from('users')
       .select('full_name, otp_verified')
@@ -221,19 +270,6 @@ export const resendOtp = async (req, res) => {
 
     if (!user) return res.status(404).json({ error: 'Usuario no encontrado.' });
     if (user.otp_verified) return res.status(400).json({ error: 'El correo ya está verificado.' });
-
-    // Rate limit: max 3 codes per 10 min
-    const tenMinsAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-    const { count } = await supabase
-      .from('otp_verifications')
-      .select('id', { count: 'exact' })
-      .eq('user_email', email)
-      .gte('created_at', tenMinsAgo);
-
-    if (count >= 3)
-      return res.status(429).json({
-        error: 'Demasiadas solicitudes. Espera 10 minutos antes de pedir otro código.',
-      });
 
     await _createAndSendOtp(email, user.full_name);
     return res.status(200).json({ success: true, message: 'OTP reenviado.' });

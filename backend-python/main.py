@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
-from app.routers import roadmap, cards, chat, reports, exercises, resources
+from app.routers import roadmap, cards, chat, reports, exercises
 from app.services.embedding_service import model_ready
 
 load_dotenv()
@@ -68,7 +68,7 @@ app.include_router(cards.router)      # POST /generate-focus-cards
 app.include_router(chat.router)       # POST /chat/ask
 app.include_router(reports.router)    # POST /generate-report
 app.include_router(exercises.router)  # POST /generate-exercise, /exercise/{id}/submit
-app.include_router(resources.router)  # POST /process-resource, /search-resources
+# app.include_router(resources.router)  # REMOVED: Handled by Node.js now
 
 # ── Infrastructure ─────────────────────────────────────────────────────────────
 @app.get("/health", tags=["Infrastructure"])

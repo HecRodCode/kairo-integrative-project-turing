@@ -4,6 +4,7 @@
 
 import { query } from '../config/database.js';
 import { createClient } from '@supabase/supabase-js';
+import { notifyUser } from '../services/notificationService.js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -92,17 +93,22 @@ export async function createAssignment(req, res) {
     }
 
     for (const coder of coderResult.rows) {
-      await query(
-        `INSERT INTO notifications (user_id, title, message, type, related_id)
-         VALUES ($1,$2,$3,'assignment',$4)`,
-        [
-          coder.id,
-          `Nueva actividad: ${title}`,
-          `Tu TL ${tlName} publicó una nueva actividad.`,
-          assignmentId,
-        ]
+      await notifyUser(
+        coder.id,
+        `Nueva actividad: ${title}`,
+        `Tu TL ${tlName} publicó una nueva actividad.`,
+        'assignment',
+        assignmentId
       );
     }
+
+    await notifyUser(
+      tl.id,
+      `Actividad Publicada`,
+      `La actividad "${title}" ha sido asignada.`,
+      'assignment',
+      assignmentId
+    );
 
     res.json({
       success: true,
@@ -219,32 +225,5 @@ export async function getAssignmentDownload(req, res) {
   } catch (err) {
     console.error('[getAssignmentDownload]', err);
     res.status(500).json({ error: 'Error al generar URL de descarga.' });
-  }
-}
-
-export async function getNotifications(req, res) {
-  try {
-    const user = req.user;
-    const result = await query(
-      `SELECT * FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 30`,
-      [user.id]
-    );
-    const unread = result.rows.filter((n) => !n.is_read).length;
-    res.json({ notifications: result.rows, unread });
-  } catch (err) {
-    console.error('[getNotifications]', err);
-    res.status(500).json({ error: 'Error al cargar notificaciones.' });
-  }
-}
-
-export async function markNotificationsRead(req, res) {
-  try {
-    await query(`UPDATE notifications SET is_read = true WHERE user_id = $1`, [
-      req.user.id,
-    ]);
-    res.json({ success: true });
-  } catch (err) {
-    console.error('[markNotificationsRead]', err);
-    res.status(500).json({ error: 'Error.' });
   }
 }

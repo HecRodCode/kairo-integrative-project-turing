@@ -6,12 +6,15 @@ import {
   getCoderDashboard, getPlanDetails,
   updateActivityProgress, getModuleMilestones,
   getActivePlan, completeDay, requestPlan,
+  markFeedbackRead,
 } from '../controllers/coderControllers.js';
 import {
   generateExercise, submitExercise, getSubmissions,
 } from '../controllers/exerciseControllers.js';
 import {
   searchResources,
+  listResourcesCoder,
+  getResourceDownload,
 } from '../controllers/resourceControllers.js';
 import { isAuthenticated, hasRole, checkOnboarding } from '../middlewares/authMiddlewares.js';
 
@@ -26,8 +29,11 @@ router.get('/plans/:planId',                         getPlanDetails);
 router.post('/exercise/generate',                    generateExercise);
 router.post('/exercise/:exerciseId/submit',          submitExercise);
 router.get('/exercise/:exerciseId/submissions',      getSubmissions);
+router.get('/resources',                             listResourcesCoder);
+router.get('/resource/:id/download',                  getResourceDownload);
 router.post('/resources/search',                     searchResources);
 router.patch('/activities/:id/complete',             updateActivityProgress);
+router.patch('/feedback/:id/read',                   markFeedbackRead);
 router.get('/milestones',                            getModuleMilestones);
 
 export default router;

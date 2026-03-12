@@ -16,8 +16,9 @@
     />
     <link rel="stylesheet" href="../../../assets/css/global.css" />
     <link rel="stylesheet" href="../../../assets/css/dashboardTL.css" />
+    <!-- Theme centralizado (igual que en todas las páginas) -->
+    <script src="../../../src/core/utils/theme.js" defer></script>
   </head>
-
   <body>
     <div class="shell">
       <!-- ══════════════════ SIDEBAR ══════════════════ -->
@@ -25,10 +26,11 @@
         <div class="sidebar-brand">
           <img src="../../../assets/img/logo.png" alt="Kairo" class="sidebar-logo" />
         </div>
-
         <nav class="sidebar-nav">
           <a class="nav-link active" href="#">
-            <span class="nav-icon"><i class="fa-solid  fa-table-columns"></i></span>
+            <span class="nav-icon"
+              ><i class="fa-solid fa-table-columns"></i
+            ></span>
             Dashboard
           </a>
           <a class="nav-link" href="./assignment.html">
@@ -46,7 +48,6 @@
             Timeline
           </a>
         </nav>
-
         <!-- TL Profile card at bottom -->
         <div class="sidebar-profile">
           <button class="btn-logout" id="btn-logout" title="Cerrar sesión">
@@ -54,7 +55,6 @@
           </button>
         </div>
       </aside>
-
       <!-- ══════════════════ MAIN ══════════════════ -->
       <main class="main">
         <!-- Topbar -->
@@ -71,8 +71,54 @@
               <span id="badge-risk-count">0</span> en riesgo
             </div>
           </div>
+          <div class="topbar-right">
+            <!-- Risk badge (TL) -->
+            <div
+              class="topbar-badge"
+              id="topbar-risk-badge"
+              style="display: none"
+            >
+              <i class="fa-solid fa-triangle-exclamation"></i>
+              <span id="badge-risk-count">0</span> en riesgo
+            </div>
+            <!-- Notification bell -->
+            <div class="notif-wrapper">
+              <button class="icon-btn" id="btn-notif" title="Notificaciones">
+                <i class="fa-solid fa-bell"></i>
+                <span class="notif-dot hidden" id="notif-dot"></span>
+              </button>
+              <!-- Dropdown -->
+              <div class="notif-dropdown hidden" id="notif-dropdown">
+                <p class="notif-header">Notificaciones</p>
+                <div id="notif-list">
+                  <p class="notif-empty">Sin notificaciones nuevas</p>
+                </div>
+              </div>
+            </div>
+            <!-- Language toggle -->
+            <button class="icon-btn" id="btn-lang" title="Idioma">
+              <i class="fa-solid fa-earth-americas"></i>
+            </button>
+            <!-- Theme toggle -->
+            <button class="icon-btn" id="btn-theme" title="Cambiar tema">
+              <i class="fa-solid fa-moon" id="icon-moon"></i>
+              <i
+                class="fa-solid fa-sun"
+                id="icon-sun"
+                style="display: none"
+              ></i>
+            </button>
+            <!-- Profile button -->
+            <a
+              href="./profile.html"
+              class="topbar-profile-btn"
+              id="topbar-profile-btn"
+            >
+              <div class="topbar-avatar"><i class="fa-solid fa-user"></i></div>
+              <span id="topbar-name">—</span>
+            </a>
+          </div>
         </header>
-
         <!-- ── Error state (no spinner, solo mensaje limpio) ── -->
         <div class="error-banner hidden" id="error-banner">
           <i class="fa-solid fa-plug-circle-xmark"></i>
@@ -84,7 +130,6 @@
             <i class="fa-solid fa-rotate-right"></i> Reintentar
           </button>
         </div>
-
         <!-- ── Stats ── -->
         <section class="stats-row" id="stats-row">
           <div class="stat-card">
@@ -123,7 +168,6 @@
             <span class="stat-label">Score promedio</span>
           </div>
         </section>
-
         <!-- ── Content ── -->
         <section class="content-grid">
           <!-- Columna izquierda -->
@@ -138,20 +182,17 @@
                   <button class="chip" data-filter="pending">Pendientes</button>
                 </div>
               </div>
-
               <!-- Loading skeleton -->
               <div class="tbl-loading" id="tbl-loading">
                 <div class="skeleton-row"></div>
                 <div class="skeleton-row"></div>
                 <div class="skeleton-row"></div>
               </div>
-
               <!-- Empty state -->
               <div class="tbl-empty hidden" id="tbl-empty">
                 <i class="fa-regular fa-face-meh-blank"></i>
                 <p>Sin coders para mostrar con este filtro</p>
               </div>
-
               <!-- Table -->
               <div class="tbl-wrap hidden" id="tbl-wrap">
                 <table class="data-table">
@@ -168,7 +209,6 @@
                 </table>
               </div>
             </div>
-
             <!-- Soft skills del clan -->
             <div class="glass-card">
               <div class="card-head">
@@ -180,7 +220,6 @@
               </div>
             </div>
           </div>
-
           <!-- Columna derecha: Panel del coder -->
           <aside class="col-aside">
             <div class="glass-card detail-card">
@@ -191,7 +230,6 @@
                 </div>
                 <p>Selecciona un coder<br />para ver su detalle</p>
               </div>
-
               <!-- Detail body -->
               <div class="detail-body hidden" id="detail-body">
                 <div class="detail-header">
@@ -204,7 +242,6 @@
                     <span class="risk-badge hidden" id="d-risk">⚠ En riesgo</span>
                   </div>
                 </div>
-
                 <div class="detail-meta">
                   <div class="meta-row">
                     <span class="meta-key"><i class="fa-solid fa-envelope"></i> Email</span>
@@ -223,9 +260,7 @@
                     <span class="meta-val" id="d-style">—</span>
                   </div>
                 </div>
-
                 <div class="detail-skills" id="d-skill-bars"></div>
-
                 <!-- Feedback inline -->
                 <div class="feedback-section">
                   <p class="section-label">Dar feedback</p>
@@ -258,13 +293,10 @@
         </section>
       </main>
     </div>
-
-    <!-- Floating theme toggle (igual que el resto de la plataforma) -->
-    <div class="theme-switch-wrapper">
-      <button class="theme-btn" id="btn-theme" title="Cambiar tema">
-        <i class="fa-solid fa-moon" id="icon-moon"></i>
-        <i class="fa-solid fa-sun" id="icon-sun" style="display: none"></i>
-      </button>
+    <!-- Toast -->
+    <div class="toast hidden" id="toast">
+      <i class="fa-solid fa-circle-check" id="toast-icon"></i>
+      <span id="toast-msg">—</span>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
