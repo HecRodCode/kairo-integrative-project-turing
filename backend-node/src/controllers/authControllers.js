@@ -8,7 +8,7 @@ import { generateOtpCode, sendOtpEmail } from '../services/email.service.js';
    session starts only after OTP is verified.
 ══════════════════════════════════════════════════════════════ */
 export const register = async (req, res) => {
-  const { email, password, fullName, role, clan } = req.body;
+  const { email, password, fullName, role, clanId } = req.body;
   try {
     // Check if user already exists in DB
     const { data: existingUser } = await supabase
@@ -31,7 +31,7 @@ export const register = async (req, res) => {
       password: hashedPassword,
       fullName,
       role: role || 'coder',
-      clan,
+      clan: clanId,
       otp: {
         code,
         expiresAt,
@@ -67,7 +67,7 @@ export const login = async (req, res) => {
     const { data: user, error } = await supabase
       .from('users')
       .select(
-        'id, email, password, full_name, role, clan, first_login, otp_verified'
+        'id, email, password, full_name, role, clan_id:clan, first_login, otp_verified'
       )
       .eq('email', email)
       .single();
@@ -101,16 +101,20 @@ export const login = async (req, res) => {
 
       req.session.userId = user.id;
 
-      return res.status(200).json({
-        success: true,
-        user: {
-          id: user.id,
-          email: user.email,
-          fullName: user.full_name,
-          role: user.role,
-          clan: user.clan,
-          firstLogin: user.first_login,
-        },
+      req.session.save((err) => {
+        if (err) console.error('[login] Session save error:', err);
+
+        return res.status(200).json({
+          success: true,
+          user: {
+            id: user.id,
+            email: user.email,
+            fullName: user.full_name,
+            role: user.role,
+            clanId: user.clan_id,
+            firstLogin: user.first_login,
+          },
+        });
       });
     });
   } catch (error) {
@@ -204,16 +208,21 @@ export const verifyOtp = async (req, res) => {
         req.session.userId = newUser.id;
         delete req.session.pendingRegistration;
 
-        return res.status(200).json({
-          success: true,
-          user: {
-            id: newUser.id,
-            email: newUser.email,
-            fullName: newUser.full_name,
-            role: newUser.role,
-            clan: newUser.clan,
-            firstLogin: newUser.first_login
-          }
+        // Force session save to avoid race conditions on redirect
+        req.session.save((err) => {
+          if (err) console.error('[verifyOtp] Session save error:', err);
+          
+          return res.status(200).json({
+            success: true,
+            user: {
+              id: newUser.id,
+              email: newUser.email,
+              fullName: newUser.full_name,
+              role: newUser.role,
+              clanId: newUser.clan, // already aliased or direct column
+              firstLogin: newUser.first_login
+            }
+          });
         });
       });
       return;
@@ -292,26 +301,32 @@ export const resendOtp = async (req, res) => {
    ONBOARDING / PROFILE
 ══════════════════════════════════════════════════════════════ */
 export const updateFirstLoginStatus = async (req, res) => {
+  const { clanId } = req.body;
   try {
+    const updateData = { first_login: false };
+    if (clanId) updateData.clan = clanId;
+
     const { error } = await supabase
       .from('users')
-      .update({ first_login: false })
+      .update(updateData)
       .eq('id', req.session.userId);
+
     if (error) throw error;
     return res
       .status(200)
       .json({ success: true, message: 'Onboarding completado.' });
   } catch (error) {
+    console.error('[updateFirstLoginStatus] Error:', error.message);
     return res.status(500).json({ error: 'Error al actualizar estado.' });
   }
 };
 
 export const updateUserProfile = async (req, res) => {
-  const { fullName, clan } = req.body;
+  const { fullName, clanId } = req.body;
   try {
     const { data, error } = await supabase
       .from('users')
-      .update({ full_name: fullName, clan })
+      .update({ full_name: fullName, clan: clanId })
       .eq('id', req.session.userId)
       .select()
       .single();
@@ -326,15 +341,19 @@ export const updateUserProfile = async (req, res) => {
    SESSION
 ══════════════════════════════════════════════════════════════ */
 export const checkAuth = async (req, res) => {
-  if (!req.session?.userId)
+  if (!req.session.userId) {
     return res.status(401).json({ authenticated: false });
+  }
+
   try {
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, email, full_name, role, clan, first_login')
+      .select('id, email, full_name, role, clan_id:clan, first_login')
       .eq('id', req.session.userId)
       .single();
+
     if (error || !user) return res.status(401).json({ authenticated: false });
+
     return res.status(200).json({
       authenticated: true,
       user: {
@@ -342,7 +361,7 @@ export const checkAuth = async (req, res) => {
         email: user.email,
         fullName: user.full_name,
         role: user.role,
-        clan: user.clan,
+        clanId: user.clan_id,
         firstLogin: user.first_login,
       },
     });

@@ -10,9 +10,9 @@ import { query } from '../config/database.js';
  */
 export async function getActivePlan(coderId) {
   const queryText = `
-    SELECT * FROM training_plans 
+    SELECT * FROM complementary_plans 
     WHERE coder_id = $1 AND is_active = true
-    ORDER BY created_at DESC LIMIT 1
+    ORDER BY generated_at DESC LIMIT 1
   `;
   const result = await query(queryText, [coderId]);
   return result.rows[0];
@@ -23,12 +23,12 @@ export async function getActivePlan(coderId) {
  */
 export async function savePlan({ coderId, planContent, topic }) {
   await query(
-    'UPDATE training_plans SET is_active = false WHERE coder_id = $1',
+    'UPDATE complementary_plans SET is_active = false WHERE coder_id = $1',
     [coderId]
   );
 
   const queryText = `
-    INSERT INTO training_plans (coder_id, topic, plan_content, is_active, created_at)
+    INSERT INTO complementary_plans (coder_id, topic, plan_content, is_active, generated_at)
     VALUES ($1, $2, $3, true, NOW())
     RETURNING *
   `;

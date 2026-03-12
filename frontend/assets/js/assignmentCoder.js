@@ -120,27 +120,28 @@ function renderCard(a) {
   if (a._kind === 'resource') {
     const modName = a.module_name || (a.module_id ? `Módulo ${a.module_id}` : '');
     const tlName = a.tl_name || 'Tu Leader';
+    const uploadDate = new Date(a.uploaded_at || a.created_at).toLocaleDateString('es-CO', { 
+      day: '2-digit', month: 'short', year: 'numeric' 
+    });
     
     return `
       <div class="act-card type-resource">
         <div class="act-card-stripe"></div>
         <div class="act-card-body">
           <div class="act-card-header">
-            <div class="act-type-icon"><i class="fa-solid fa-book"></i></div>
+            <div class="act-type-icon"><i class="fa-solid fa-book-open"></i></div>
             <div class="act-card-info">
               <p class="act-card-title">${esc(a.title)}</p>
               <div class="act-chips">
-                ${modName ? `<span class="act-chip module">${esc(modName)}</span>` : ''}
+                ${modName ? `<span class="act-chip module"><i class="fa-solid fa-layer-group"></i> ${esc(modName)}</span>` : ''}
                 <span class="act-chip tl"><i class="fa-solid fa-user-tie"></i> ${esc(tlName)}</span>
-                <span class="act-chip scope-all">
-                  <i class="fa-solid fa-brain-circuit"></i> Recurso RAG
-                </span>
+                <span class="act-chip scope-all"><i class="fa-solid fa-brain"></i> RAG</span>
               </div>
             </div>
           </div>
-          <div class="act-deadline no-date" style="background:rgba(168, 85, 247, 0.08); color:var(--accent); border-color:rgba(168, 85, 247, 0.25);">
+          <div class="act-deadline resource-date">
              <i class="fa-regular fa-calendar-check"></i>
-             Subido el ${new Date(a.uploaded_at || a.created_at).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}
+             Publicado el ${uploadDate}
           </div>
           ${
             a.preview_text

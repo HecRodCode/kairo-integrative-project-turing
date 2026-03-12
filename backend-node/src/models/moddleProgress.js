@@ -21,18 +21,18 @@ export async function getByCoderId(coderId) {
 /**
  * Updates or inserts (upsert) academic progress data.
  */
-export async function upsertProgress({ coderId, averageScore, completedActivities, currentWeek }) {
+export async function upsertProgress({ coderId, moduleId, averageScore, weeksCompleted, currentWeek }) {
   const queryText = `
-    INSERT INTO moodle_progress (coder_id, average_score, completed_activities, current_week, updated_at)
-    VALUES ($1, $2, $3, $4, NOW())
-    ON CONFLICT (coder_id) DO UPDATE SET
+    INSERT INTO moodle_progress (coder_id, module_id, average_score, weeks_completed, current_week, updated_at)
+    VALUES ($1, $2, $3, $4, $5, NOW())
+    ON CONFLICT (coder_id, module_id) DO UPDATE SET
       average_score = EXCLUDED.average_score,
-      completed_activities = EXCLUDED.completed_activities,
+      weeks_completed = EXCLUDED.weeks_completed,
       current_week = EXCLUDED.current_week,
       updated_at = NOW()
     RETURNING *
   `;
-  const values = [coderId, averageScore, completedActivities, currentWeek];
+  const values = [coderId, moduleId, averageScore, weeksCompleted, currentWeek];
   const result = await query(queryText, values);
   return result.rows[0];
 }

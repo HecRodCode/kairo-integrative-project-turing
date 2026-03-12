@@ -73,7 +73,7 @@ function renderUser(user, plan, riskFlags) {
   const firstName = user.fullName?.split(' ')[0] || user.fullName || '—';
   el('welcome-name').textContent = user.fullName;
   el('topbar-name').textContent = firstName;
-  el('clan-badge').textContent = cap(user.clan || '—');
+  el('clan-badge').textContent = cap(user.clanId || '—');
   // Plan badge
   if (plan) {
     el('plan-badge').classList.remove('hidden');

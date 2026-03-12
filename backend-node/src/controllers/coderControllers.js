@@ -31,7 +31,7 @@ export async function getCoderDashboard(req, res) {
       query(
         `
         SELECT
-          u.full_name, u.email, u.clan, u.role,
+          u.full_name, u.email, u.clan AS clan_id, u.role,
           u.current_module_id,
           u.learning_style_cache,
           m.name        AS module_name,
@@ -176,8 +176,9 @@ export async function getCoderDashboard(req, res) {
         ? {
             fullName: user.full_name,
             email: user.email,
-            clan: user.clan,
+            clanId: user.clan_id,
             role: user.role,
+            firstLogin: user.first_login,
             moduleId: user.current_module_id,
             moduleName: user.module_name,
             moduleTotalWeeks: user.module_total_weeks,
