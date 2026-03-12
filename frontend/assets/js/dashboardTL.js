@@ -62,10 +62,10 @@ function renderAll(data) {
 }
 
 /* ── TL info ── */
-function renderTLInfo( user, clan ) {
-  const firstName = user.fullName?.split(' ')[0] || user.fullName || '—';
-  el('clan-heading').textContent = cap(clan);
-  el('topbar-name').textContent = firstName;
+function renderTLInfo(tl) {
+  if (!tl) return;
+  el('clan-heading').textContent = cap(tl.clanId);
+  el('topbar-name').textContent = tl.fullName;
 }
 
 /* ── Stats ── */
@@ -184,7 +184,7 @@ function renderDetail(c) {
   body.classList.remove('hidden');
   body.style.display = 'flex';
   el('d-name').textContent = c.full_name;
-  el('d-clan').textContent = cap(c.clan || '—');
+  el('d-clan').textContent = cap(c.clan_id || '—');
   el('d-email').textContent = c.email;
   el('d-week').textContent =
     c.current_week > 0 ? `Semana ${c.current_week}` : '—';
@@ -285,7 +285,7 @@ function generatePDF(c) {
   const rows = [
     ['Nombre', c.full_name],
     ['Email', c.email],
-    ['Clan', cap(c.clan || '—')],
+    ['Clan', cap(c.clan_id || '—')],
     [
       'Score promedio',
       c.average_score > 0 ? `${parseFloat(c.average_score).toFixed(1)}%` : '—',
