@@ -87,7 +87,7 @@ app.use('/api/diagnostics', diagnosticRoutes);
 app.use('/api/coder', coderRoutes);
 app.use('/api/tl', tlRoutes);
 app.use('/api/ai', aiRoutes);
-app.use('/api/assignment', assignmentRoutes);
+app.use('/api', assignmentRoutes);
 
 app.get('/api/health', async (req, res) => {
   try {

@@ -5,14 +5,10 @@
  * Datos reales del endpoint GET /api/coder/dashboard.
  * Sin mock data. Sin spinners de carga — skeleton shimmer implícito en CSS.
  */
-
 import { guards, sessionManager } from '../../src/core/auth/session.js';
-
 const API = 'http://localhost:3000/api';
-
 /* ── State ── */
 let dashData = null;
-
 /* ── Shorthand ── */
 const el = (id) => document.getElementById(id);
 
@@ -20,25 +16,17 @@ const el = (id) => document.getElementById(id);
    BOOTSTRAP
 ══════════════════════════════════════ */
 (async function init() {
-  applyTheme();
-  wireTheme();
   wireLang();
   wireNotifToggle();
   wireLogout();
   setDate();
-
   // requireCompleted: verifica sesión activa + firstLogin === false.
-  // Si no hay sesión → redirige a login.
-  // Si firstLogin === true → redirige a onboarding.
-  // El overlay empieza hidden, loadDashboard() lo muestra y siempre lo oculta en finally.
   const session = await guards.requireCompleted();
   if (!session) return;
-
   if (session.user.role !== 'coder') {
     sessionManager.redirectByRole(session.user);
     return;
   }
-
   await loadDashboard();
 })();
 
@@ -46,17 +34,12 @@ const el = (id) => document.getElementById(id);
    LOAD
 ══════════════════════════════════════ */
 async function loadDashboard() {
-  el('error-banner').classList.add('hidden');
-  el('loading-overlay').classList.remove('hidden');
-
   try {
     const res = await fetch(`${API}/coder/dashboard`, {
       credentials: 'include',
     });
     const data = await res.json();
-
     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-
     dashData = data;
     renderAll(data);
   } catch (err) {
@@ -65,7 +48,6 @@ async function loadDashboard() {
     el('error-msg').textContent =
       err.message || 'No se pudo conectar con el servidor.';
   } finally {
-    el('loading-overlay').classList.add('hidden');
   }
 }
 
@@ -88,19 +70,14 @@ function renderAll(d) {
 /* ── User / welcome ── */
 function renderUser(user, plan, riskFlags) {
   if (!user) return;
-
   const firstName = user.fullName?.split(' ')[0] || user.fullName || '—';
-
   el('welcome-name').textContent = user.fullName;
   el('topbar-name').textContent = firstName;
-
   el('clan-badge').textContent = cap(user.clan || '—');
-
   // Plan badge
   if (plan) {
     el('plan-badge').classList.remove('hidden');
   }
-
   // Risk alert
   const activeRisks = (riskFlags || []).filter(
     (r) => r.level === 'high' || r.level === 'critical'
@@ -118,7 +95,6 @@ function renderTopbar(user, progress) {
   el('module-pill').textContent = user?.moduleName
     ? truncate(user.moduleName, 22)
     : '—';
-
   const week = progress?.currentWeek ?? 1;
   el('topbar-week').textContent = user?.moduleTotalWeeks
     ? `Semana ${week} de ${user.moduleTotalWeeks}`
@@ -130,14 +106,11 @@ function renderStats(user, progress) {
   el('st-module').textContent = user?.moduleName
     ? truncate(user.moduleName, 14)
     : '—';
-
   el('st-week').textContent = `Semana ${progress?.currentWeek ?? 1}`;
-
   el('st-score').textContent =
     progress?.averageScore != null
       ? `${parseFloat(progress.averageScore).toFixed(1)}`
       : 'Sin datos';
-
   el('st-weeks-done').textContent =
     progress?.weeksCompletedCount != null
       ? `${progress.weeksCompletedCount}`
@@ -149,20 +122,16 @@ function renderModuleProgress(progress, user) {
   const total = user?.moduleTotalWeeks || 0;
   const current = progress?.currentWeek ?? 1;
   const done = progress?.weeksCompletedCount || 0;
-
   el('progress-meta').textContent =
     total > 0 ? `Semana ${current} de ${total}` : '—';
-
   if (!total) {
     el('week-dots').innerHTML =
       '<span style="font-size:12px;color:var(--text-muted)">Sin datos de módulo</span>';
     el('progress-percent').textContent = '—';
     return;
   }
-
   const pct = Math.round((done / total) * 100);
   el('progress-percent').textContent = `${pct}% completado`;
-
   el('week-dots').innerHTML = Array.from({ length: total }, (_, i) => {
     const weekNum = i + 1;
     let cls = 'week-dot';
@@ -178,12 +147,9 @@ function renderScoreRing(softSkills) {
     el('ring-value').textContent = '—';
     return;
   }
-
   const avg = softSkills.average; // 1-5
   const pct = ((avg - 1) / 4) * 100; // normalize 1-5 to 0-100%
-
   el('ring-value').textContent = avg.toFixed(1);
-
   // Animate the conic gradient
   requestAnimationFrame(() => {
     setTimeout(() => {
@@ -217,7 +183,6 @@ function renderSoftSkills(ss) {
       '<p class="empty-state">Completa el onboarding para ver tus habilidades blandas.</p>';
     return;
   }
-
   const scores = {
     autonomy: ss.autonomy,
     timeManagement: ss.timeManagement,
@@ -225,11 +190,9 @@ function renderSoftSkills(ss) {
     communication: ss.communication,
     teamwork: ss.teamwork,
   };
-
   const weakestKey = Object.entries(scores).reduce((a, b) =>
     a[1] < b[1] ? a : b
   )[0];
-
   el('skills-list').innerHTML = SKILL_DEFS.map(({ key, label }) => {
     const val = scores[key] || 0;
     const pct = (val / 5) * 100;
@@ -251,7 +214,6 @@ function renderSoftSkills(ss) {
         </div>
       </div>`;
   }).join('');
-
   // Animate bars in after render
   requestAnimationFrame(() => {
     setTimeout(() => {
@@ -262,15 +224,12 @@ function renderSoftSkills(ss) {
         });
     }, 150);
   });
-
   // Note under bars
   el('skills-note').textContent =
     `Resultados del diagnóstico inicial · ${formatDate(ss.assessedAt)}`;
-
   // Style block in ring card
   const style = ss.learningStyle || 'mixed';
   el('style-value').textContent = cap(style);
-
   const desc = STYLE_DESCRIPTIONS[style] || '';
   if (desc) {
     const p = document.createElement('p');
@@ -284,7 +243,6 @@ function renderSoftSkills(ss) {
 /* ── Performance tests ── */
 function renderPerformanceTests(tests) {
   if (!tests || tests.length === 0) return;
-
   el('perf-list').innerHTML = tests
     .map((t) => {
       const score = t.score != null ? Math.round(t.score) : '—';
@@ -308,12 +266,10 @@ function renderPerformanceTests(tests) {
     })
     .join('');
 }
-
 /* ── TL Feedback ── */
 function renderFeedback(notifications) {
   const items = notifications?.items || [];
   if (items.length === 0) return;
-
   el('feedback-list').innerHTML = items
     .map((f) => {
       const typeLabel =
@@ -325,7 +281,6 @@ function renderFeedback(notifications) {
         }[f.type] ||
         f.type ||
         'Feedback';
-
       return `
       <div class="feedback-item">
         <div class="feedback-meta">
@@ -337,12 +292,10 @@ function renderFeedback(notifications) {
     })
     .join('');
 }
-
 /* ── Struggling topics ── */
 function renderStrugglingTopics(progress) {
   const topics = progress?.strugglingTopics || [];
   if (!topics.length) return;
-
   el('struggling-card').classList.remove('hidden');
   el('struggling-list').innerHTML = topics
     .map(
@@ -351,18 +304,14 @@ function renderStrugglingTopics(progress) {
     )
     .join('');
 }
-
 /* ── Notification dropdown ── */
 function renderNotifications(notifications) {
   const items = notifications?.items || [];
   const unread = notifications?.unread || 0;
-
   if (unread > 0) {
     el('notif-dot').classList.remove('hidden');
   }
-
   if (items.length === 0) return;
-
   el('notif-list').innerHTML = items
     .map((f) => {
       const typeLabel =
@@ -372,7 +321,6 @@ function renderNotifications(notifications) {
           achievement: '💜 Logro',
           warning: '🔴 Advertencia',
         }[f.type] || '📨 Feedback';
-
       return `
       <div class="notif-item">
         <p class="notif-tl">${typeLabel} · ${f.tlName || 'Tu TL'}</p>
@@ -382,11 +330,9 @@ function renderNotifications(notifications) {
     })
     .join('');
 }
-
 /* ══════════════════════════════════════
    INTERACTIONS
 ══════════════════════════════════════ */
-
 function wireNotifToggle() {
   el('btn-notif').addEventListener('click', (e) => {
     e.stopPropagation();
@@ -396,11 +342,9 @@ function wireNotifToggle() {
     el('notif-dropdown').classList.add('hidden');
   });
 }
-
 function wireLogout() {
   el('btn-logout').addEventListener('click', () => sessionManager.logout());
 }
-
 /* Language toggle — cycles es/en (UI label only for now) */
 const LANGS = ['ES', 'EN'];
 let langIdx = 0;
@@ -411,47 +355,17 @@ function wireLang() {
     // Full i18n implementation in i18n.js
   });
 }
-
-/* ══════════════════════════════════════
-   THEME — matches rest of platform
-══════════════════════════════════════ */
-function applyTheme() {
-  const stored = localStorage.getItem('kairo_theme') || 'dark';
-  document.documentElement.setAttribute('data-theme', stored);
-  syncThemeIcon(stored);
-}
-
-function wireTheme() {
-  el('btn-theme').addEventListener('click', () => {
-    const next =
-      document.documentElement.getAttribute('data-theme') === 'dark'
-        ? 'light'
-        : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('kairo_theme', next);
-    syncThemeIcon(next);
-  });
-}
-
-function syncThemeIcon(theme) {
-  el('icon-moon').style.display = theme === 'dark' ? 'block' : 'none';
-  el('icon-sun').style.display = theme === 'light' ? 'block' : 'none';
-}
-
 /* ══════════════════════════════════════
    UTILS
 ══════════════════════════════════════ */
-
 function cap(str) {
   if (!str) return '—';
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
-
 function truncate(str, max) {
   if (!str) return '';
   return str.length > max ? str.slice(0, max) + '...' : str;
 }
-
 function formatDate(iso) {
   if (!iso) return '—';
   return new Date(iso).toLocaleDateString('es-CO', {
@@ -460,7 +374,6 @@ function formatDate(iso) {
     year: 'numeric',
   });
 }
-
 function setDate() {
   el('topbar-date').textContent = new Date().toLocaleDateString('es-CO', {
     weekday: 'long',
@@ -469,7 +382,6 @@ function setDate() {
     day: 'numeric',
   });
 }
-
 function styleIcon(style) {
   const icons = {
     visual: 'fa-eye',
@@ -482,6 +394,3 @@ function styleIcon(style) {
   icon.className = `fa-solid ${icons[(style || 'mixed').toLowerCase()] || 'fa-star'} fa-xs`;
   return icon;
 }
-
-// Expose for retry button
-window.loadDashboard = loadDashboard;

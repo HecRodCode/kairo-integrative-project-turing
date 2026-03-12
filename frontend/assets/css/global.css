@@ -2,7 +2,6 @@
    GLOBAL.CSS — Kairo Design System
    Single source of truth. Imported by every page.
    ===================================================== */
-
 /* ─────────────────────────────────────────────────────
    1. DESIGN TOKENS
    ───────────────────────────────────────────────────── */
@@ -11,33 +10,26 @@
   --bg-body: #050505;
   --bg-card: rgba(10, 10, 10, 0.85);
   --bg-logo: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
-
   /* Text */
-  --text-main: #ffffff; 
+  --text-main: #ffffff;
   --text-muted: #94a3b8;
-
   /* Inputs */
   --input-bg: rgba(30, 41, 59, 0.5);
   --input-text: #f8fafc;
-
   /* Borders & Glass */
   --border-glass: rgba(255, 255, 255, 0.08);
   --primary-glow: rgba(109, 40, 217, 0.3);
-
   /* Social buttons */
   --btn-social-bg: rgba(255, 255, 255, 0.05);
-
   /* Accent palette */
   --accent: #a855f7;
   --accent-dim: rgba(168, 85, 247, 0.15);
   --accent-border: rgba(168, 85, 247, 0.4);
-
   /* Purple scale */
   --purple-deep: #4c1d95;
   --purple-mid: #6d28d9;
   --purple-bright: #a855f7;
   --purple-light: #c084fc;
-
   /* Semantic / coder colors */
   --color-success: #10b981;
   --color-warning: #f59e0b;
@@ -46,40 +38,32 @@
   --code-blue: #38bdf8;
   --code-orange: #fb923c;
   --code-yellow: #fbbf24;
-
   /* Surfaces (used by landing + onboarding) */
   --surface-terminal: rgba(5, 5, 10, 0.9);
   --tab-active: rgba(168, 85, 247, 0.2);
   --tab-inactive: rgba(255, 255, 255, 0.03);
   --line-num: rgba(100, 116, 139, 0.5);
 }
-
 /* ─── Light theme overrides ─── */
 [data-theme='light'] {
   --bg-body: #f0f4ff;
   --bg-card: rgba(255, 255, 255, 0.95);
   --bg-logo: linear-gradient(135deg, #4c1d95 0%, #6d28d9 50%, #7c3aed 100%);
-
   --text-main: #1e293b;
   --text-muted: #64748b;
-
   --input-bg: #f1f5f9;
   --input-text: #1e293b;
-
   --border-glass: rgba(109, 40, 217, 0.12);
   --primary-glow: rgba(109, 40, 217, 0.12);
   --btn-social-bg: #ffffff;
-
   --accent: #7c3aed;
   --accent-dim: rgba(124, 58, 237, 0.08);
   --accent-border: rgba(124, 58, 237, 0.35);
-
   --surface-terminal: rgba(241, 245, 249, 0.9);
   --tab-active: rgba(124, 58, 237, 0.15);
   --tab-inactive: rgba(0, 0, 0, 0.03);
   --line-num: rgba(100, 116, 139, 0.6);
 }
-
 /* ─────────────────────────────────────────────────────
    2. RESET
    ───────────────────────────────────────────────────── */
@@ -90,11 +74,9 @@
   padding: 0;
   box-sizing: border-box;
 }
-
 html {
   scroll-behavior: smooth;
 }
-
 /* ─────────────────────────────────────────────────────
    3. BASE BODY
    ───────────────────────────────────────────────────── */
@@ -112,7 +94,6 @@ body {
     background-color 0.4s ease,
     color 0.4s ease;
 }
-
 /* ─────────────────────────────────────────────────────
    4. FLOATING TOGGLE BUTTONS
    Single definition — identical on every page.
@@ -126,7 +107,6 @@ body {
   flex-direction: column;
   gap: 12px;
 }
-
 .theme-btn {
   width: 52px;
   height: 52px;
@@ -150,13 +130,11 @@ body {
   font-weight: 700;
   letter-spacing: 0.5px;
 }
-
 .theme-btn:hover {
   transform: scale(1.1) rotate(12deg);
   border-color: var(--accent);
   box-shadow: 0 8px 25px var(--primary-glow);
 }
-
 /* ─────────────────────────────────────────────────────
    5. SHARED ANIMATIONS
    ───────────────────────────────────────────────────── */
@@ -170,7 +148,6 @@ body {
     transform: translateY(0);
   }
 }
-
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -181,7 +158,6 @@ body {
     transform: translateY(0);
   }
 }
-
 @keyframes shake {
   10%,
   90% {
@@ -201,17 +177,14 @@ body {
     transform: translate3d(4px, 0, 0);
   }
 }
-
 @keyframes spin {
   to {
     transform: rotate(360deg);
   }
 }
-
 /* ─────────────────────────────────────────────────────
    6. SHARED UTILITY CLASSES
    ───────────────────────────────────────────────────── */
-
 /* Gradient text (used in landing hero + auth heading) */
 .gradient-text {
   background: linear-gradient(to right, var(--accent), #6366f1, #3b82f6);
@@ -220,7 +193,6 @@ body {
   background-clip: text;
   display: inline-block;
 }
-
 [data-theme='light'] .gradient-text {
   background: linear-gradient(
     to right,
@@ -232,14 +204,12 @@ body {
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
-
 /* Error state for inputs */
 .input-error {
   border-color: var(--color-error) !important;
   background-color: rgba(239, 68, 68, 0.05);
   transition: all 0.3s ease;
 }
-
 .error-text {
   color: var(--color-error);
   font-size: 0.75rem;
@@ -248,13 +218,11 @@ body {
   display: block;
   animation: fadeIn 0.3s ease-in;
 }
-
 /* Shake */
 .shake {
   animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
   transform: translate3d(0, 0, 0);
 }
-
 /* Spinner */
 .spinner {
   width: 18px;
@@ -264,7 +232,6 @@ body {
   border-top-color: #fff;
   animation: spin 0.8s linear infinite;
 }
-
 /* Page exit transition */
 .page-exit {
   opacity: 0 !important;
@@ -274,12 +241,10 @@ body {
     transform 0.3s ease-in-out;
   pointer-events: none;
 }
-
 /* Text accent */
 .text-accent {
   color: var(--accent);
 }
-
 /* ─────────────────────────────────────────────────────
    7. GLOBAL SCROLLBAR
    ───────────────────────────────────────────────────── */
@@ -293,4 +258,192 @@ body {
 ::-webkit-scrollbar-thumb {
   background: var(--accent-border);
   border-radius: 99px;
+}
+
+/* ════════════════════════════════════
+   TOPBAR — ESTANDARIZADO (ahora en global.css para todas las páginas)
+════════════════════════════════════ */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+.topbar-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.topbar-module {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.module-pill {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px solid var(--accent-border);
+  padding: 3px 12px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.topbar-sep {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.topbar-week {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+.topbar-date {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+}
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+/* Icon buttons (notif, lang, theme) */
+.icon-btn {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  color: var(--text-muted);
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  cursor: pointer;
+  transition:
+    border-color 0.18s,
+    color 0.18s,
+    background 0.18s;
+}
+.icon-btn:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+/* Notification dot */
+.notif-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-error);
+  border: 1.5px solid var(--bg-body);
+}
+/* Notification wrapper + dropdown */
+.notif-wrapper {
+  position: relative;
+}
+.notif-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 300px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: 14px;
+  backdrop-filter: blur(16px);
+  z-index: 100;
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+}
+.notif-header {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--border-glass);
+  margin: 0;
+}
+.notif-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-glass);
+  cursor: default;
+  transition: background 0.15s;
+}
+.notif-item:last-child {
+  border-bottom: none;
+}
+.notif-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+.notif-tl {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 3px;
+}
+.notif-text {
+  font-size: 12px;
+  color: var(--text-main);
+  line-height: 1.4;
+}
+.notif-time {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+.notif-empty {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 20px 16px;
+  margin: 0;
+}
+/* Profile button in topbar */
+.topbar-profile-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 6px;
+  border-radius: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  text-decoration: none;
+  color: var(--text-main);
+  font-size: 13px;
+  font-weight: 500;
+  transition: border-color 0.18s;
+}
+.topbar-profile-btn:hover {
+  border-color: var(--accent-border);
+}
+.topbar-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--accent-dim);
+  border: 1px solid var(--accent-border);
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  color: var(--accent);
+}
+/* TL Risk Badge (se mantiene porque el JS lo usa) */
+.topbar-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: var(--color-error);
+  font-size: 12px;
+  font-weight: 500;
 }

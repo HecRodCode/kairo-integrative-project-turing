@@ -16,6 +16,8 @@
     />
     <link rel="stylesheet" href="../../../assets/css/global.css" />
     <link rel="stylesheet" href="../../../assets/css/dashboardCoder.css" />
+
+    <script src="../../../src/core/utils/theme.js" defer></script>
   </head>
 
   <body>
@@ -42,33 +44,29 @@
 
         <nav class="sidebar-nav">
           <a class="nav-link active" href="#">
-            <span class="nav-icon"><i class="fa-solid fa-grid-2"></i></span>
+            <span class="nav-icon"
+              ><i class="fa-solid fa-table-columns"></i
+            ></span>
             Dashboard
           </a>
-          <a class="nav-link" href="./aiTrainer.html">
-            <span class="nav-icon"
-              ><i class="fa-solid fa-brain-circuit"></i
-            ></span>
+          <a class="nav-link" href="./IAtrainer.html">
+            <span class="nav-icon"><i class="fa-solid fa-microchip"></i></span>
             AI Trainer
           </a>
-          <a class="nav-link" href="./progress.html">
-            <span class="nav-icon"><i class="fa-solid fa-chart-line"></i></span>
-            Mi Progreso
-          </a>
-          <a class="nav-link" href="./activitiesCoder.html">
+          <a class="nav-link" href="./assignment.html">
             <span class="nav-icon"
               ><i class="fa-solid fa-clipboard-list"></i
             ></span>
             Actividades
           </a>
+          <a class="nav-link" href="./progress.html">
+            <span class="nav-icon"><i class="fa-solid fa-chart-line"></i></span>
+            Mi Progreso
+          </a>
         </nav>
 
         <!-- Coder identity + logout at bottom -->
         <div class="sidebar-profile">
-          <div class="coder-info">
-            <span class="coder-name" id="sidebar-name">—</span>
-            <span class="coder-clan" id="sidebar-clan">—</span>
-          </div>
           <button class="btn-logout" id="btn-logout" title="Cerrar sesión">
             <i class="fa-solid fa-arrow-right-from-bracket"></i>
           </button>
@@ -308,5 +306,6 @@
         </section>
       </main>
     </div>
+    <script src="../../../assets/js/dashboardCoder.js" type="module"></script>
   </body>
 </html>
