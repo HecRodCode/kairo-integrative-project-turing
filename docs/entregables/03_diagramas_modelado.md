@@ -19,183 +19,168 @@
 
 **Herramienta:** [dbdiagram.io](https://dbdiagram.io)
 
-El diagrama ER fue generado en dbdiagram.io a partir del DDL del `schema.sql`.
-Muestra las 14 tablas con sus columnas, tipos de dato, restricciones y
-relaciones (foreign keys). La tabla `users` está al centro como entidad
-principal de la que dependen casi todas las demás.
+El diagrama ER fue generado en dbdiagram.io a partir del DDL del `schema.sql`. Muestra las 14 tablas con sus columnas, tipos de dato, restricciones y relaciones (foreign keys). La tabla `users` está al centro como entidad principal de la que dependen casi todas las demás.
 
 A continuación el código Mermaid equivalente para referencia y versionado:
-
-```mermaid
-erDiagram
-    users ||--o| soft_skills_assessment : "tiene evaluación"
-    users ||--o{ moodle_progress : "tiene progreso"
-    users ||--o{ complementary_plans : "tiene planes"
-    users ||--o{ activity_progress : "completa actividades"
-    users ||--o{ evidence_submissions : "sube evidencias"
-    users ||--o{ tl_feedback : "recibe feedback"
-    users ||--o{ risk_flags : "tiene alertas"
-    users ||--o{ coder_struggling_topics : "reporta dificultad"
-    users ||--o{ ai_generation_log : "genera logs IA"
-
-    modules ||--o{ moodle_progress : "pertenece a"
-    modules ||--o{ topics : "contiene temas"
-    modules ||--o{ complementary_plans : "asociado a"
-
-    topics ||--o{ coder_struggling_topics : "reportado en"
-
-    complementary_plans ||--o{ plan_activities : "tiene actividades"
-    complementary_plans ||--o{ tl_feedback : "recibe feedback"
-
-    plan_activities ||--o{ activity_progress : "tiene progreso"
-    plan_activities ||--o{ evidence_submissions : "tiene evidencias"
-
-    users {
-        int id PK
-        varchar email UK
-        varchar password
-        varchar full_name
-        role_enum role
-        varchar clan_id
-        boolean first_login
-        timestamp created_at
-    }
-
-    soft_skills_assessment {
-        int id PK
-        int coder_id FK_UK
-        int autonomy
-        int time_management
-        int problem_solving
-        int communication
-        int teamwork
-        learning_style_enum learning_style
-        timestamp assessed_at
-    }
-
-    modules {
-        int id PK
-        varchar name
-        text description
-        int total_weeks
-        timestamp created_at
-    }
-
-    moodle_progress {
-        int id PK
-        int coder_id FK
-        int module_id FK
-        int current_week
-        jsonb weeks_completed
-        text_arr struggling_topics
-        decimal average_score
-        timestamp updated_at
-    }
-
-    topics {
-        int id PK
-        int module_id FK
-        varchar name
-        varchar category
-    }
-
-    coder_struggling_topics {
-        int id PK
-        int coder_id FK
-        int topic_id FK
-        timestamp reported_at
-    }
-
-    complementary_plans {
-        int id PK
-        int coder_id FK
-        int module_id FK
-        jsonb plan_content
-        priority_level_enum priority_level
-        jsonb soft_skills_snapshot
-        jsonb moodle_status_snapshot
-        boolean is_active
-        timestamp generated_at
-    }
-
-    plan_activities {
-        int id PK
-        int plan_id FK
-        int day_number
-        varchar title
-        text description
-        int estimated_time_minutes
-        activity_type_enum activity_type
-        varchar skill_focus
-    }
-
-    activity_progress {
-        int id PK
-        int activity_id FK
-        int coder_id FK
-        boolean completed
-        text reflection_text
-        int time_spent_minutes
-        timestamp completed_at
-    }
-
-    evidence_submissions {
-        int id PK
-        int activity_id FK
-        int coder_id FK
-        text file_url
-        text link_url
-        text description
-        timestamp submitted_at
-    }
-
-    tl_feedback {
-        int id PK
-        int coder_id FK
-        int tl_id FK
-        int plan_id FK
-        text feedback_text
-        feedback_type_enum feedback_type
-        boolean is_read
-        timestamp created_at
-    }
-
-    risk_flags {
-        int id PK
-        int coder_id FK
-        risk_level_enum risk_level
-        text reason
-        boolean auto_detected
-        timestamp detected_at
-        boolean resolved
-        timestamp resolved_at
-    }
-
-    ai_reports {
-        int id PK
-        report_target_enum target_type
-        int target_id
-        text summary_text
-        risk_level_enum risk_level
-        text recommendations
-        timestamp generated_at
-        boolean viewed_by_tl
-    }
-
-    ai_generation_log {
-        int id PK
-        int coder_id FK
-        ai_agent_enum agent_type
-        jsonb input_payload
-        jsonb output_payload
-        varchar model_name
-        int execution_time_ms
-        boolean success
-        text error_message
-        timestamp generated_at
-    }
 ```
+Table users {
+  id SERIAL [pk]
+  email VARCHAR(100) [unique, not null]
+  password VARCHAR(255) [not null]
+  full_name VARCHAR(150) [not null]
+  role VARCHAR(10) [not null, note: 'coder | tl']
+  clan_id VARCHAR(50)
+  first_login BOOLEAN [default: true]
+  created_at TIMESTAMP [default: `now()`]
+}
 
+Table soft_skills_assessment {
+  id SERIAL [pk]
+  coder_id INT [unique, not null, ref: > users.id]
+  autonomy INT [not null]
+  time_management INT [not null]
+  problem_solving INT [not null]
+  communication INT [not null]
+  teamwork INT [not null]
+  learning_style VARCHAR(20) [not null, note: 'visual | auditory | kinesthetic | mixed']
+  raw_answers JSONB
+  assessed_at TIMESTAMP [default: `now()`]
+}
+
+Table modules {
+  id SERIAL [pk]
+  name VARCHAR(100) [not null]
+  description TEXT
+  total_weeks INT [not null]
+  created_at TIMESTAMP [default: `now()`]
+}
+
+Table moodle_progress {
+  id SERIAL [pk]
+  coder_id INT [not null, ref: > users.id]
+  module_id INT [not null, ref: > modules.id]
+  current_week INT [not null]
+  weeks_completed JSONB [default: '[]']
+  struggling_topics TEXT
+  average_score DECIMAL(5,2) [default: 0]
+  updated_at TIMESTAMP [default: `now()`]
+
+  indexes {
+    (coder_id, module_id) [unique]
+  }
+}
+
+Table topics {
+  id SERIAL [pk]
+  module_id INT [not null, ref: > modules.id]
+  name VARCHAR(200) [not null]
+  category VARCHAR(100)
+}
+
+Table coder_struggling_topics {
+  id SERIAL [pk]
+  coder_id INT [not null, ref: > users.id]
+  topic_id INT [not null, ref: > topics.id]
+  reported_at TIMESTAMP [default: `now()`]
+
+  indexes {
+    (coder_id, topic_id) [unique]
+  }
+}
+
+Table complementary_plans {
+  id SERIAL [pk]
+  coder_id INT [not null, ref: > users.id]
+  module_id INT [not null, ref: > modules.id]
+  plan_content JSONB [not null]
+  priority_level VARCHAR(10) [default: 'medium', note: 'low | medium | high']
+  soft_skills_snapshot JSONB
+  moodle_status_snapshot JSONB
+  is_active BOOLEAN [default: true]
+  generated_at TIMESTAMP [default: `now()`]
+}
+
+Table plan_activities {
+  id SERIAL [pk]
+  plan_id INT [not null, ref: > complementary_plans.id]
+  day_number INT [not null]
+  title VARCHAR(200) [not null]
+  description TEXT
+  estimated_time_minutes INT
+  activity_type VARCHAR(20) [note: 'guided | semi_guided | autonomous']
+  skill_focus VARCHAR(100)
+}
+
+Table activity_progress {
+  id SERIAL [pk]
+  activity_id INT [not null, ref: > plan_activities.id]
+  coder_id INT [not null, ref: > users.id]
+  completed BOOLEAN [default: false]
+  reflection_text TEXT
+  time_spent_minutes INT
+  completed_at TIMESTAMP
+
+  indexes {
+    (activity_id, coder_id) [unique]
+  }
+}
+
+Table evidence_submissions {
+  id SERIAL [pk]
+  activity_id INT [not null, ref: > plan_activities.id]
+  coder_id INT [not null, ref: > users.id]
+  file_url TEXT
+  link_url TEXT
+  description TEXT
+  submitted_at TIMESTAMP [default: `now()`]
+}
+
+Table tl_feedback {
+  id SERIAL [pk]
+  coder_id INT [not null, ref: > users.id]
+  tl_id INT [not null, ref: > users.id]
+  plan_id INT [ref: > complementary_plans.id]
+  feedback_text TEXT [not null]
+  feedback_type VARCHAR(20) [note: 'weekly | activity | general']
+  is_read BOOLEAN [default: false]
+  created_at TIMESTAMP [default: `now()`]
+}
+
+Table risk_flags {
+  id SERIAL [pk]
+  coder_id INT [not null, ref: > users.id]
+  risk_level VARCHAR(10) [not null, note: 'low | medium | high']
+  reason TEXT [not null]
+  auto_detected BOOLEAN [default: true]
+  detected_at TIMESTAMP [default: `now()`]
+  resolved BOOLEAN [default: false]
+  resolved_at TIMESTAMP
+}
+
+Table ai_reports {
+  id SERIAL [pk]
+  target_type VARCHAR(10) [not null, note: 'coder | clan | cohort']
+  target_id INT [not null, ref: > users.id]
+  summary_text TEXT [not null]
+  risk_level VARCHAR(10)
+  recommendations TEXT
+  generated_at TIMESTAMP [default: `now()`]
+  viewed_by_tl BOOLEAN [default: false]
+}
+
+Table ai_generation_log {
+  id SERIAL [pk]
+  coder_id INT [ref: > users.id]
+  agent_type VARCHAR(30) [not null, note: 'learning_plan | report_generator | risk_detector']
+  input_payload JSONB [not null]
+  output_payload JSONB [not null]
+  model_name VARCHAR(100)
+  execution_time_ms INT
+  success BOOLEAN [default: true]
+  error_message TEXT
+  generated_at TIMESTAMP [default: `now()`]
+}
+```
 ---
 
 ## 2. Diagrama de Componentes
@@ -313,14 +298,9 @@ implementarlo todo bien este sprint:
 - **Campos extra en `modules`:** `is_critical`, `has_performance_test`. También
   falta decidir si van.
 
-En resumen, lo que importa es que el schema base es solido y las relaciones son
-correctas. Las discrepancias vienen de que el backend evolucionó mas rápido que
-el schema, lo cual pasa en todo proyecto de este tipo. La corrección no debería
-tomar mas de un día si nos sentamos Miguel y yo a alinear las migraciones.
+lo que importa es que el schema base es solido y las relaciones son correctas. Las discrepancias vienen de que el backend evolucionó mas rápido que el schema, lo cual pasa en todo proyecto de este tipo. La corrección no debería tomar mas de un día si nos sentamos Miguel y yo a alinear las migraciones.
 
-Queda bastante por probar con datos reales, pero el punto de partida es solido y
-las rutas de datos están bien definidas para que tanto Cesar como Camilo puedan
-avanzar sin depender de cambios en la DB.
+Queda bastante por probar con datos reales, pero el punto de partida es solido y las rutas de datos están bien definidas para que tanto Cesar como Camilo puedan avanzar sin depender de cambios en la DB.
 
 ---
 

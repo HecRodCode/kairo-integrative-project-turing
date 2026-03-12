@@ -92,17 +92,13 @@ generando planes simultáneamente.
 
 **Índice:** `idx_soft_skills_coder`
 
-Para ponerlo en términos concretos: el coder contesta 20 preguntas basadas en
+Para ponerlo en términos concretos: el coder contesta 30 preguntas basadas en
 VARK + ILS (Felder-Silverman) + Kolb. El `diagnosticControllers.js` toma las
 respuestas crudas, calcula tallies por etiqueta (V, A, R, K, ACT, REF, SNS, INT,
 etc.) y deriva los scores de 1 a 5 para cada soft skill usando mapeos
-psicológicos. El modelo `softSkills.js` hace un UPSERT — si el coder repite el
-quiz, se actualizan todos los campos.
+psicológicos. El modelo `softSkills.js` hace un UPSERT.
 
-Algo que vale la pena detenerse aquí un momento: el modelo Node.js inserta una
-columna `raw_answers` (JSONB) que **no existe en el schema.sql actual**. Eso va
-a fallar en producción si no se agrega la columna. Lo documenté en el documento
-de Hallazgos (Entregable 2, sección 5).
+ el modelo Node.js inserta una columna `raw_answers` (JSONB) que **no existe en el schema.sql actual**. Eso va a fallar en producción si no se agrega la columna. Lo documenté en el documento de Hallazgos (Entregable 2, sección 5).
 
 ### 2.3 `modules` — Módulos del Bootcamp
 
@@ -115,7 +111,7 @@ de Hallazgos (Entregable 2, sección 5).
 | `created_at`  | TIMESTAMP    | DEFAULT NOW() | Fecha de creación                   |
 
 No tiene índices adicionales más allá del PK. En principio es una tabla pequeña
-(6-8 módulos máximo), así que no es crítico.
+(6-8 módulos máximo).
 
 ### 2.4 `moodle_progress` — Progreso Académico
 
@@ -133,8 +129,7 @@ No tiene índices adicionales más allá del PK. En principio es una tabla peque
 **Constraint:** UNIQUE(coder_id, module_id) — un registro por combinación
 coder-módulo. **Índices:** `idx_moodle_coder`, `idx_moodle_score`
 
-El modelo `moddleProgress.js` (sí, tiene un typo en el nombre del archivo —
-"moddle" en vez de "moodle") hace un UPSERT basado en `coder_id`, pero la tabla
+El modelo `moodleProgress.js`  hace un UPSERT basado en `coder_id`, pero la tabla
 tiene el constraint UNIQUE sobre `(coder_id, module_id)`. Esa diferencia importa
 porque el ON CONFLICT del modelo no especifica `module_id`, al menos en este
 prototipo.
@@ -165,8 +160,7 @@ tema dos veces. **Índice:** `idx_struggling_coder`
 Esta tabla es la relación N:M entre coders y topics. Parece redundante con el
 campo `struggling_topics` de `moodle_progress`, pero la diferencia es que esta
 tabla conecta con temas reales del catálogo (con FK a topics), mientras que el
-TEXT[] de moodle_progress son strings libres. Dependiendo del tipo de consulta
-que necesite Cesar para las gráficas, una u otra será mas útil.
+TEXT[] de moodle_progress son strings libres.
 
 ### 2.7 `complementary_plans` — Planes IA (Las 6 Cards)
 
@@ -184,11 +178,7 @@ que necesite Cesar para las gráficas, una u otra será mas útil.
 
 **Índices:** `idx_plans_coder`, `idx_plans_active`, `idx_plans_priority`
 
-Y aquí viene la parte interesante: los snapshots (`soft_skills_snapshot` y
-`moodle_status_snapshot`) son fotos del estado del coder al momento de generarse
-el plan. Esto permite comparar "cómo estaba cuando se generó" vs "cómo está
-ahora". Es un patron de diseño que no es la decision mas elegante pero es la que
-podemos implementar este semestre sin complicar las queries demasiado.
+los snapshots (`soft_skills_snapshot` y `moodle_status_snapshot`) son fotos del estado del coder al momento de generarse el plan. Esto permite comparar "cómo estaba cuando se generó" vs "cómo está ahora". Es un patron de diseño que no es la decision mas elegante pero es la que podemos implementar este semestre sin complicar las queries demasiado.
 
 El servicio Python (`supabase_service.py`) desactiva todos los planes activos
 antes de insertar uno nuevo. Solo un plan es `is_active = true` a la vez.
@@ -224,8 +214,7 @@ antes de insertar uno nuevo. Solo un plan es `is_active = true` a la vez.
 una sola vez. **Índices:** `idx_progress_activity`, `idx_progress_coder`,
 `idx_progress_completed`
 
-Esta tabla es la que recibe el click del botón "Completado". Se analiza en
-detalle en el Entregable 2 (Lógica de Persistencia).
+Esta tabla es la que recibe el click del botón "Completado".  (Lógica de Persistencia).
 
 ### 2.10 `evidence_submissions` — Evidencias
 
@@ -319,11 +308,8 @@ detalle en el Entregable 2 (Lógica de Persistencia).
 | `ai_agent_enum`       | `learning_plan`, `report_generator`, `risk_detector` | `ai_generation_log.agent_type`                   |
 | `priority_level_enum` | `low`, `medium`, `high`                              | `complementary_plans.priority_level`             |
 
-Se eligieron ENUMs en vez de tablas de lookup principalmente porque el equipo ya
-tiene base en PostgreSQL por materias anteriores y los ENUMs mantienen la
-integridad sin necesidad de JOINs adicionales. Una solución más robusta con
-tablas de referencia permitiría agregar valores sin migración, pero para el
-alcance del semestre los ENUMs son suficientes.
+ los ENUMs mantienen la integridad sin necesidad de JOINs adicionales. Una solución más robusta con
+tablas de referencia permitiría agregar valores sin migración, pero para el alcance del semestre los ENUMs son suficientes.
 
 ---
 

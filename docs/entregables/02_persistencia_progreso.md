@@ -21,9 +21,9 @@ botón de "Completado" está registrando correctamente en la base de datos?
 
 ### 1.1 Flujo del Botón "Completado"
 
-El coder hace click en "Completado" en una actividad → el frontend envía un
-`PATCH /api/coder/activities/:id/complete` → el middleware valida sesión + rol +
-onboarding → el controller `updateActivityProgress` ejecuta un UPSERT en
+El coder hace click en "Completado" en una actividad -> el frontend envía un
+`PATCH /api/coder/activities/:id/complete` -> el middleware valida sesión + rol +
+onboarding -> el controller `updateActivityProgress` ejecuta un UPSERT en
 `activity_progress`.
 
 El SQL que ejecuta el controller es:
@@ -42,39 +42,25 @@ RETURNING *
 
 **Validación del UPSERT:**
 
-Esto funciona bien en condiciones normales. El constraint
-`UNIQUE(activity_id, coder_id)` garantiza que no haya duplicados. Si el coder
-clickea dos veces "Completado", la segunda vez actualiza `reflection_text`,
-`time_spent_minutes` y `completed_at` — no crea un segundo registro. Eso está
+ El constraint `UNIQUE(activity_id, coder_id)` garantiza que no haya duplicados. Si el coder clickea dos veces "Completado", la segunda vez actualiza `reflection_text`, `time_spent_minutes` y `completed_at` — no crea un segundo registro. Eso está
 bien.
 
-Lo que sí hay que notar es que el UPDATE no toca el campo `completed`. Si por
-alguna razón alguien quisiera "desmarcar" una actividad, este endpoint no lo
-permite — siempre inserta con `completed = true`. En la mayoría de casos
-funciona, aunque hay escenarios edge donde todavía no tenemos respuesta, como
-cuando un coder marca por error y quiere volver atrás.
+el UPDATE no toca el campo `completed`. Si alguien quisiera "desmarcar" una actividad, este endpoint no lo
+permite — siempre inserta con `completed = true`.
 
 ### 1.2 Flujo de Generación de Planes (Snapshots)
 
 Cuando el coder completa el onboarding:
 
-1. `POST /api/diagnostics` → `diagnosticControllers.js` recibe las respuestas
-   crudas
-2. El controller calcula tallies VARK + ILS + Kolb → deriva soft skills (1-5) y
-   learning style
+1. `POST /api/diagnostics` -> `diagnosticControllers.js` recibe las respuestas crudas
+2. El controller calcula tallies VARK + ILS + Kolb → deriva soft skills (1-5) y learning style
 3. Guarda en `soft_skills_assessment` via UPSERT (modelo `softSkills.js`)
 4. Responde 201 al frontend inmediatamente (no bloquea)
 5. **Fire-and-forget:** llama al microservicio Python `POST /generate-plan`
-6. Python (`supabase_service.py`) desactiva planes anteriores → inserta nuevo
-   plan en `complementary_plans` con snapshots
+6. Python (`supabase_service.py`) desactiva planes anteriores -> inserta nuevo plan en `complementary_plans` con snapshots
 7. Registra la generación en `ai_generation_log`
 
-**Validación de los snapshots:** El servicio Python guarda
-`soft_skills_snapshot` y `moodle_status_snapshot` como JSONB. Estos snapshots
-capturan el estado del coder en el momento exacto de la generación. Cuando Cesar
-necesite graficar la evolución de un coder, puede comparar el snapshot del plan
-anterior con el estado actual. El sistema debería manejarlo bien, aunque no
-hemos probado ese escenario todavía con datos reales masivos.
+**Validación de los snapshots:** El servicio Python guarda `soft_skills_snapshot` y `moodle_status_snapshot` como JSONB. Estos snapshots capturan el estado del coder en el momento exacto de la generación. Cuando se necesite graficar la evolución de un coder, puede comparar el snapshot del plan anterior con el estado actual. El sistema debería manejarlo bien, aunque no hemos probado ese escenario todavía con datos reales masivos.
 
 ### 1.3 Persistencia del Progreso Académico (Moodle)
 
@@ -86,12 +72,7 @@ VALUES ($1, $2, $3, $4, NOW())
 ON CONFLICT (coder_id) DO UPDATE SET ...
 ```
 
-**Problema detectado:** El `ON CONFLICT` solo especifica `coder_id`, pero la
-tabla tiene `UNIQUE(coder_id, module_id)`. Si un coder está en dos módulos, el
-UPSERT podría fallar. El modelo además referencia una columna
-`completed_activities` que no existe en el schema — la tabla tiene
-`weeks_completed` (JSONB) y `struggling_topics` (TEXT[]). Esto requiere
-corrección, dependiendo del tipo de dato que quieran persistir.
+**Problema detectado:** El `ON CONFLICT` solo especifica `coder_id`, pero la tabla tiene `UNIQUE(coder_id, module_id)`. Si un coder está en dos módulos, el UPSERT podría fallar. El modelo además referencia una columna `completed_activities` que no existe en el schema — la tabla tiene `weeks_completed` (JSONB) y `struggling_topics` (TEXT[]). Esto requiere corrección, dependiendo del tipo de dato que quieran persistir.
 
 ### 1.4 Vista del Dashboard (`v_coder_dashboard`)
 
@@ -101,10 +82,7 @@ La vista calcula automáticamente:
 - `completed_activities`: sum de las que tienen `completed = TRUE`
 - `completion_percentage`: porcentaje redondeado al 2do decimal
 
-Esto se ve claro en un caso como: un coder tiene un plan con 28 actividades (4
-semanas × 7 días) y completa 14. La vista le muestra
-`completion_percentage = 50.00`. Si Cesar consume esta vista directamente, los
-datos de las gráficas deberían ser consistentes.
+Esto se ve claro en un caso como: un coder tiene un plan con 28 actividades (4 semanas × 7 días) y completa 14. La vista le muestra `completion_percentage = 50.00`. Si Cesar consume esta vista directamente, los datos de las gráficas deberían ser consistentes.
 
 ---
 
@@ -135,9 +113,7 @@ GROUP BY ...
 **Joins:** `users` → `soft_skills_assessment` → `moodle_progress` → `modules` →
 `complementary_plans` (solo activos) → `plan_activities` → `activity_progress`.
 
-Es una vista de 7 JOINs. Funciona para pocos coders pero si algún día hay 200+
-podría necesitar optimización. O al menos reducir el impacto, que no es lo mismo
-que eliminarlo.
+Es una vista de 7 JOINs. Funciona para pocos coders pero si algún día hay 200+ podría necesitar optimización. O al menos reducir el impacto, que no es lo mismo que eliminarlo.
 
 ### 2.2 `v_coder_risk_analysis`
 
@@ -155,10 +131,7 @@ realidad.
 
 ## 3. Hallazgos y Discrepancias Detectadas
 
-Durante la revisión del código se encontraron varias discrepancias entre lo que
-dice el schema y lo que hace el backend. Esto es normal en un proyecto que
-avanza rápido con varios desarrolladores, pero hay que resolverlas antes de la
-entrega final.
+Durante la revisión del código se encontraron varias discrepancias entre lo que dice el schema y lo que hace el backend. Esto es normal en un proyecto que avanza rápido con varios desarrolladores, pero hay que resolverlas antes de la entrega final.
 
 ### 3.1 Columna `raw_answers` faltante en schema.sql
 
