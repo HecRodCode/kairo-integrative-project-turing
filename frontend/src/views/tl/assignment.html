@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="../../../assets/css/global.css" />
     <link rel="stylesheet" href="../../../assets/css/dashboardTL.css" />
     <link rel="stylesheet" href="../../../assets/css/assignmentTL.css" />
+    <script src="../../../src/core/utils/theme.js" defer></script>
   </head>
 
   <body>
@@ -78,23 +79,41 @@
             <p class="topbar-sub" id="topbar-date">—</p>
           </div>
           <div class="topbar-right">
-            <!-- Topbar actions -->
-            <button
-              class="btn-action-secondary"
-              id="btn-open-rag"
-              title="Subir recurso para el AI Trainer"
-            >
-              <i class="fa-solid fa-book-open"></i>
-              Subir recurso RAG
+            <!-- Notification bell -->
+            <div class="notif-wrapper">
+              <button class="icon-btn" id="btn-notif" title="Notificaciones">
+                <i class="fa-solid fa-bell"></i>
+                <span class="notif-dot hidden" id="notif-dot"></span>
+              </button>
+              <div class="notif-dropdown hidden" id="notif-dropdown">
+                <p class="notif-header">Notificaciones</p>
+                <div id="notif-list">
+                  <p class="notif-empty">Sin notificaciones nuevas</p>
+                </div>
+              </div>
+            </div>
+            <!-- Language toggle -->
+            <button class="icon-btn" id="btn-lang" title="Idioma">
+              <i class="fa-solid fa-earth-americas"></i>
             </button>
-            <button
-              class="btn-action-primary"
-              id="btn-open-add"
-              title="Publicar nueva actividad"
-            >
-              <i class="fa-solid fa-plus"></i>
-              Añadir trabajo
+            <!-- Theme toggle -->
+            <button class="icon-btn" id="btn-theme" title="Cambiar tema">
+              <i class="fa-solid fa-moon" id="icon-moon"></i>
+              <i
+                class="fa-solid fa-sun"
+                id="icon-sun"
+                style="display: none"
+              ></i>
             </button>
+            <!-- Profile -->
+            <a
+              href="./profile.html"
+              class="topbar-profile-btn"
+              id="topbar-profile-btn"
+            >
+              <div class="topbar-avatar"><i class="fa-solid fa-user"></i></div>
+              <span id="topbar-name">—</span>
+            </a>
           </div>
         </header>
 
@@ -107,17 +126,40 @@
               Verifica que el backend esté corriendo en localhost:3000
             </p>
           </div>
-          <button class="btn-retry" onclick="window.loadAssignments()">
+          <button class="btn-retry" id="btn-retry">
             <i class="fa-solid fa-rotate-right"></i> Reintentar
           </button>
         </div>
 
-        <!-- Section header -->
+        <!-- Section header with action buttons -->
         <div class="section-header">
           <div>
-            <h2 class="section-title">Trabajos publicados</h2>
+            <h2 class="section-title">Trabajos y recursos publicados</h2>
             <p class="section-sub" id="assignment-count">Cargando...</p>
           </div>
+          <div class="section-actions">
+            <button class="btn-action-secondary" id="btn-open-rag">
+              <i class="fa-solid fa-book-open"></i>
+              Subir recurso RAG
+            </button>
+            <button class="btn-action-primary" id="btn-open-add">
+              <i class="fa-solid fa-plus"></i>
+              Añadir trabajo
+            </button>
+          </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="grid-legend" id="grid-legend">
+          <span class="legend-item legend-pdf"
+            ><i class="fa-solid fa-file-pdf"></i> Actividad PDF</span
+          >
+          <span class="legend-item legend-repo"
+            ><i class="fa-brands fa-github"></i> Repositorio</span
+          >
+          <span class="legend-item legend-resource"
+            ><i class="fa-solid fa-book-open"></i> Recurso RAG</span
+          >
         </div>
 
         <!-- Loading skeleton -->
@@ -132,24 +174,16 @@
           <div class="empty-icon">
             <i class="fa-solid fa-clipboard-list"></i>
           </div>
-          <h3>Sin actividades publicadas</h3>
+          <h3>Sin contenido publicado</h3>
           <p>
-            Crea la primera actividad para tu clan usando el botón
-            <strong>Añadir trabajo</strong>.
+            Usa <strong>Añadir trabajo</strong> para asignar actividades o
+            <strong>Subir recurso RAG</strong> para materiales de estudio.
           </p>
         </div>
 
-        <!-- Assignments grid -->
+        <!-- Combined grid -->
         <div class="assignments-grid hidden" id="assignments-grid"></div>
       </main>
-    </div>
-
-    <!-- Floating theme toggle -->
-    <div class="theme-switch-wrapper">
-      <button class="theme-btn" id="btn-theme" title="Cambiar tema">
-        <i class="fa-solid fa-moon" id="icon-moon"></i>
-        <i class="fa-solid fa-sun" id="icon-sun" style="display: none"></i>
-      </button>
     </div>
 
     <!-- ══════════ MODAL: Añadir trabajo ══════════ -->
@@ -169,7 +203,6 @@
         </div>
 
         <div class="modal-body-scroll">
-          <!-- Title -->
           <div class="form-group">
             <label class="form-label">Título *</label>
             <input
@@ -181,7 +214,6 @@
             />
           </div>
 
-          <!-- Module + Deadline row -->
           <div class="form-row-2">
             <div class="form-group">
               <label class="form-label">Módulo</label>
@@ -198,26 +230,17 @@
             </div>
           </div>
 
-          <!-- Scope selection -->
           <div class="form-group">
             <label class="form-label">¿Para quién es esta actividad?</label>
             <div class="scope-options">
-              <button
-                class="scope-card active"
-                id="scope-clan"
-                onclick="setScope('clan')"
-              >
+              <button class="scope-card active" id="scope-clan">
                 <i class="fa-solid fa-users"></i>
                 <span class="scope-card-title">Solo mi clan</span>
                 <span class="scope-card-sub" id="scope-clan-label"
                   >Los coders de tu clan</span
                 >
               </button>
-              <button
-                class="scope-card"
-                id="scope-all"
-                onclick="setScope('all')"
-              >
+              <button class="scope-card" id="scope-all">
                 <i class="fa-solid fa-earth-americas"></i>
                 <span class="scope-card-title">Todos los coders</span>
                 <span class="scope-card-sub">Todos los clanes de Riwi</span>
@@ -225,22 +248,13 @@
             </div>
           </div>
 
-          <!-- Content type toggle -->
           <div class="form-group">
             <label class="form-label">Tipo de contenido</label>
             <div class="type-toggle">
-              <button
-                class="type-btn active"
-                id="type-pdf"
-                onclick="setContentType('pdf')"
-              >
+              <button class="type-btn active" id="type-pdf">
                 <i class="fa-solid fa-file-pdf"></i> PDF
               </button>
-              <button
-                class="type-btn"
-                id="type-repo"
-                onclick="setContentType('repo')"
-              >
+              <button class="type-btn" id="type-repo">
                 <i class="fa-brands fa-github"></i> Repositorio
               </button>
             </div>
@@ -248,11 +262,7 @@
 
           <!-- PDF zone -->
           <div id="pdf-section">
-            <div
-              class="drop-zone"
-              id="a-drop-zone"
-              onclick="document.getElementById('a-file-input').click()"
-            >
+            <div class="drop-zone" id="a-drop-zone">
               <input
                 type="file"
                 id="a-file-input"
@@ -301,7 +311,6 @@
                 />
               </div>
             </div>
-            <!-- GitHub preview card -->
             <div class="github-preview hidden" id="github-preview">
               <div class="github-preview-left">
                 <svg
@@ -326,7 +335,6 @@
             </div>
           </div>
 
-          <!-- Status message -->
           <div class="upload-status hidden" id="a-status"></div>
         </div>
 
@@ -345,12 +353,12 @@
         <div class="modal-header">
           <div class="modal-title-block">
             <i
-              class="fa-solid fa-upload"
-              style="color: var(--accent); font-size: 16px"
+              class="fa-solid fa-book-open"
+              style="color: var(--code-blue); font-size: 16px"
             ></i>
             <h2 class="modal-title">Subir recurso RAG</h2>
           </div>
-          <button class="icon-btn" onclick="closeUploadModal()">
+          <button class="icon-btn" id="btn-close-rag">
             <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
@@ -381,18 +389,14 @@
               <option value="3">JavaScript (Módulo 3)</option>
             </select>
           </div>
-          <div
-            class="drop-zone"
-            id="drop-zone"
-            onclick="document.getElementById('upload-file-input').click()"
-          >
+          <div class="drop-zone" id="drop-zone">
             <input
               type="file"
               id="upload-file-input"
               accept="application/pdf"
               style="display: none"
             />
-            <div class="drop-zone-content" id="drop-zone-content">
+            <div id="drop-zone-content">
               <i
                 class="fa-solid fa-file-pdf"
                 style="font-size: 28px; color: #ef4444; margin-bottom: 8px"
@@ -428,11 +432,7 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button
-            class="btn-submit-exercise"
-            id="btn-do-upload"
-            onclick="doUpload()"
-          >
+          <button class="btn-submit-exercise" id="btn-do-upload">
             <i class="fa-solid fa-upload"></i> Subir PDF
           </button>
           <p class="submit-note">
@@ -444,7 +444,7 @@
 
     <!-- Toast -->
     <div class="toast hidden" id="toast">
-      <i class="toast-icon fa-solid fa-circle-check" id="toast-icon"></i>
+      <i class="fa-solid fa-circle-check" id="toast-icon"></i>
       <span id="toast-msg">—</span>
     </div>
 

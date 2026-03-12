@@ -100,11 +100,10 @@
   margin-bottom: 32px;
 }
 .sidebar-logo {
-  width: 56px;
-  height: 56px;
+  width: 120px;
+  height: 120px;
   border-radius: 14px;
   object-fit: cover;
-  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 .sidebar-nav {
   flex: 1;

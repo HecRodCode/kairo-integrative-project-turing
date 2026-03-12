@@ -4,6 +4,7 @@
  */
 
 import { authService } from './auth-service.js';
+import { notificationsClient } from '../notificationsSSE.js';
 
 /* ── Absolute paths from web root ──────────────────────────── */
 const PATHS = {
@@ -73,6 +74,12 @@ export const guards = {
 
       // Keep localStorage cache in sync
       sessionManager.saveUser(data.user);
+
+      // GLOBALLY auto-connect the SSE Notification service for all validated users on any page
+      if (data.user.role) {
+        notificationsClient.connect(data.user.role);
+      }
+
       return data; // shape: { authenticated: true, user: { ...firstLogin... } }
     } catch {
       sessionManager.clearUser();

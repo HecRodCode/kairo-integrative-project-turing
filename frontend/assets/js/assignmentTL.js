@@ -1,125 +1,168 @@
 /**
  * assets/js/activitiesTL.js
- * Página de Actividades — vista TL.
- * Gestiona: crear trabajos (PDF/repo), listar, eliminar,
- * subir recursos RAG, notificaciones automáticas.
+ * Página Actividades — vista TL.
+ * Grid combinado: actividades (PDF/repo) + recursos RAG.
  */
 
-import { guards, sessionManager } from '/frontend/src/core/auth/session.js';
+import { guards, sessionManager } from '../../src/core/auth/session.js';
 
 const API = 'http://localhost:3000/api';
 const el = (id) => document.getElementById(id);
 
 /* ── State ── */
 let assignments = [];
+let resources = [];
 let currentScope = 'clan';
-let currentContentType = 'pdf';
+let currentType = 'pdf';
 let selectedFile = null;
-let tlClan = '—';
+let _ragFile = null;
+let _toastTimer = null;
 
 /* ══════════════════════════════════════
    BOOTSTRAP
 ══════════════════════════════════════ */
 (async function init() {
-  applyTheme();
-  wireThemeToggle();
+  try {
+    const session = await guards.requireAuth();
+    if (!session) return;
+    if (session.user.role !== 'tl') {
+      sessionManager.redirectByRole(session.user);
+      return;
+    }
 
-  const session = await guards.requireAuth();
-  if (!session) return;
-  if (session.user.role !== 'tl') {
-    sessionManager.redirectByRole(session.user);
+    el('topbar-name').textContent =
+      session.user.fullName || session.user.full_name || '—';
+  } catch (e) {
+    console.error('[init] auth error:', e);
     return;
   }
 
+  // Wire UI before any fetches — buttons must work even if backend is slow
+  
   wireLogout();
   setDate();
   wireAddModal();
   wireRagModal();
+  el('btn-retry').addEventListener('click', loadAll);
 
-  await loadAssignments();
+  await loadAll();
 })();
 
 /* ══════════════════════════════════════
-   LOAD & RENDER
+   LOAD — assignments + resources (independent fetches)
 ══════════════════════════════════════ */
-async function loadAssignments() {
+async function loadAll() {
   el('assignments-loading').style.display = 'grid';
   el('assignments-empty').classList.add('hidden');
   el('assignments-grid').classList.add('hidden');
+  el('grid-legend').classList.add('hidden');
   el('error-banner').classList.add('hidden');
 
+  // Non-fatal: enrich clan label
+  try {
+    const tlRes = await fetch(`${API}/tl/dashboard`, {
+      credentials: 'include',
+    });
+    if (tlRes.ok) {
+      const d = await tlRes.json();
+      const clan = d.tl?.clan || '';
+      if (clan) {
+        el('clan-heading').textContent = cap(clan);
+        el('scope-clan-label').textContent = `Coders del clan ${cap(clan)}`;
+      }
+    }
+  } catch {
+    /* non-critical */
+  }
+
+  // Fetch assignments
   try {
     const res = await fetch(`${API}/tl/assignments`, {
       credentials: 'include',
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-
-    // Set clan name in heading
-    if (data.assignments.length > 0) {
-      // Get clan from session indirectly via first assignment's clan_id
-    }
-
-    // Try to get TL info for clan heading
-    try {
-      const tlRes = await fetch(`${API}/tl/dashboard`, {
-        credentials: 'include',
-      });
-      if (tlRes.ok) {
-        const tlData = await tlRes.json();
-        tlClan = tlData.tl?.clan || '—';
-        el('clan-heading').textContent = cap(tlClan);
-        el('scope-clan-label').textContent = `Coders del clan ${cap(tlClan)}`;
-      }
-    } catch {
-      /* non-critical */
-    }
-
-    assignments = data.assignments;
-    renderAssignments();
+    assignments = data.assignments || [];
   } catch (err) {
-    console.error('[loadAssignments]', err);
+    console.error('[loadAll] assignments:', err);
     el('assignments-loading').style.display = 'none';
     el('error-banner').classList.remove('hidden');
-    el('error-msg').textContent = err.message;
-  }
-}
-
-function renderAssignments() {
-  el('assignments-loading').style.display = 'none';
-
-  if (!assignments.length) {
-    el('assignments-empty').classList.remove('hidden');
-    el('assignment-count').textContent = 'Sin actividades publicadas aún';
+    el('error-msg').textContent =
+      `No se pudo conectar al servidor (${err.message})`;
     return;
   }
 
-  const plural =
-    assignments.length === 1
-      ? '1 actividad publicada'
-      : `${assignments.length} actividades publicadas`;
-  el('assignment-count').textContent = plural;
+  // Fetch resources (non-fatal — show assignments even if resources fail)
+  try {
+    const res = await fetch(`${API}/tl/resource/list`, {
+      credentials: 'include',
+    });
+    const data = await res.json();
+    resources = res.ok ? data.resources || [] : [];
+  } catch {
+    resources = [];
+  }
 
+  renderGrid();
+}
+
+/* ══════════════════════════════════════
+   RENDER GRID (assignments + resources mezclados)
+══════════════════════════════════════ */
+function renderGrid() {
+  el('assignments-loading').style.display = 'none';
+
+  const items = [
+    ...assignments.map((a) => ({ ...a, _kind: 'assignment' })),
+    ...resources.map((r) => ({
+      ...r,
+      _kind: 'resource',
+      content_type: 'resource',
+      created_at: r.uploaded_at,
+      scope: 'clan',
+    })),
+  ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+  if (!items.length) {
+    el('assignments-empty').classList.remove('hidden');
+    el('assignment-count').textContent = 'Sin contenido publicado aún';
+    return;
+  }
+
+  el('assignment-count').textContent =
+    `${assignments.length} actividad${assignments.length !== 1 ? 'es' : ''} · ` +
+    `${resources.length} recurso${resources.length !== 1 ? 's' : ''} RAG`;
+
+  el('assignments-grid').innerHTML = items.map(renderCard).join('');
   el('assignments-grid').classList.remove('hidden');
-  el('assignments-grid').innerHTML = assignments.map(renderCard).join('');
+  el('grid-legend').classList.remove('hidden');
 
-  // Wire three-dot menus
+  // Three-dot menus
   el('assignments-grid')
     .querySelectorAll('[data-menu-id]')
     .forEach((btn) => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const menuId = btn.dataset.menuId;
-        const dropdown = el(`dropdown-${menuId}`);
-        // Close all others
         document.querySelectorAll('.three-dot-dropdown').forEach((d) => {
-          if (d.id !== `dropdown-${menuId}`) d.classList.add('hidden');
+          d.classList.toggle('hidden', d.id !== `dropdown-${menuId}`);
         });
-        dropdown.classList.toggle('hidden');
       });
     });
 
-  // Close menus on outside click
+  // Delete buttons
+  el('assignments-grid')
+    .querySelectorAll('.btn-delete-item')
+    .forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const { id, kind } = btn.dataset;
+        if (kind === 'assignment') deleteAssignment(id);
+        else deleteResource(id);
+      });
+    });
+
+  // Close dropdowns on outside click
   document.addEventListener('click', () => {
     document
       .querySelectorAll('.three-dot-dropdown')
@@ -127,58 +170,92 @@ function renderAssignments() {
   });
 }
 
-function renderCard(a) {
-  const typeClass = a.content_type === 'pdf' ? 'type-pdf' : 'type-repo';
+function renderCard(item) {
+  if (item._kind === 'resource') {
+    const modName = item.module_id ? `Módulo ${item.module_id}` : '';
+    return `
+      <div class="assignment-card type-resource">
+        <div class="card-top-row">
+          <div class="card-type-icon"><i class="fa-solid fa-book-open"></i></div>
+          <div class="card-main">
+            <p class="card-title-text" title="${esc(item.title)}">${esc(item.title)}</p>
+            <div class="card-chips">
+              ${modName ? `<span class="chip-module">${modName}</span>` : ''}
+              <span class="chip-scope clan chip-rag">
+                <i class="fa-solid fa-brain-circuit"></i> Recurso RAG
+              </span>
+            </div>
+            ${
+              item.preview_text
+                ? `<p class="card-preview">${esc(item.preview_text.slice(0, 100))}…</p>`
+                : ''
+            }
+          </div>
+          <div class="three-dot-wrapper">
+            <button class="btn-three-dot" data-menu-id="r-${item.id}" title="Opciones">
+              <i class="fa-solid fa-ellipsis-vertical"></i>
+            </button>
+            <div class="three-dot-dropdown hidden" id="dropdown-r-${item.id}">
+              <button class="dropdown-item btn-delete-item" data-id="${item.id}" data-kind="resource">
+                <i class="fa-solid fa-trash"></i> Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="card-meta-row">
+          <span><i class="fa-regular fa-clock" style="margin-right:5px"></i>${relativeTime(item.created_at)}</span>
+          <span style="font-size:11px;color:var(--text-muted)">${esc(item.file_name || '')}</span>
+        </div>
+      </div>`;
+  }
+
+  // Assignment card (pdf / repo)
+  const typeClass = item.content_type === 'pdf' ? 'type-pdf' : 'type-repo';
   const typeIcon =
-    a.content_type === 'pdf'
+    item.content_type === 'pdf'
       ? '<i class="fa-solid fa-file-pdf"></i>'
       : '<i class="fa-brands fa-github"></i>';
-
   const scopeLabel =
-    a.scope === 'all' ? 'Todos los coders' : `Clan ${cap(a.clan_id || '—')}`;
-  const scopeClass = a.scope === 'all' ? 'all' : 'clan';
-
-  const deadlineChip = a.deadline ? buildDeadlineChip(a.deadline) : '';
-  const moduleChip = a.module_name
-    ? `<span class="chip-module">${a.module_name}</span>`
-    : '';
-  const scopeChip = `<span class="chip-scope ${scopeClass}"><i class="fa-solid fa-${a.scope === 'all' ? 'earth-americas' : 'users'}"></i> ${scopeLabel}</span>`;
-
-  const timeAgo = relativeTime(a.created_at);
+    item.scope === 'all'
+      ? 'Todos los coders'
+      : `Clan ${cap(item.clan_id || '—')}`;
+  const scopeIcon = item.scope === 'all' ? 'earth-americas' : 'users';
 
   return `
     <div class="assignment-card ${typeClass}">
       <div class="card-top-row">
         <div class="card-type-icon">${typeIcon}</div>
         <div class="card-main">
-          <p class="card-title-text" title="${esc(a.title)}">${esc(a.title)}</p>
+          <p class="card-title-text" title="${esc(item.title)}">${esc(item.title)}</p>
           <div class="card-chips">
-            ${moduleChip}
-            ${scopeChip}
-            ${deadlineChip}
+            ${item.module_name ? `<span class="chip-module">${esc(item.module_name)}</span>` : ''}
+            <span class="chip-scope ${item.scope === 'all' ? 'all' : 'clan'}">
+              <i class="fa-solid fa-${scopeIcon}"></i> ${scopeLabel}
+            </span>
+            ${item.deadline ? buildDeadlineChip(item.deadline) : ''}
           </div>
         </div>
         <div class="three-dot-wrapper">
-          <button class="btn-three-dot" data-menu-id="${a.id}" title="Opciones">
+          <button class="btn-three-dot" data-menu-id="${item.id}" title="Opciones">
             <i class="fa-solid fa-ellipsis-vertical"></i>
           </button>
-          <div class="three-dot-dropdown hidden" id="dropdown-${a.id}">
-            <button class="dropdown-item" onclick="deleteAssignment(${a.id})">
+          <div class="three-dot-dropdown hidden" id="dropdown-${item.id}">
+            <button class="dropdown-item btn-delete-item" data-id="${item.id}" data-kind="assignment">
               <i class="fa-solid fa-trash"></i> Eliminar
             </button>
           </div>
         </div>
       </div>
       <div class="card-meta-row">
-        <span><i class="fa-regular fa-clock" style="margin-right:5px"></i>${timeAgo}</span>
+        <span><i class="fa-regular fa-clock" style="margin-right:5px"></i>${relativeTime(item.created_at)}</span>
         ${
-          a.content_type === 'repo' && a.repo_url
-            ? `<a href="${esc(a.repo_url)}" target="_blank" rel="noopener"
+          item.content_type === 'repo' && item.repo_url
+            ? `<a href="${esc(item.repo_url)}" target="_blank" rel="noopener"
                style="font-size:11.5px;color:var(--accent);text-decoration:none">
                <i class="fa-solid fa-arrow-up-right-from-square"></i> Ver repo
              </a>`
-            : a.file_name
-              ? `<span style="font-size:11px;color:var(--text-muted)">${esc(a.file_name)}</span>`
+            : item.file_name
+              ? `<span style="font-size:11px;color:var(--text-muted)">${esc(item.file_name)}</span>`
               : ''
         }
       </div>
@@ -186,21 +263,57 @@ function renderCard(a) {
 }
 
 /* ══════════════════════════════════════
-   ADD MODAL
+   DELETE
+══════════════════════════════════════ */
+async function deleteAssignment(id) {
+  if (!confirm('¿Eliminar esta actividad? Los coders ya no podrán verla.'))
+    return;
+  try {
+    const res = await fetch(`${API}/tl/assignment/${id}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+    if (!res.ok) throw new Error('Error al eliminar.');
+    showToast('Actividad eliminada', 'info');
+    assignments = assignments.filter((a) => String(a.id) !== String(id));
+    renderGrid();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function deleteResource(id) {
+  if (!confirm('¿Eliminar este recurso? Los coders ya no podrán usarlo.'))
+    return;
+  try {
+    const res = await fetch(`${API}/tl/resource/${id}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+    if (!res.ok) throw new Error('Error al eliminar.');
+    showToast('Recurso eliminado', 'info');
+    resources = resources.filter((r) => String(r.id) !== String(id));
+    renderGrid();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+/* ══════════════════════════════════════
+   ADD ACTIVITY MODAL
 ══════════════════════════════════════ */
 function wireAddModal() {
   el('btn-open-add').addEventListener('click', openAddModal);
   el('btn-close-add').addEventListener('click', closeAddModal);
   el('btn-do-add').addEventListener('click', submitAssignment);
 
-  // File input
-  el('a-file-input').addEventListener('change', () => {
-    selectedFile = el('a-file-input').files[0] || null;
-    updateDropZone();
-  });
+  el('scope-clan').addEventListener('click', () => setScope('clan'));
+  el('scope-all').addEventListener('click', () => setScope('all'));
+  el('type-pdf').addEventListener('click', () => setContentType('pdf'));
+  el('type-repo').addEventListener('click', () => setContentType('repo'));
 
-  // Drag & drop
   const dz = el('a-drop-zone');
+  dz.addEventListener('click', () => el('a-file-input').click());
   dz.addEventListener('dragover', (e) => {
     e.preventDefault();
     dz.classList.add('dragover');
@@ -213,10 +326,13 @@ function wireAddModal() {
     updateDropZone();
   });
 
-  // Repo URL detect
+  el('a-file-input').addEventListener('change', () => {
+    selectedFile = el('a-file-input').files[0] || null;
+    updateDropZone();
+  });
+
   el('a-repo-url').addEventListener('input', detectGithubUrl);
 
-  // Close on overlay click
   el('add-modal').addEventListener('click', (e) => {
     if (e.target === el('add-modal')) closeAddModal();
   });
@@ -231,10 +347,6 @@ function openAddModal() {
 function closeAddModal() {
   el('add-modal').classList.add('hidden');
   document.body.style.overflow = '';
-  resetAddModal();
-}
-
-function resetAddModal() {
   el('a-title').value = '';
   el('a-deadline').value = '';
   el('a-repo-url').value = '';
@@ -251,22 +363,19 @@ function setScope(s) {
   el('scope-clan').classList.toggle('active', s === 'clan');
   el('scope-all').classList.toggle('active', s === 'all');
 }
-window.setScope = setScope;
 
 function setContentType(t) {
-  currentContentType = t;
+  currentType = t;
   el('type-pdf').classList.toggle('active', t === 'pdf');
   el('type-repo').classList.toggle('active', t === 'repo');
   el('pdf-section').classList.toggle('hidden', t !== 'pdf');
   el('repo-section').classList.toggle('hidden', t !== 'repo');
 }
-window.setContentType = setContentType;
 
 function updateDropZone() {
-  const dz = el('a-drop-zone');
   const content = el('a-drop-content');
   if (selectedFile) {
-    dz.classList.add('has-file');
+    el('a-drop-zone').classList.add('has-file');
     content.innerHTML = `
       <i class="fa-solid fa-file-pdf" style="font-size:24px;color:#10b981;margin-bottom:6px"></i>
       <p style="font-size:13px;font-weight:700;color:var(--text-main);margin:0">${esc(selectedFile.name)}</p>
@@ -274,7 +383,7 @@ function updateDropZone() {
         ${(selectedFile.size / 1024 / 1024).toFixed(2)} MB · Click para cambiar
       </p>`;
   } else {
-    dz.classList.remove('has-file');
+    el('a-drop-zone').classList.remove('has-file');
     content.innerHTML = `
       <i class="fa-solid fa-file-pdf" style="font-size:28px;color:#ef4444;margin-bottom:8px"></i>
       <p style="font-size:13px;font-weight:600;color:var(--text-main);margin:0">Haz clic o arrastra el PDF aquí</p>
@@ -284,32 +393,26 @@ function updateDropZone() {
 
 function detectGithubUrl() {
   const url = el('a-repo-url').value.trim();
-  const preview = el('github-preview');
   if (url.includes('github.com') && url.startsWith('http')) {
-    preview.classList.remove('hidden');
-    el('github-preview-url').textContent = url
-      .replace('https://', '')
-      .replace('http://', '');
+    el('github-preview').classList.remove('hidden');
+    el('github-preview-url').textContent = url.replace(/^https?:\/\//, '');
   } else {
-    preview.classList.add('hidden');
+    el('github-preview').classList.add('hidden');
   }
 }
 
 async function submitAssignment() {
   const title = el('a-title').value.trim();
-  const moduleId = el('a-module').value;
-  const deadline = el('a-deadline').value;
-  const repoUrl = el('a-repo-url').value.trim();
   const btn = el('btn-do-add');
 
   if (!title) return setStatus('a-status', 'error', 'El título es requerido.');
-  if (currentContentType === 'pdf' && !selectedFile)
+  if (currentType === 'pdf' && !selectedFile)
     return setStatus('a-status', 'error', 'Selecciona un archivo PDF.');
-  if (currentContentType === 'pdf' && selectedFile.type !== 'application/pdf')
-    return setStatus('a-status', 'error', 'Solo se aceptan archivos PDF.');
-  if (currentContentType === 'pdf' && selectedFile.size > 20 * 1024 * 1024)
+  if (currentType === 'pdf' && selectedFile.type !== 'application/pdf')
+    return setStatus('a-status', 'error', 'Solo se aceptan PDFs.');
+  if (currentType === 'pdf' && selectedFile.size > 20 * 1024 * 1024)
     return setStatus('a-status', 'error', 'El archivo supera los 20 MB.');
-  if (currentContentType === 'repo' && !repoUrl)
+  if (currentType === 'repo' && !el('a-repo-url').value.trim())
     return setStatus('a-status', 'error', 'Ingresa la URL del repositorio.');
 
   btn.disabled = true;
@@ -319,12 +422,13 @@ async function submitAssignment() {
   try {
     const form = new FormData();
     form.append('title', title);
-    form.append('moduleId', moduleId);
+    form.append('moduleId', el('a-module').value);
     form.append('scope', currentScope);
-    form.append('contentType', currentContentType);
-    if (deadline) form.append('deadline', deadline);
-    if (currentContentType === 'pdf') form.append('file', selectedFile);
-    if (currentContentType === 'repo') form.append('repoUrl', repoUrl);
+    form.append('contentType', currentType);
+    if (el('a-deadline').value) form.append('deadline', el('a-deadline').value);
+    if (currentType === 'pdf') form.append('file', selectedFile);
+    if (currentType === 'repo')
+      form.append('repoUrl', el('a-repo-url').value.trim());
 
     const res = await fetch(`${API}/tl/assignment`, {
       method: 'POST',
@@ -332,16 +436,15 @@ async function submitAssignment() {
       body: form,
     });
     const data = await res.json();
-
     if (!res.ok) throw new Error(data.error || 'Error al publicar.');
 
-    const notified = data.notified || 0;
+    const n = data.notified || 0;
     showToast(
-      `✓ Actividad publicada · ${notified} coder${notified !== 1 ? 's' : ''} notificado${notified !== 1 ? 's' : ''}`,
+      `✓ Actividad publicada · ${n} coder${n !== 1 ? 's' : ''} notificado${n !== 1 ? 's' : ''}`,
       'success'
     );
     closeAddModal();
-    await loadAssignments();
+    await loadAll();
   } catch (err) {
     setStatus('a-status', 'error', err.message);
   } finally {
@@ -351,42 +454,16 @@ async function submitAssignment() {
   }
 }
 
-async function deleteAssignment(id) {
-  if (!confirm('¿Eliminar esta actividad? Los coders ya no podrán verla.'))
-    return;
-
-  try {
-    const res = await fetch(`${API}/tl/assignment/${id}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    });
-    if (!res.ok) throw new Error('Error al eliminar.');
-
-    showToast('Actividad eliminada', 'info');
-    assignments = assignments.filter((a) => a.id !== id);
-    renderAssignments();
-  } catch (err) {
-    showToast(err.message, 'error');
-  }
-}
-window.deleteAssignment = deleteAssignment;
-
 /* ══════════════════════════════════════
-   RAG UPLOAD MODAL (moved from dashboardTL)
+   RAG MODAL
 ══════════════════════════════════════ */
-let _ragFile = null;
-
 function wireRagModal() {
-  el('btn-open-rag').addEventListener('click', openUploadModal);
+  el('btn-open-rag').addEventListener('click', openRagModal);
+  el('btn-close-rag').addEventListener('click', closeRagModal);
+  el('btn-do-upload').addEventListener('click', doUpload);
 
-  const fi = el('upload-file-input');
   const dz = el('drop-zone');
-
-  fi.addEventListener('change', () => {
-    _ragFile = fi.files[0] || null;
-    _updateRagDropZone();
-  });
-
+  dz.addEventListener('click', () => el('upload-file-input').click());
   dz.addEventListener('dragover', (e) => {
     e.preventDefault();
     dz.classList.add('dragover');
@@ -396,17 +473,37 @@ function wireRagModal() {
     e.preventDefault();
     dz.classList.remove('dragover');
     _ragFile = e.dataTransfer.files[0] || null;
-    _updateRagDropZone();
+    updateRagDropZone();
+  });
+
+  el('upload-file-input').addEventListener('change', () => {
+    _ragFile = el('upload-file-input').files[0] || null;
+    updateRagDropZone();
   });
 
   el('upload-resource-modal').addEventListener('click', (e) => {
-    if (e.target === el('upload-resource-modal')) closeUploadModal();
+    if (e.target === el('upload-resource-modal')) closeRagModal();
   });
 }
 
-function _updateRagDropZone() {
+function openRagModal() {
+  el('upload-resource-modal').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  setStatus('upload-status', '', '');
+  el('upload-progress').classList.add('hidden');
+  el('upload-progress-bar').style.width = '0%';
+}
+
+function closeRagModal() {
+  el('upload-resource-modal').classList.add('hidden');
+  document.body.style.overflow = '';
+  _ragFile = null;
+  updateRagDropZone();
+  el('upload-title').value = '';
+}
+
+function updateRagDropZone() {
   const content = el('drop-zone-content');
-  if (!content) return;
   if (_ragFile) {
     el('drop-zone').classList.add('has-file');
     content.innerHTML = `
@@ -424,24 +521,8 @@ function _updateRagDropZone() {
   }
 }
 
-window.openUploadModal = function () {
-  el('upload-resource-modal').classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
-  setStatus('upload-status', '', '');
-  el('upload-progress').classList.add('hidden');
-};
-
-window.closeUploadModal = function () {
-  el('upload-resource-modal').classList.add('hidden');
-  document.body.style.overflow = '';
-  _ragFile = null;
-  _updateRagDropZone();
-  el('upload-title').value = '';
-};
-
-window.doUpload = async function () {
+async function doUpload() {
   const title = el('upload-title').value.trim();
-  const moduleId = el('upload-module').value;
   const btn = el('btn-do-upload');
 
   if (!title)
@@ -457,16 +538,14 @@ window.doUpload = async function () {
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Subiendo...';
   setStatus('upload-status', 'info', 'Subiendo archivo...');
 
-  const prog = el('upload-progress');
-  const bar = el('upload-progress-bar');
-  prog.classList.remove('hidden');
-  bar.style.width = '30%';
+  el('upload-progress').classList.remove('hidden');
+  el('upload-progress-bar').style.width = '30%';
 
   try {
     const form = new FormData();
     form.append('file', _ragFile);
     form.append('title', title);
-    form.append('moduleId', moduleId);
+    form.append('moduleId', el('upload-module').value);
 
     const res = await fetch(`${API}/tl/resource/upload`, {
       method: 'POST',
@@ -474,113 +553,94 @@ window.doUpload = async function () {
       body: form,
     });
     const data = await res.json();
-    bar.style.width = '100%';
+    el('upload-progress-bar').style.width = '100%';
 
     if (res.ok && data.success) {
       setStatus(
         'upload-status',
         'success',
-        '✓ PDF subido. El embedding se procesa en segundo plano (~10s).'
+        '✓ PDF subido. El embedding se procesa en ~10s.'
       );
       showToast('Recurso RAG subido correctamente', 'success');
-      setTimeout(window.closeUploadModal, 2500);
+      setTimeout(async () => {
+        closeRagModal();
+        await loadAll();
+      }, 1800);
     } else {
-      setStatus(
-        'upload-status',
-        'error',
-        data.error || 'Error al subir el archivo.'
-      );
+      setStatus('upload-status', 'error', data.error || 'Error al subir.');
     }
-  } catch {
-    setStatus('upload-status', 'error', 'No se pudo conectar con el servidor.');
+  } catch (err) {
+    setStatus('upload-status', 'error', `No se pudo conectar: ${err.message}`);
   } finally {
     btn.disabled = false;
     btn.innerHTML = '<i class="fa-solid fa-upload"></i> Subir PDF';
   }
-};
-
-/* ══════════════════════════════════════
-   TOAST
-══════════════════════════════════════ */
-let _toastTimer = null;
-
-function showToast(msg, type = 'success') {
-  const toast = el('toast');
-  const icon = el('toast-icon');
-
-  toast.className = `toast ${type}`;
-  icon.className = `toast-icon fa-solid ${
-    type === 'success'
-      ? 'fa-circle-check'
-      : type === 'error'
-        ? 'fa-circle-xmark'
-        : 'fa-circle-info'
-  }`;
-  el('toast-msg').textContent = msg;
-  toast.classList.remove('hidden');
-
-  if (_toastTimer) clearTimeout(_toastTimer);
-  _toastTimer = setTimeout(() => toast.classList.add('hidden'), 3500);
 }
 
 /* ══════════════════════════════════════
-   HELPERS
+   UTILS
 ══════════════════════════════════════ */
-function setStatus(elId, type, msg) {
-  const statusEl = el(elId);
+function showToast(msg, type = 'success') {
+  const icons = {
+    success: 'fa-circle-check',
+    error: 'fa-circle-xmark',
+    info: 'fa-circle-info',
+  };
+  el('toast-icon').className = `fa-solid ${icons[type] || icons.info}`;
+  el('toast-msg').textContent = msg;
+  const t = el('toast');
+  t.className = `toast ${type}`;
+  t.classList.remove('hidden');
+  if (_toastTimer) clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.classList.add('hidden'), 3500);
+}
+
+function setStatus(id, type, msg) {
+  const s = el(id);
+  if (!s) return;
   if (!msg) {
-    statusEl.classList.add('hidden');
+    s.classList.add('hidden');
     return;
   }
-  statusEl.className = `upload-status ${type}`;
-  statusEl.textContent = msg;
-  statusEl.classList.remove('hidden');
+  s.className = `upload-status ${type}`;
+  s.textContent = msg;
+  s.classList.remove('hidden');
 }
 
 function buildDeadlineChip(deadline) {
-  const d = new Date(deadline);
-  const now = new Date();
-  const diffDays = Math.round((d - now) / (1000 * 60 * 60 * 24));
-  let cls, text;
-
-  if (diffDays < 0) {
-    cls = 'overdue';
-    text = `Venció hace ${Math.abs(diffDays)}d`;
-  } else if (diffDays <= 3) {
-    cls = 'soon';
-    text = diffDays === 0 ? 'Vence hoy' : `Vence en ${diffDays}d`;
-  } else {
-    cls = 'ok';
-    text = `${d.toLocaleDateString('es-CO', { day: '2-digit', month: 'short' })}`;
-  }
-
+  const diff = Math.round((new Date(deadline) - new Date()) / 86400000);
+  const cls = diff < 0 ? 'overdue' : diff <= 3 ? 'soon' : 'ok';
+  const text =
+    diff < 0
+      ? `Venció hace ${Math.abs(diff)}d`
+      : diff === 0
+        ? 'Vence hoy'
+        : `Vence en ${diff}d`;
   return `<span class="chip-deadline ${cls}"><i class="fa-regular fa-calendar"></i> ${text}</span>`;
 }
 
-function relativeTime(isoString) {
-  const d = new Date(isoString);
-  const diff = Date.now() - d.getTime();
-  const mins = Math.floor(diff / 60000);
+function relativeTime(iso) {
+  if (!iso) return '—';
+  const mins = Math.floor((Date.now() - new Date(iso)) / 60000);
   if (mins < 2) return 'Hace un momento';
   if (mins < 60) return `Hace ${mins} min`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `Hace ${hrs} hora${hrs > 1 ? 's' : ''}`;
-  const days = Math.floor(hrs / 24);
-  return `Hace ${days} día${days > 1 ? 's' : ''}`;
+  if (hrs < 24) return `Hace ${hrs}h`;
+  return `Hace ${Math.floor(hrs / 24)}d`;
 }
 
-function cap(str) {
-  if (!str) return '—';
-  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+function cap(s) {
+  return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : '—';
 }
 
-function esc(str) {
-  if (!str) return '';
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+function esc(s) {
+  return s
+    ? s
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+    : '';
 }
 
 function setDate() {
@@ -596,26 +656,5 @@ function wireLogout() {
   el('btn-logout').addEventListener('click', () => sessionManager.logout());
 }
 
-function applyTheme() {
-  const stored = localStorage.getItem('kairo_theme') || 'dark';
-  document.documentElement.setAttribute('data-theme', stored);
-  syncThemeIcon(stored);
-}
-
-function wireThemeToggle() {
-  el('btn-theme').addEventListener('click', () => {
-    const current = document.documentElement.getAttribute('data-theme');
-    const next = current === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('kairo_theme', next);
-    syncThemeIcon(next);
-  });
-}
-
-function syncThemeIcon(theme) {
-  el('icon-moon').style.display = theme === 'dark' ? 'block' : 'none';
-  el('icon-sun').style.display = theme === 'light' ? 'block' : 'none';
-}
-
-// Expose for retry button
-window.loadAssignments = loadAssignments;
+// Expose for HTML error banner retry button
+window.loadAssignments = loadAll;

@@ -12,6 +12,7 @@
 import { query } from '../config/database.js';
 import { calculatePercentage, formatDate } from '../utils/helpers.js';
 import { sanitizeInput } from '../utils/validators.js';
+import { notifyUser } from '../services/notificationService.js';
 
 /* ════════════════════════════════════════
    CLAN OVERVIEW
@@ -181,6 +182,19 @@ export async function submitFeedback(req, res) {
       RETURNING *
     `,
       [coderId, tlId, sanitizeInput(feedbackText), sanitizeInput(feedbackType)]
+    );
+
+    // Get TL name for the notification
+    const tlResult = await query('SELECT full_name FROM users WHERE id = $1', [tlId]);
+    const tlName = tlResult.rows[0]?.full_name || 'Tu TL';
+
+    // Dispatch realtime notification to the coder
+    await notifyUser(
+      coderId,
+      'Nuevo Feedback Requerido',
+      `${tlName} te ha dejado un feedback: "${feedbackText.substring(0, 50)}..."`,
+      'feedback',
+      result.rows[0].id
     );
 
     res.status(201).json({

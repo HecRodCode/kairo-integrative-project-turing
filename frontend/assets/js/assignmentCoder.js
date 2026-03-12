@@ -11,6 +11,7 @@ const el = (id) => document.getElementById(id);
 
 /* ── State ── */
 let allAssignments = [];
+let allResources = [];
 let activeFilter = 'all';
 
 /* ══════════════════════════════════════
@@ -34,9 +35,16 @@ let activeFilter = 'all';
   wireLogout();
   setDate();
   wireFilters();
-  wireNotifBell();
 
-  await Promise.all([loadActivities(), loadNotifications()]);
+  await loadActivities();
+
+  // Sync: Refresh activities if a new assignment notification arrives
+  window.addEventListener('kairo-notification', (e) => {
+    if (e.detail.type === 'assignment') {
+      console.log('[Sync] New assignment detected, refreshing grid...');
+      loadActivities();
+    }
+  });
 })();
 
 /* ══════════════════════════════════════
@@ -49,13 +57,19 @@ async function loadActivities() {
   el('error-banner').classList.add('hidden');
 
   try {
-    const res = await fetch(`${API}/coder/assignments`, {
-      credentials: 'include',
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    const [aRes, rRes] = await Promise.all([
+      fetch(`${API}/coder/assignments`, { credentials: 'include' }),
+      fetch(`${API}/coder/resources`, { credentials: 'include' }),
+    ]);
 
-    allAssignments = data.assignments;
+    const aData = await aRes.json();
+    const rData = await rRes.json();
+
+    if (!aRes.ok) throw new Error(aData.error || `HTTP ${aRes.status}`);
+
+    allAssignments = aData.assignments || [];
+    allResources = rRes.ok ? rData.resources || [] : [];
+
     renderActivities();
   } catch (err) {
     console.error('[loadActivities]', err);
@@ -68,7 +82,18 @@ async function loadActivities() {
 function renderActivities() {
   el('act-loading').style.display = 'none';
 
-  const filtered = applyFilter(allAssignments);
+  const items = [
+    ...allAssignments.map((a) => ({ ...a, _kind: 'assignment' })),
+    ...allResources.map((r) => ({
+      ...r,
+      _kind: 'resource',
+      content_type: 'resource',
+      created_at: r.uploaded_at,
+      scope: 'clan',
+    })),
+  ].sort((a, b) => new Date(b.created_at || b.uploaded_at) - new Date(a.created_at || a.uploaded_at));
+
+  const filtered = applyFilter(items);
 
   if (!filtered.length) {
     el('act-grid').classList.add('hidden');
@@ -83,15 +108,56 @@ function renderActivities() {
   el('act-empty').classList.add('hidden');
   el('act-grid').classList.remove('hidden');
 
-  const total = allAssignments.length;
+  const total = items.length;
   el('act-count').textContent =
-    `${total} actividad${total !== 1 ? 'es' : ''} publicada${total !== 1 ? 's' : ''}`;
+    `${allAssignments.length} actividad${allAssignments.length !== 1 ? 'es' : ''} · ` +
+    `${allResources.length} recurso${allResources.length !== 1 ? 's' : ''} RAG`;
 
   el('act-grid').innerHTML = filtered.map(renderCard).join('');
 }
 
 function renderCard(a) {
+  if (a._kind === 'resource') {
+    const modName = a.module_name || (a.module_id ? `Módulo ${a.module_id}` : '');
+    const tlName = a.tl_name || 'Tu Leader';
+    
+    return `
+      <div class="act-card type-resource">
+        <div class="act-card-stripe"></div>
+        <div class="act-card-body">
+          <div class="act-card-header">
+            <div class="act-type-icon"><i class="fa-solid fa-book"></i></div>
+            <div class="act-card-info">
+              <p class="act-card-title">${esc(a.title)}</p>
+              <div class="act-chips">
+                ${modName ? `<span class="act-chip module">${esc(modName)}</span>` : ''}
+                <span class="act-chip tl"><i class="fa-solid fa-user-tie"></i> ${esc(tlName)}</span>
+                <span class="act-chip scope-all">
+                  <i class="fa-solid fa-brain-circuit"></i> Recurso RAG
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="act-deadline no-date" style="background:rgba(168, 85, 247, 0.08); color:var(--accent); border-color:rgba(168, 85, 247, 0.25);">
+             <i class="fa-regular fa-calendar-check"></i>
+             Subido el ${new Date(a.uploaded_at || a.created_at).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}
+          </div>
+          ${
+            a.preview_text
+              ? `<div class="act-preview-text">${esc(a.preview_text.slice(0, 120))}…</div>`
+              : ''
+          }
+        </div>
+        <div class="act-card-footer">
+          <button class="btn-act-primary" onclick="downloadResource(${a.id}, this)">
+             <i class="fa-solid fa-download"></i> Descargar Recurso
+          </button>
+        </div>
+      </div>`;
+  }
+
   const typeClass = a.content_type === 'pdf' ? 'type-pdf' : 'type-repo';
+  // ... rest of regular assignment rendering
 
   const typeIcon =
     a.content_type === 'pdf'
@@ -188,6 +254,40 @@ async function downloadAssignment(id, btn) {
 window.downloadAssignment = downloadAssignment;
 
 /* ══════════════════════════════════════
+   DOWNLOAD RESOURCE
+   (Función separada para evitar confusiones de endpoint)
+══════════════════════════════════════ */
+async function downloadResource(id, btn) {
+  const original = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+  try {
+    const res = await fetch(`${API}/coder/resource/${id}/download`, {
+      credentials: 'include',
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'No se pudo obtener recurso.');
+
+    const link = document.createElement('a');
+    link.href = data.url;
+    link.download = data.fileName || 'recurso_rag.pdf';
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showToast('Recurso descargado', 'success');
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = original;
+  }
+}
+window.downloadResource = downloadResource;
+
+/* ══════════════════════════════════════
    FILTERS
 ══════════════════════════════════════ */
 function wireFilters() {
@@ -203,80 +303,22 @@ function wireFilters() {
   });
 }
 
-function applyFilter(assignments) {
+function applyFilter(items) {
   if (activeFilter === 'pending') {
-    return assignments.filter((a) => {
+    return items.filter((a) => {
+      if (a._kind === 'resource') return true; // los recursos no vencen
       if (!a.deadline) return true;
       return new Date(a.deadline) >= new Date();
     });
   }
   if (activeFilter === 'overdue') {
-    return assignments.filter((a) => {
+    return items.filter((a) => {
+      if (a._kind === 'resource') return false;
       if (!a.deadline) return false;
       return new Date(a.deadline) < new Date();
     });
   }
-  return assignments;
-}
-
-/* ══════════════════════════════════════
-   NOTIFICATIONS
-══════════════════════════════════════ */
-async function loadNotifications() {
-  try {
-    const res = await fetch(`${API}/notifications`, { credentials: 'include' });
-    if (!res.ok) return;
-    const data = await res.json();
-
-    if (data.unread > 0) {
-      el('notif-dot').classList.remove('hidden');
-      el('notif-dot').textContent = data.unread > 9 ? '9+' : data.unread;
-    }
-
-    if (data.notifications.length) {
-      el('notif-list').innerHTML = data.notifications
-        .slice(0, 10)
-        .map(
-          (n) => `
-          <div class="notif-item ${!n.is_read ? 'notif-item-unread' : ''}">
-            <p class="notif-title">${esc(n.title)}</p>
-            <p class="notif-time">${relativeTime(n.created_at)}</p>
-          </div>`
-        )
-        .join('');
-    }
-  } catch {
-    /* non-critical */
-  }
-}
-
-function wireNotifBell() {
-  const btn = el('btn-notif');
-  const dropdown = el('notif-dropdown');
-
-  btn.addEventListener('click', async (e) => {
-    e.stopPropagation();
-    dropdown.classList.toggle('hidden');
-
-    if (!dropdown.classList.contains('hidden')) {
-      // Mark as read
-      try {
-        await fetch(`${API}/notifications/read`, {
-          method: 'POST',
-          credentials: 'include',
-        });
-        el('notif-dot').classList.add('hidden');
-      } catch {
-        /* non-critical */
-      }
-    }
-  });
-
-  document.addEventListener('click', (e) => {
-    if (!dropdown.contains(e.target) && e.target !== btn) {
-      dropdown.classList.add('hidden');
-    }
-  });
+  return items;
 }
 
 /* ══════════════════════════════════════
