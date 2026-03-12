@@ -6,10 +6,7 @@
  * Sin mock data. Sin spinners de carga — skeleton shimmer implícito en CSS.
  */
 
-import {
-  guards,
-  sessionManager,
-} from '../../src/core/auth/session.js';
+import { guards, sessionManager } from '../../src/core/auth/session.js';
 
 const API = 'http://localhost:3000/api';
 
@@ -94,9 +91,7 @@ function renderUser(user, plan, riskFlags) {
 
   const firstName = user.fullName?.split(' ')[0] || user.fullName || '—';
 
-  el('welcome-name').textContent = firstName;
-  el('sidebar-name').textContent = user.fullName || '—';
-  el('sidebar-clan').textContent = cap(user.clan || '—');
+  el('welcome-name').textContent = user.fullName;
   el('topbar-name').textContent = firstName;
 
   el('clan-badge').textContent = cap(user.clan || '—');

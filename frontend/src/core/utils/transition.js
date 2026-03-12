@@ -1,9 +1,6 @@
 /**
  * src/core/utils/transition.js
  * Page transition animations for auth views.
- *
- * FIX: was selecting `.auth-container` which does not exist in login.html / register.html.
- *      The correct selector is `.card-content` (the main auth card element).
  */
 
 document.addEventListener('DOMContentLoaded', () => {

@@ -1,6 +1,5 @@
 """
-Kairo AI Microservice — main.py
-Entry point for FastAPI. Registers all routers and configures middleware.
+Kairo AI Microservice — main.py v2.2
 """
 
 import os
@@ -10,7 +9,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
-from app.routers import roadmap, cards, chat, reports, exercises
+from app.routers import roadmap, cards, chat, reports, exercises, resources
+from app.services.embedding_service import model_ready
 
 load_dotenv()
 
@@ -37,10 +37,11 @@ def _build_origins() -> list[str]:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-    logger.info("  Kairo AI Service v2.1  |  starting")
-    logger.info(f"  Model   : {os.getenv('MODEL_NAME', 'llama-3.3-70b-versatile')}")
-    logger.info(f"  Env     : {os.getenv('ENV', 'development')}")
-    logger.info(f"  Origins : {_build_origins()}")
+    logger.info("  Kairo AI Service v2.2  |  starting")
+    logger.info(f"  LLM model  : {os.getenv('MODEL_NAME', 'llama-3.3-70b-versatile')}")
+    logger.info(f"  Embeddings : {'✓ all-MiniLM-L6-v2 (384d)' if model_ready() else '✗ NOT LOADED'}")
+    logger.info(f"  Env        : {os.getenv('ENV', 'development')}")
+    logger.info(f"  Origins    : {_build_origins()}")
     logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     yield
     logger.info("Kairo AI Service shutting down.")
@@ -48,8 +49,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Kairo AI Service",
-    description="AI microservice for Riwi bootcamp — plans, exercises, cards, and TL reports.",
-    version="2.1.0",
+    description="AI microservice for Riwi — plans, exercises, resources RAG, and TL reports.",
+    version="2.2.0",
     lifespan=lifespan,
 )
 
@@ -57,7 +58,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=_build_origins(),
     allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization"],
 )
 
@@ -65,8 +66,9 @@ app.add_middleware(
 app.include_router(roadmap.router)    # POST /generate-plan
 app.include_router(cards.router)      # POST /generate-focus-cards
 app.include_router(chat.router)       # POST /chat/ask
-app.include_router(reports.router)    # POST /generate-report, GET /generate-pdf/{clan}
-app.include_router(exercises.router)  # POST /generate-exercise, POST /exercise/{id}/submit
+app.include_router(reports.router)    # POST /generate-report
+app.include_router(exercises.router)  # POST /generate-exercise, /exercise/{id}/submit
+app.include_router(resources.router)  # POST /process-resource, /search-resources
 
 # ── Infrastructure ─────────────────────────────────────────────────────────────
 @app.get("/health", tags=["Infrastructure"])
@@ -75,9 +77,10 @@ async def health_check():
         "status":      "online",
         "service":     "Kairo AI Engine",
         "model":       os.getenv("MODEL_NAME", "llama-3.3-70b-versatile"),
+        "embeddings":  "all-MiniLM-L6-v2" if model_ready() else "unavailable",
         "environment": os.getenv("ENV", "development"),
     }
 
 @app.get("/", tags=["Infrastructure"])
 async def root():
-    return {"message": "Kairo AI Microservice", "docs": "/docs", "version": "2.1.0"}
+    return {"message": "Kairo AI Microservice", "docs": "/docs", "version": "2.2.0"}
