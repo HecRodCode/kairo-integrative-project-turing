@@ -147,5 +147,107 @@ class SupabaseManager:
         except Exception as e:
             logger.error(f"Failed to log generation: {e}")
 
+    # ── EXERCISES ──────────────────────────────────────────────
+
+    def get_exercise(self, plan_id: int, day_number: int) -> Optional[Dict]:
+        """Returns cached exercise for a plan day, or None if not yet generated."""
+        try:
+            r = self.client.table("exercises")                 .select("id, title, description, language, starter_code, solution, hints, topic, difficulty, expected_output")                 .eq("plan_id", plan_id)                 .eq("day_number", day_number)                 .single()                 .execute()
+            return r.data
+        except Exception:
+            return None
+
+    def save_exercise(self, plan_id: int, coder_id: int, day_number: int,
+                      exercise: Dict) -> Optional[int]:
+        """Inserts exercise; on conflict (plan_id, day_number) does nothing and returns existing id."""
+        try:
+            r = self.client.table("exercises").upsert({
+                "plan_id":        plan_id,
+                "coder_id":       coder_id,
+                "day_number":     day_number,
+                "title":          exercise.get("title", ""),
+                "description":    exercise.get("description", ""),
+                "language":       exercise.get("language", "sql"),
+                "starter_code":   exercise.get("starter_code", ""),
+                "solution":       exercise.get("solution", ""),
+                "hints":          exercise.get("hints", []),
+                "topic":          exercise.get("topic", ""),
+                "difficulty":     exercise.get("difficulty", "intermediate"),
+                "expected_output": exercise.get("expected_output", ""),
+            }, on_conflict="plan_id,day_number").execute()
+            return r.data[0]["id"] if r.data else None
+        except Exception as e:
+            logger.error(f"Failed to save exercise: {e}")
+            return None
+
+    def save_submission(self, exercise_id: int, coder_id: int, code: str) -> Optional[int]:
+        try:
+            r = self.client.table("exercise_submissions").insert({
+                "exercise_id":    exercise_id,
+                "coder_id":       coder_id,
+                "code_submitted": code,
+            }).execute()
+            return r.data[0]["id"] if r.data else None
+        except Exception as e:
+            logger.error(f"Failed to save submission: {e}")
+            return None
+
+
+    # ── RESOURCES (RAG) ────────────────────────────────────────
+
+    def save_resource(self, module_id, title, storage_path, file_name,
+                      preview_text, embedding, uploaded_by, clan_id=None) -> int | None:
+        try:
+            r = self.client.table("resources").insert({
+                "module_id":    module_id,
+                "title":        title,
+                "storage_path": storage_path,
+                "file_name":    file_name,
+                "preview_text": preview_text,
+                "embedding":    embedding,   # list[float] → Supabase convierte a vector
+                "uploaded_by":  uploaded_by,
+                "clan_id":      clan_id,
+                "is_active":    True,
+            }).execute()
+            return r.data[0]["id"] if r.data else None
+        except Exception as e:
+            logger.error(f"Failed to save resource: {e}")
+            return None
+
+    def search_resources(self, embedding: list, module_id: int = 0,
+                         clan_id: str = None, limit: int = 3) -> list:
+        """
+        Llama a la función pgvector search_resources definida en la migración.
+        """
+        try:
+            r = self.client.rpc("search_resources", {
+                "query_embedding":  embedding,
+                "target_module_id": module_id,
+                "target_clan_id":   clan_id,
+                "match_count":      limit,
+            }).execute()
+            return r.data or []
+        except Exception as e:
+            logger.warning(f"search_resources RPC failed: {e}")
+            return []
+
+    def delete_resource(self, resource_id: int, uploaded_by: int) -> bool:
+        try:
+            self.client.table("resources")                 .update({"is_active": False})                 .eq("id", resource_id)                 .eq("uploaded_by", uploaded_by)                 .execute()
+            return True
+        except Exception as e:
+            logger.warning(f"delete_resource failed: {e}")
+            return False
+
+    def get_resources_by_module(self, module_id: int) -> list:
+        """Lista todos los recursos activos de un módulo (para el TL dashboard)."""
+        try:
+            r = self.client.table("resources")                 .select("id, title, file_name, preview_text, uploaded_at")                 .eq("module_id", module_id)                 .eq("is_active", True)                 .order("uploaded_at", desc=True)                 .execute()
+            return r.data or []
+        except Exception as e:
+            logger.warning(f"get_resources_by_module failed: {e}")
+            return []
+
+
 
 db_manager = SupabaseManager()

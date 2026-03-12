@@ -2,12 +2,6 @@
  * src/core/utils/theme.js
  * Responsabilidad ÚNICA: dark / light mode.
  * Cárgalo con `defer` en TODAS las páginas.
- *
- * HTML requerido (igual en todas las páginas):
- *   <button id="theme-toggle" class="theme-btn">
- *     <svg id="moon-icon">...</svg>
- *     <svg id="sun-icon" style="display:none">...</svg>
- *   </button>
  */
 
 /* ── 1. Aplica el tema ANTES de pintar → evita flash blanco/negro ── */

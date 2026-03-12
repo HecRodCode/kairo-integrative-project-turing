@@ -1,11 +1,6 @@
 /**
  * src/core/auth/otp-ui.js
  * OTP verification page logic — Kairo Project.
- *
- * Flow after successful verification:
- *   → Always new user (first_login = true) → onboarding
- *   → If somehow first_login = false       → dashboard
- *   NEVER → login (email is already proven real)
  */
 
 import { sessionManager } from './session.js';
@@ -195,10 +190,6 @@ verifyBtn.addEventListener('click', async () => {
       verifyBtn.style.borderColor = 'var(--color-success)';
 
       // ── Redirect: directo al onboarding ─────────────────────
-      // No usamos redirectByRole aquí porque en este punto
-      // SABEMOS con certeza que es un usuario nuevo.
-      // La sesión ya está activa en el servidor (verifyOtp la creó).
-      // requireOnboarding() en onboarding-ui.js validará la cookie.
       setTimeout(() => {
         window.location.href = '/frontend/src/views/coder/onboarding.html';
       }, 800);

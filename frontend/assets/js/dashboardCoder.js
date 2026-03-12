@@ -90,9 +90,7 @@ function renderUser(user, plan, riskFlags) {
 
   const firstName = user.fullName?.split(' ')[0] || user.fullName || '—';
 
-  el('welcome-name').textContent = firstName;
-  el('sidebar-name').textContent = user.fullName || '—';
-  el('sidebar-clan').textContent = cap(user.clan || '—');
+  el('welcome-name').textContent = user.fullName;
   el('topbar-name').textContent = firstName;
 
   el('clan-badge').textContent = cap(user.clan || '—');

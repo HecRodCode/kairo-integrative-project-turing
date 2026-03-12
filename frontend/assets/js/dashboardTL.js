@@ -1,9 +1,10 @@
 /**
  * assets/js/dashboardTL.js
  * Dashboard TL — Kairo Project.
+ * Conectado al endpoint real GET /api/tl/dashboard.
  */
 
-import { guards, sessionManager } from '../../src/core/auth/session.js';
+import { guards, sessionManager } from '/frontend/src/core/auth/session.js';
 
 const API = 'http://localhost:3000/api';
 
@@ -16,7 +17,9 @@ let activeFilter = 'all';
 const $ = (id) => document.getElementById(id);
 const el = (id) => document.getElementById(id);
 
-/* === BOOTSTRAP === */
+/* ══════════════════════════════════════
+   BOOTSTRAP
+══════════════════════════════════════ */
 (async function init() {
   applyTheme();
   wireThemeToggle();
@@ -39,7 +42,9 @@ const el = (id) => document.getElementById(id);
   await loadDashboard();
 })();
 
-/* LOAD DATA */
+/* ══════════════════════════════════════
+   LOAD DATA
+══════════════════════════════════════ */
 async function loadDashboard() {
   hideBanner();
 
@@ -57,7 +62,9 @@ async function loadDashboard() {
   }
 }
 
-/* ══= RENDER === */
+/* ══════════════════════════════════════
+   RENDER
+══════════════════════════════════════ */
 function renderAll(data) {
   renderTLInfo(data.tl);
   renderStats(data.overview);
@@ -66,9 +73,7 @@ function renderAll(data) {
 }
 
 /* ── TL info ── */
-function renderTLInfo({ fullName, clan }) {
-  el('sidebar-tl-name').textContent = fullName;
-  el('sidebar-tl-clan').textContent = cap(clan);
+function renderTLInfo({ clan }) {
   el('clan-heading').textContent = cap(clan);
 }
 
@@ -229,7 +234,10 @@ function renderDetail(c) {
   el('feedback-status').textContent = '';
 }
 
-/* === INTERACTIONS === */
+/* ══════════════════════════════════════
+   INTERACTIONS
+══════════════════════════════════════ */
+
 /* Filters */
 function wireFilters() {
   el('filter-row').addEventListener('click', (e) => {
@@ -365,7 +373,9 @@ function syncThemeIcon(theme) {
   el('icon-sun').style.display = theme === 'light' ? 'block' : 'none';
 }
 
-/* HELPERS */
+/* ══════════════════════════════════════
+   HELPERS
+══════════════════════════════════════ */
 function applyFilter(coders) {
   if (activeFilter === 'risk')
     return coders.filter((c) => c.risk_level === 'high' || c.risk_level === 'critical');
@@ -409,3 +419,5 @@ function cap(str) {
 
 // Expose for retry button inline onclick
 window.loadDashboard = loadDashboard;
+
+// Upload modal moved to activitiesTL.js

@@ -1,10 +1,6 @@
 /**
  * routes/authRoutes.js
  * Authentication & User Routes.
- *
- * FIX: Restored OAuth routes (Google / GitHub) that were lost in a previous version.
- * FIX: Added hasRole('coder') back to /complete-onboarding.
- * FIX: /update-profile changed from PUT to PATCH to match the controller convention.
  */
 
 import { Router } from 'express';
@@ -27,8 +23,8 @@ const router = Router();
 
 /* ── Public ──────────────────────────────────────────────── */
 router.post('/register', register);
-router.post('/verify-otp', verifyOtp); // ← FALTABA — causa raíz
-router.post('/resend-otp', resendOtp); // ← FALTABA
+router.post('/verify-otp', verifyOtp);
+router.post('/resend-otp', resendOtp);
 router.post('/login', login);
 router.get('/check', checkAuth);
 
@@ -66,7 +62,11 @@ router.get('/me', isAuthenticated, getCurrentUser);
 router.patch('/profile', isAuthenticated, updateUserProfile);
 
 /* ── Onboarding ──────────────────────────────────────────── */
-// FIX: hasRole('coder') restored — only coders complete onboarding
-router.patch('/complete-onboarding', isAuthenticated, hasRole('coder'), updateFirstLoginStatus);
+router.patch(
+  '/complete-onboarding',
+  isAuthenticated,
+  hasRole('coder'),
+  updateFirstLoginStatus
+);
 
 export default router;
