@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="es" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Trainer · Kairo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+    <link rel="stylesheet" href="../../../assets/css/global.css" />
+    <link rel="stylesheet" href="../../../assets/css/iaTrainer.css" />
+  </head>
+
+  <body>
+    <!-- Loading overlay — starts hidden -->
+    <div class="loading-overlay hidden" id="loading-overlay">
+      <div class="loading-box">
+        <div class="loading-spinner"></div>
+        <p class="loading-text">
+          Cargando AI Trainer<span class="loading-dots"></span>
+        </p>
+      </div>
+    </div>
+
+    <div class="shell">
+      <!-- ══════════ SIDEBAR ══════════ -->
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <img
+            src="../../../assets/img/logo.png"
+            alt="Kairo"
+            class="sidebar-logo"
+          />
+        </div>
+
+        <nav class="sidebar-nav">
+          <a class="nav-link" href="./dashboard.html">
+            <span class="nav-icon"
+              ><i class="fa-solid fa-table-columns"></i
+            ></span>
+            Dashboard
+          </a>
+          <a class="nav-link active" href="#">
+            <span class="nav-icon"><i class="fa-solid fa-microchip"></i></span>
+            AI Trainer
+          </a>
+          <a class="nav-link" href="./assignment.html">
+            <span class="nav-icon"
+              ><i class="fa-solid fa-clipboard-list"></i
+            ></span>
+            Actividades
+          </a>
+          <a class="nav-link" href="./progress.html">
+            <span class="nav-icon"><i class="fa-solid fa-chart-line"></i></span>
+            Mi Progreso
+          </a>
+        </nav>
+
+        <div class="sidebar-profile">
+          <div class="coder-info">
+            <span class="coder-name" id="sidebar-name">—</span>
+            <span class="coder-clan" id="sidebar-clan">—</span>
+          </div>
+          <button class="btn-logout" id="btn-logout" title="Cerrar sesión">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          </button>
+        </div>
+      </aside>
+
+      <!-- ══════════ MAIN ══════════ -->
+      <main class="main">
+        <!-- Topbar -->
+        <header class="topbar">
+          <div class="topbar-left">
+            <h1 class="page-title">
+              <i class="fa-solid fa-brain-circuit"></i>
+              AI Trainer
+            </h1>
+            <p class="topbar-date" id="topbar-date">—</p>
+          </div>
+          <div class="topbar-right">
+            <button class="icon-btn" id="btn-theme" title="Cambiar tema">
+              <i class="fa-solid fa-moon" id="icon-moon"></i>
+              <i
+                class="fa-solid fa-sun"
+                id="icon-sun"
+                style="display: none"
+              ></i>
+            </button>
+            <a
+              href="./profile.html"
+              class="topbar-profile-btn"
+              id="topbar-profile-btn"
+            >
+              <div class="topbar-avatar"><i class="fa-solid fa-user"></i></div>
+              <span id="topbar-name">—</span>
+            </a>
+          </div>
+        </header>
+
+        <!-- ══════ STATE: GENERATING (polling) ══════ -->
+        <div id="state-generating" class="state-panel hidden">
+          <div class="generating-box">
+            <div class="generating-orb">
+              <i class="fa-solid fa-brain-circuit"></i>
+            </div>
+            <h2 class="generating-title">Kairo está preparando tu plan</h2>
+            <p class="generating-sub">
+              La IA está analizando tu perfil de aprendizaje y construyendo un
+              camino personalizado para ti. Esto toma unos segundos.
+            </p>
+            <div class="generating-progress">
+              <div class="progress-bar-track">
+                <div class="progress-bar-fill"></div>
+              </div>
+              <span class="progress-label" id="poll-label"
+                >Analizando tu diagnóstico...</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════ STATE: NO PLAN ══════ -->
+        <div id="state-no-plan" class="state-panel hidden">
+          <div class="no-plan-box">
+            <div class="no-plan-icon">
+              <i class="fa-solid fa-sparkles"></i>
+            </div>
+            <h2 class="no-plan-title">Aún no tienes un plan activo</h2>
+            <p class="no-plan-sub">
+              Kairo generará un plan personalizado basado en tu estilo de
+              aprendizaje y tus resultados del diagnóstico inicial.
+            </p>
+            <button class="btn-request-plan" id="btn-request-plan">
+              <i class="fa-solid fa-wand-magic-sparkles"></i>
+              Generar mi plan personalizado
+            </button>
+          </div>
+        </div>
+
+        <!-- ══════ STATE: ACTIVE PLAN ══════ -->
+        <div id="state-active" class="state-panel hidden">
+          <!-- Plan header -->
+          <div class="plan-header glass-card">
+            <div class="plan-header-left">
+              <div class="plan-chips">
+                <span class="chip chip-type" id="chip-type">—</span>
+                <span class="chip chip-style" id="chip-style">—</span>
+                <span class="chip chip-skill" id="chip-skill">—</span>
+              </div>
+              <p class="plan-summary" id="plan-summary">—</p>
+            </div>
+            <div class="plan-header-right">
+              <div class="plan-stat">
+                <span class="plan-stat-value" id="stat-completed">0</span>
+                <span class="plan-stat-label">días completados</span>
+              </div>
+              <div class="plan-stat">
+                <span class="plan-stat-value">20</span>
+                <span class="plan-stat-label">días totales</span>
+              </div>
+              <div class="plan-overall-progress">
+                <div class="overall-track">
+                  <div
+                    class="overall-fill"
+                    id="overall-fill"
+                    style="width: 0%"
+                  ></div>
+                </div>
+                <span class="overall-pct" id="overall-pct">0%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Week navigator -->
+          <div class="week-nav glass-card">
+            <div class="week-tabs" id="week-tabs">
+              <!-- 4 week tabs populated by JS -->
+            </div>
+            <div class="day-dots" id="day-dots">
+              <!-- 5 day dots for selected week, populated by JS -->
+            </div>
+          </div>
+
+          <!-- Day content -->
+          <div class="day-header">
+            <button class="nav-arrow" id="btn-prev-day" title="Día anterior">
+              <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <div class="day-label">
+              <span class="day-number" id="day-number">Día 1</span>
+              <span class="day-week-label" id="day-week-label">Semana 1</span>
+            </div>
+            <button class="nav-arrow" id="btn-next-day" title="Día siguiente">
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+
+          <!-- Activity cards -->
+          <div class="activity-grid" id="activity-grid">
+            <!-- Technical activity -->
+            <div class="activity-card tech-card" id="card-tech">
+              <div class="card-stripe tech-stripe"></div>
+              <div class="card-body">
+                <div class="card-top">
+                  <div class="card-badges">
+                    <span class="badge-type tech-badge">
+                      <i class="fa-solid fa-code"></i> Técnica
+                    </span>
+                    <span class="badge-difficulty" id="tech-difficulty">—</span>
+                  </div>
+                  <span class="card-duration" id="tech-duration">45 min</span>
+                </div>
+                <h3 class="card-title" id="tech-title">—</h3>
+                <p class="card-desc" id="tech-desc">—</p>
+                <div class="resources-block" id="resources-block">
+                  <p class="resources-label">
+                    <i class="fa-solid fa-link"></i> Recursos
+                  </p>
+                  <div class="resources-chips" id="resources-chips"></div>
+                </div>
+              </div>
+              <div class="card-footer card-footer-actions">
+                <button class="btn-exercise" id="btn-open-exercise">
+                  <i class="fa-solid fa-terminal"></i>
+                  Ejercicio del día
+                </button>
+                <button
+                  class="btn-complete"
+                  id="btn-complete-tech"
+                  data-type="tech"
+                >
+                  <i class="fa-solid fa-check"></i>
+                  Completado
+                </button>
+              </div>
+            </div>
+
+            <!-- Soft skill activity -->
+            <div class="activity-card soft-card" id="card-soft">
+              <div class="card-stripe soft-stripe"></div>
+              <div class="card-body">
+                <div class="card-top">
+                  <div class="card-badges">
+                    <span class="badge-type soft-badge">
+                      <i class="fa-solid fa-brain"></i> Habilidad blanda
+                    </span>
+                    <span class="badge-skill" id="soft-skill-badge">—</span>
+                  </div>
+                  <span class="card-duration" id="soft-duration">20 min</span>
+                </div>
+                <h3 class="card-title" id="soft-title">—</h3>
+                <p class="card-desc" id="soft-desc">—</p>
+                <div class="reflection-block">
+                  <p class="reflection-label">
+                    <i class="fa-solid fa-comment-dots"></i> Reflexión al
+                    terminar
+                  </p>
+                  <p class="reflection-text" id="reflection-text">—</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Completed overlay (shows when current day is done) -->
+          <!-- ── Recursos del TL (RAG) ── -->
+          <div class="resources-section" id="resources-section">
+            <div class="resources-section-header">
+              <span class="resources-section-title">
+                <i class="fa-solid fa-folder-open"></i>
+                Recursos del TL para este tema
+              </span>
+              <span
+                class="resources-loading-badge hidden"
+                id="resources-loading-badge"
+              >
+                <i class="fa-solid fa-spinner fa-spin fa-xs"></i> Buscando...
+              </span>
+            </div>
+            <!-- Cards populated by JS -->
+            <div class="resources-cards" id="resources-cards"></div>
+            <!-- Empty state -->
+            <p class="resources-empty hidden" id="resources-empty">
+              <i class="fa-regular fa-folder-open"></i>
+              Tu TL aún no ha subido recursos para este tema.
+            </p>
+          </div>
+
+          <div class="day-completed-banner hidden" id="day-completed-banner">
+            <i class="fa-solid fa-circle-check"></i>
+            <span>¡Día completado! Sigue avanzando con el siguiente día.</span>
+          </div>
+
+          <!-- Plan complete state -->
+          <div class="plan-complete-banner hidden" id="plan-complete-banner">
+            <i class="fa-solid fa-trophy"></i>
+            <div>
+              <strong>¡Completaste el plan!</strong>
+              <p>
+                Has terminado los 20 días. Tu próximo plan se generará
+                automáticamente el lunes.
+              </p>
+            </div>
+          </div>
+        </div>
+        <!-- end state-active -->
+      </main>
+    </div>
+
+    <!-- ══════════ EXERCISE MODAL ══════════ -->
+    <div class="modal-overlay hidden" id="exercise-modal">
+      <div class="modal-box">
+        <!-- Modal header -->
+        <div class="modal-header">
+          <div class="modal-title-block">
+            <span class="modal-lang-badge" id="modal-lang-badge">SQL</span>
+            <h2 class="modal-title" id="modal-ex-title">
+              Cargando ejercicio...
+            </h2>
+          </div>
+          <div class="modal-header-actions">
+            <span class="modal-difficulty" id="modal-difficulty">—</span>
+            <button class="icon-btn" id="btn-show-hint" title="Ver pista">
+              <i class="fa-solid fa-lightbulb"></i>
+            </button>
+            <button
+              class="icon-btn"
+              id="btn-show-solution"
+              title="Ver solución"
+            >
+              <i class="fa-solid fa-key"></i>
+            </button>
+            <button class="icon-btn" id="btn-close-modal" title="Cerrar">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Loading state -->
+        <div class="modal-loading" id="modal-loading">
+          <div class="loading-spinner"></div>
+          <p>
+            Generando ejercicio personalizado<span class="loading-dots"></span>
+          </p>
+        </div>
+
+        <!-- Exercise content -->
+        <div class="modal-content hidden" id="modal-content">
+          <!-- Description -->
+          <p class="ex-description" id="ex-description">—</p>
+
+          <!-- Hint box (hidden by default) -->
+          <div class="hint-box hidden" id="hint-box">
+            <p class="hint-label">
+              <i class="fa-solid fa-lightbulb"></i> Pista
+            </p>
+            <p class="hint-text" id="hint-text">—</p>
+            <div class="hint-nav">
+              <button class="btn-hint-nav" id="btn-prev-hint" disabled>
+                ‹ Anterior
+              </button>
+              <span class="hint-counter" id="hint-counter">1 / 1</span>
+              <button class="btn-hint-nav" id="btn-next-hint">
+                Siguiente ›
+              </button>
+            </div>
+          </div>
+
+          <!-- Monaco editor -->
+          <div class="editor-wrapper">
+            <div class="editor-topbar">
+              <span class="editor-label">
+                <i class="fa-solid fa-code"></i> Tu solución
+              </span>
+              <div class="editor-actions">
+                <button
+                  class="btn-editor-action"
+                  id="btn-reset-code"
+                  title="Resetear código"
+                >
+                  <i class="fa-solid fa-rotate-left"></i> Resetear
+                </button>
+              </div>
+            </div>
+            <div id="monaco-editor" class="monaco-container"></div>
+          </div>
+
+          <!-- Expected output -->
+          <div class="expected-block">
+            <p class="expected-label">
+              <i class="fa-solid fa-circle-check"></i> Resultado esperado
+            </p>
+            <p class="expected-text" id="expected-output">—</p>
+          </div>
+
+          <!-- Solution box (hidden) -->
+          <div class="solution-box hidden" id="solution-box">
+            <p class="solution-label">
+              <i class="fa-solid fa-key"></i> Solución de referencia
+            </p>
+            <pre class="solution-code" id="solution-code"></pre>
+          </div>
+        </div>
+
+        <!-- Modal footer -->
+        <div class="modal-footer">
+          <button class="btn-submit-exercise" id="btn-submit-exercise" disabled>
+            <i class="fa-solid fa-paper-plane"></i>
+            Enviar solución
+          </button>
+          <p class="submit-note">Tu TL podrá revisar tu código enviado.</p>
+        </div>
+      </div>
+    </div>
+
+    <script src="../../../assets/js/iaTrainer.js" type="module"></script>
+  </body>
+</html>

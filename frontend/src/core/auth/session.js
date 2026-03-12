@@ -1,17 +1,10 @@
 /**
  * src/core/auth/session.js
  * Session management and Role-Based routing — Kairo Project.
- *
- * Source of truth: server session cookie (checkAuth endpoint).
- * localStorage: UI cache only — never used for security decisions.
- *
- * first_login flow:
- *   true  → user just registered, must complete onboarding test
- *   false → onboarding done, goes straight to dashboard
- *   Flipped to false by Node when coder completes the diagnostic.
  */
 
 import { authService } from './auth-service.js';
+import { notificationsClient } from '../notificationsSSE.js';
 
 /* ── Absolute paths from web root ──────────────────────────── */
 const PATHS = {
@@ -51,13 +44,6 @@ export const sessionManager = {
     window.location.href = PATHS.login;
   },
 
-  /**
-   * redirectByRole(user)
-   * Receives the user object directly (camelCase from backend).
-   * Routing logic:
-   *   - tl / admin  → TL dashboard (firstLogin doesn't apply)
-   *   - coder       → onboarding if firstLogin === true, else dashboard
-   */
   redirectByRole(user) {
     if (!user?.role) return;
     const role = user.role.toLowerCase().trim();
@@ -74,18 +60,7 @@ export const sessionManager = {
   },
 };
 
-/* ══════════════════════════════════════════════════════════════
-   GUARDS
-   checkAuth() returns: { authenticated, user: { id, email,
-     fullName, role, clan, firstLogin } }
-   So always access firstLogin via session.user.firstLogin.
-══════════════════════════════════════════════════════════════ */
 export const guards = {
-  /**
-   * requireAuth()
-   * Verifies the cookie session with the server.
-   * Returns { authenticated, user } or redirects to login.
-   */
   async requireAuth() {
     try {
       const res = await authService.checkAuth();
@@ -99,6 +74,12 @@ export const guards = {
 
       // Keep localStorage cache in sync
       sessionManager.saveUser(data.user);
+
+      // GLOBALLY auto-connect the SSE Notification service for all validated users on any page
+      if (data.user.role) {
+        notificationsClient.connect(data.user.role);
+      }
+
       return data; // shape: { authenticated: true, user: { ...firstLogin... } }
     } catch {
       sessionManager.clearUser();
@@ -107,13 +88,6 @@ export const guards = {
     }
   },
 
-  /**
-   * requireOnboarding()
-   * For the onboarding page only.
-   * ✓ Authenticated + firstLogin === true  → allow
-   * ✗ Not authenticated                    → login
-   * ✗ firstLogin === false                 → dashboard (already done)
-   */
   async requireOnboarding() {
     const session = await this.requireAuth();
     if (!session) return null;
@@ -127,13 +101,6 @@ export const guards = {
     return session;
   },
 
-  /**
-   * requireCompleted()
-   * For dashboard and all post-onboarding pages.
-   * ✓ Authenticated + firstLogin === false → allow
-   * ✗ Not authenticated                    → login
-   * ✗ firstLogin === true                  → onboarding (must complete test)
-   */
   async requireCompleted() {
     const session = await this.requireAuth();
     if (!session) return null;
@@ -147,11 +114,6 @@ export const guards = {
     return session;
   },
 
-  /**
-   * requireGuest()
-   * For login and register pages.
-   * If already authenticated → redirect by role (respects firstLogin).
-   */
   async requireGuest() {
     try {
       const res = await authService.checkAuth();

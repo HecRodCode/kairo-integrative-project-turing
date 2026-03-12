@@ -1,17 +1,5 @@
 """
-Kairo AI Microservice — main.py
-Entry point for FastAPI. Registers all routers and configures middleware.
-
-Routers:
-  /generate-plan        → personalized 4-week learning plan
-  /generate-focus-cards → 6 smart cards for the coder dashboard
-  /chat/ask             → AI tutor Q&A
-  /generate-report      → TL clan AI report
-  /generate-pdf/{clan}  → TL clan PDF export
-
-FIX: os.getenv("NODE_URL", "*") was injecting the literal string "*" into
-     allow_origins — invalid when allow_credentials=True (FastAPI startup crash).
-FIX: @app.on_event("startup") is deprecated — replaced with lifespan.
+Kairo AI Microservice — main.py v2.2
 """
 
 import os
@@ -21,7 +9,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
-from app.routers import roadmap, cards, chat, reports
+from app.routers import roadmap, cards, chat, reports, exercises
+from app.services.embedding_service import model_ready
 
 load_dotenv()
 
@@ -32,12 +21,7 @@ logging.basicConfig(
 logger = logging.getLogger("kairo-ai-service")
 
 
-# ── CORS origins ───────────────────────────────────────────────
 def _build_origins() -> list[str]:
-    """
-    Builds the allowed origins list safely.
-    Filters out None and '*' — both break credentials mode in FastAPI.
-    """
     base = [
         "http://localhost:3000",
         "http://localhost:5500",
@@ -47,27 +31,26 @@ def _build_origins() -> list[str]:
         val = os.getenv(env_var)
         if val and val != "*" and val.startswith("http"):
             base.append(val)
-    return list(dict.fromkeys(base))  # deduplicate, preserve order
+    return list(dict.fromkeys(base))
 
 
-# ── Lifespan ───────────────────────────────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-    logger.info("  Kairo AI Service v2.0  |  starting")
-    logger.info(f"  Model   : {os.getenv('MODEL_NAME', 'gpt-4o-mini')}")
-    logger.info(f"  Env     : {os.getenv('ENV', 'development')}")
-    logger.info(f"  Origins : {_build_origins()}")
+    logger.info("  Kairo AI Service v2.2  |  starting")
+    logger.info(f"  LLM model  : {os.getenv('MODEL_NAME', 'llama-3.3-70b-versatile')}")
+    logger.info(f"  Embeddings : {'✓ all-MiniLM-L6-v2 (384d)' if model_ready() else '✗ NOT LOADED'}")
+    logger.info(f"  Env        : {os.getenv('ENV', 'development')}")
+    logger.info(f"  Origins    : {_build_origins()}")
     logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     yield
     logger.info("Kairo AI Service shutting down.")
 
 
-# ── App ────────────────────────────────────────────────────────
 app = FastAPI(
     title="Kairo AI Service",
-    description="AI microservice for Riwi bootcamp — plans, cards, and TL reports.",
-    version="2.0.0",
+    description="AI microservice for Riwi — plans, exercises, resources RAG, and TL reports.",
+    version="2.2.0",
     lifespan=lifespan,
 )
 
@@ -75,27 +58,29 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=_build_origins(),
     allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization"],
 )
 
-# ── Routers ────────────────────────────────────────────────────
-app.include_router(roadmap.router)   # POST /generate-plan
-app.include_router(cards.router)     # POST /generate-focus-cards
-app.include_router(chat.router)      # POST /chat/ask
-app.include_router(reports.router)   # POST /generate-report
-                                     # GET  /generate-pdf/{clan}
+# ── Routers ────────────────────────────────────────────────────────────────────
+app.include_router(roadmap.router)    # POST /generate-plan
+app.include_router(cards.router)      # POST /generate-focus-cards
+app.include_router(chat.router)       # POST /chat/ask
+app.include_router(reports.router)    # POST /generate-report
+app.include_router(exercises.router)  # POST /generate-exercise, /exercise/{id}/submit
+# app.include_router(resources.router)  # REMOVED: Handled by Node.js now
 
-# ── Infrastructure ─────────────────────────────────────────────
+# ── Infrastructure ─────────────────────────────────────────────────────────────
 @app.get("/health", tags=["Infrastructure"])
 async def health_check():
     return {
         "status":      "online",
         "service":     "Kairo AI Engine",
-        "model":       os.getenv("MODEL_NAME", "gpt-4o-mini"),
+        "model":       os.getenv("MODEL_NAME", "llama-3.3-70b-versatile"),
+        "embeddings":  "all-MiniLM-L6-v2" if model_ready() else "unavailable",
         "environment": os.getenv("ENV", "development"),
     }
 
 @app.get("/", tags=["Infrastructure"])
 async def root():
-    return {"message": "Kairo AI Microservice", "docs": "/docs", "version": "2.0.0"}
+    return {"message": "Kairo AI Microservice", "docs": "/docs", "version": "2.2.0"}

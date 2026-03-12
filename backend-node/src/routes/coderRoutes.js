@@ -1,36 +1,39 @@
 /**
  * routes/coderRoutes.js
- * Rutas del coder — Kairo Project.
  */
-
 import { Router } from 'express';
 import {
-  getCoderDashboard,
-  getPlanDetails,
-  updateActivityProgress,
-  getModuleMilestones,
+  getCoderDashboard, getPlanDetails,
+  updateActivityProgress, getModuleMilestones,
+  getActivePlan, completeDay, requestPlan,
+  markFeedbackRead,
 } from '../controllers/coderControllers.js';
 import {
-  isAuthenticated,
-  hasRole,
-  checkOnboarding,
-} from '../middlewares/authMiddlewares.js';
+  generateExercise, submitExercise, getSubmissions,
+} from '../controllers/exerciseControllers.js';
+import {
+  searchResources,
+  listResourcesCoder,
+  getResourceDownload,
+} from '../controllers/resourceControllers.js';
+import { isAuthenticated, hasRole, checkOnboarding } from '../middlewares/authMiddlewares.js';
 
 const router = Router();
-
-/* Todas las rutas del coder requieren sesión activa + rol coder + onboarding completo */
 router.use(isAuthenticated, hasRole('coder'), checkOnboarding);
 
-/* Dashboard principal */
-router.get('/dashboard', getCoderDashboard);
-
-/* Planes de aprendizaje */
-router.get('/plans/:planId', getPlanDetails);
-
-/* Progreso de actividades */
-router.patch('/activities/:id/complete', updateActivityProgress);
-
-/* Hitos del módulo */
-router.get('/milestones', getModuleMilestones);
+router.get('/dashboard',                             getCoderDashboard);
+router.get('/plan',                                  getActivePlan);
+router.post('/plan/request',                         requestPlan);
+router.post('/plan/:planId/day/:day/complete',       completeDay);
+router.get('/plans/:planId',                         getPlanDetails);
+router.post('/exercise/generate',                    generateExercise);
+router.post('/exercise/:exerciseId/submit',          submitExercise);
+router.get('/exercise/:exerciseId/submissions',      getSubmissions);
+router.get('/resources',                             listResourcesCoder);
+router.get('/resource/:id/download',                  getResourceDownload);
+router.post('/resources/search',                     searchResources);
+router.patch('/activities/:id/complete',             updateActivityProgress);
+router.patch('/feedback/:id/read',                   markFeedbackRead);
+router.get('/milestones',                            getModuleMilestones);
 
 export default router;

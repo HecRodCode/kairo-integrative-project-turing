@@ -147,5 +147,50 @@ class SupabaseManager:
         except Exception as e:
             logger.error(f"Failed to log generation: {e}")
 
+    # ── EXERCISES ──────────────────────────────────────────────
+
+    def get_exercise(self, plan_id: int, day_number: int) -> Optional[Dict]:
+        """Returns cached exercise for a plan day, or None if not yet generated."""
+        try:
+            r = self.client.table("exercises")                 .select("id, title, description, language, starter_code, solution, hints, topic, difficulty, expected_output")                 .eq("plan_id", plan_id)                 .eq("day_number", day_number)                 .single()                 .execute()
+            return r.data
+        except Exception:
+            return None
+
+    def save_exercise(self, plan_id: int, coder_id: int, day_number: int,
+                      exercise: Dict) -> Optional[int]:
+        """Inserts exercise; on conflict (plan_id, day_number) does nothing and returns existing id."""
+        try:
+            r = self.client.table("exercises").upsert({
+                "plan_id":        plan_id,
+                "coder_id":       coder_id,
+                "day_number":     day_number,
+                "title":          exercise.get("title", ""),
+                "description":    exercise.get("description", ""),
+                "language":       exercise.get("language", "sql"),
+                "starter_code":   exercise.get("starter_code", ""),
+                "solution":       exercise.get("solution", ""),
+                "hints":          exercise.get("hints", []),
+                "topic":          exercise.get("topic", ""),
+                "difficulty":     exercise.get("difficulty", "intermediate"),
+                "expected_output": exercise.get("expected_output", ""),
+            }, on_conflict="plan_id,day_number").execute()
+            return r.data[0]["id"] if r.data else None
+        except Exception as e:
+            logger.error(f"Failed to save exercise: {e}")
+            return None
+
+    def save_submission(self, exercise_id: int, coder_id: int, code: str) -> Optional[int]:
+        try:
+            r = self.client.table("exercise_submissions").insert({
+                "exercise_id":    exercise_id,
+                "coder_id":       coder_id,
+                "code_submitted": code,
+            }).execute()
+            return r.data[0]["id"] if r.data else None
+        except Exception as e:
+            logger.error(f"Failed to save submission: {e}")
+            return None
+
 
 db_manager = SupabaseManager()

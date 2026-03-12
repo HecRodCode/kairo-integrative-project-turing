@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="es" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Actividades · Kairo TL</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+    <link rel="stylesheet" href="../../../assets/css/global.css" />
+    <link rel="stylesheet" href="../../../assets/css/dashboardTL.css" />
+    <link rel="stylesheet" href="../../../assets/css/assignmentTL.css" />
+    <script src="../../../src/core/utils/theme.js" defer></script>
+  </head>
+
+  <body>
+    <div class="shell">
+      <!-- ══════════════════ SIDEBAR ══════════════════ -->
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <img
+            src="../../../assets/img/logo.png"
+            alt="Kairo"
+            class="sidebar-logo"
+          />
+        </div>
+
+        <nav class="sidebar-nav">
+          <a class="nav-link" href="./dashboard.html">
+            <span class="nav-icon"
+              ><i class="fa-solid fa-table-columns"></i
+            ></span>
+            Dashboard
+          </a>
+          <a class="nav-link active" href="#">
+            <span class="nav-icon"
+              ><i class="fa-solid fa-clipboard-list"></i
+            ></span>
+            Actividades
+          </a>
+          <a class="nav-link" href="./messages.html">
+            <span class="nav-icon"
+              ><i class="fa-solid fa-comment-dots"></i
+            ></span>
+            Mensajes
+          </a>
+          <a class="nav-link" href="./AssignmentTimeline.html">
+            <span class="nav-icon"
+              ><i class="fa-solid fa-calendar-lines"></i
+            ></span>
+            Timeline
+          </a>
+        </nav>
+
+        <div class="sidebar-profile">
+          <div class="tl-info"></div>
+          <button class="btn-logout" id="btn-logout" title="Cerrar sesión">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          </button>
+        </div>
+      </aside>
+
+      <!-- ══════════════════ MAIN ══════════════════ -->
+      <main class="main">
+        <!-- Topbar -->
+        <header class="topbar">
+          <div class="topbar-left">
+            <h1 class="topbar-title">
+              Actividades —
+              <span id="clan-heading" class="gradient-text">—</span>
+            </h1>
+            <p class="topbar-sub" id="topbar-date">—</p>
+          </div>
+          <div class="topbar-right">
+            <!-- Notification bell -->
+            <div class="notif-wrapper">
+              <button class="icon-btn" id="btn-notif" title="Notificaciones">
+                <i class="fa-solid fa-bell"></i>
+                <span class="notif-dot hidden" id="notif-dot"></span>
+              </button>
+              <div class="notif-dropdown hidden" id="notif-dropdown">
+                <p class="notif-header">Notificaciones</p>
+                <div id="notif-list">
+                  <p class="notif-empty">Sin notificaciones nuevas</p>
+                </div>
+              </div>
+            </div>
+            <!-- Language toggle -->
+            <button class="icon-btn" id="btn-lang" title="Idioma">
+              <i class="fa-solid fa-earth-americas"></i>
+            </button>
+            <!-- Theme toggle -->
+            <button class="icon-btn" id="btn-theme" title="Cambiar tema">
+              <i class="fa-solid fa-moon" id="icon-moon"></i>
+              <i
+                class="fa-solid fa-sun"
+                id="icon-sun"
+                style="display: none"
+              ></i>
+            </button>
+            <!-- Profile -->
+            <a
+              href="./profile.html"
+              class="topbar-profile-btn"
+              id="topbar-profile-btn"
+            >
+              <div class="topbar-avatar"><i class="fa-solid fa-user"></i></div>
+              <span id="topbar-name">—</span>
+            </a>
+          </div>
+        </header>
+
+        <!-- Error banner -->
+        <div class="error-banner hidden" id="error-banner">
+          <i class="fa-solid fa-plug-circle-xmark"></i>
+          <div>
+            <strong>No se pudo conectar con el servidor</strong>
+            <p id="error-msg">
+              Verifica que el backend esté corriendo en localhost:3000
+            </p>
+          </div>
+          <button class="btn-retry" id="btn-retry">
+            <i class="fa-solid fa-rotate-right"></i> Reintentar
+          </button>
+        </div>
+
+        <!-- Section header with action buttons -->
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Trabajos y recursos publicados</h2>
+            <p class="section-sub" id="assignment-count">Cargando...</p>
+          </div>
+          <div class="section-actions">
+            <button class="btn-action-secondary" id="btn-open-rag">
+              <i class="fa-solid fa-book-open"></i>
+              Subir recurso RAG
+            </button>
+            <button class="btn-action-primary" id="btn-open-add">
+              <i class="fa-solid fa-plus"></i>
+              Añadir trabajo
+            </button>
+          </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="grid-legend" id="grid-legend">
+          <span class="legend-item legend-pdf"
+            ><i class="fa-solid fa-file-pdf"></i> Actividad PDF</span
+          >
+          <span class="legend-item legend-repo"
+            ><i class="fa-brands fa-github"></i> Repositorio</span
+          >
+          <span class="legend-item legend-resource"
+            ><i class="fa-solid fa-book-open"></i> Recurso RAG</span
+          >
+        </div>
+
+        <!-- Loading skeleton -->
+        <div id="assignments-loading" class="assignments-loading">
+          <div class="skeleton-card"></div>
+          <div class="skeleton-card"></div>
+          <div class="skeleton-card"></div>
+        </div>
+
+        <!-- Empty state -->
+        <div class="empty-state hidden" id="assignments-empty">
+          <div class="empty-icon">
+            <i class="fa-solid fa-clipboard-list"></i>
+          </div>
+          <h3>Sin contenido publicado</h3>
+          <p>
+            Usa <strong>Añadir trabajo</strong> para asignar actividades o
+            <strong>Subir recurso RAG</strong> para materiales de estudio.
+          </p>
+        </div>
+
+        <!-- Combined grid -->
+        <div class="assignments-grid hidden" id="assignments-grid"></div>
+      </main>
+    </div>
+
+    <!-- ══════════ MODAL: Añadir trabajo ══════════ -->
+    <div class="modal-overlay hidden" id="add-modal">
+      <div class="modal-box add-modal-box">
+        <div class="modal-header">
+          <div class="modal-title-block">
+            <i
+              class="fa-solid fa-clipboard-list"
+              style="color: var(--accent); font-size: 16px"
+            ></i>
+            <h2 class="modal-title">Añadir trabajo</h2>
+          </div>
+          <button class="icon-btn" id="btn-close-add">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <div class="modal-body-scroll">
+          <div class="form-group">
+            <label class="form-label">Título *</label>
+            <input
+              type="text"
+              id="a-title"
+              class="form-input"
+              placeholder="Ej: Taller de JOINs en PostgreSQL"
+              maxlength="200"
+            />
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">Módulo</label>
+              <select id="a-module" class="form-input">
+                <option value="4">Bases de Datos (Módulo 4)</option>
+                <option value="1">Python (Módulo 1)</option>
+                <option value="2">HTML/CSS (Módulo 2)</option>
+                <option value="3">JavaScript (Módulo 3)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Fecha límite</label>
+              <input type="date" id="a-deadline" class="form-input" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">¿Para quién es esta actividad?</label>
+            <div class="scope-options">
+              <button class="scope-card active" id="scope-clan">
+                <i class="fa-solid fa-users"></i>
+                <span class="scope-card-title">Solo mi clan</span>
+                <span class="scope-card-sub" id="scope-clan-label"
+                  >Los coders de tu clan</span
+                >
+              </button>
+              <button class="scope-card" id="scope-all">
+                <i class="fa-solid fa-earth-americas"></i>
+                <span class="scope-card-title">Todos los coders</span>
+                <span class="scope-card-sub">Todos los clanes de Riwi</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Tipo de contenido</label>
+            <div class="type-toggle">
+              <button class="type-btn active" id="type-pdf">
+                <i class="fa-solid fa-file-pdf"></i> PDF
+              </button>
+              <button class="type-btn" id="type-repo">
+                <i class="fa-brands fa-github"></i> Repositorio
+              </button>
+            </div>
+          </div>
+
+          <!-- PDF zone -->
+          <div id="pdf-section">
+            <div class="drop-zone" id="a-drop-zone">
+              <input
+                type="file"
+                id="a-file-input"
+                accept="application/pdf"
+                style="display: none"
+              />
+              <div id="a-drop-content">
+                <i
+                  class="fa-solid fa-file-pdf"
+                  style="font-size: 28px; color: #ef4444; margin-bottom: 8px"
+                ></i>
+                <p
+                  style="
+                    font-size: 13px;
+                    font-weight: 600;
+                    color: var(--text-main);
+                    margin: 0;
+                  "
+                >
+                  Haz clic o arrastra el PDF aquí
+                </p>
+                <p
+                  style="
+                    font-size: 11px;
+                    color: var(--text-muted);
+                    margin: 4px 0 0;
+                  "
+                >
+                  Máximo 20 MB · Solo PDF
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Repo zone -->
+          <div id="repo-section" class="hidden">
+            <div class="form-group">
+              <label class="form-label">URL del repositorio *</label>
+              <div class="repo-input-wrapper">
+                <i class="fa-brands fa-github repo-input-icon"></i>
+                <input
+                  type="url"
+                  id="a-repo-url"
+                  class="form-input repo-input"
+                  placeholder="https://github.com/usuario/repositorio"
+                />
+              </div>
+            </div>
+            <div class="github-preview hidden" id="github-preview">
+              <div class="github-preview-left">
+                <svg
+                  class="github-logo"
+                  viewBox="0 0 98 96"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    clip-rule="evenodd"
+                    d="M48.854 0C21.839 0 0 22 0 49.217c0 21.756 13.993 40.172 33.405 46.69 2.427.49 3.316-1.059 3.316-2.362 0-1.141-.08-5.052-.08-9.127-13.59 2.934-16.42-5.867-16.42-5.867-2.184-5.704-5.42-7.17-5.42-7.17-4.448-3.015.324-3.015.324-3.015 4.934.326 7.523 5.052 7.523 5.052 4.367 7.496 11.404 5.378 14.235 4.074.404-3.178 1.699-5.378 3.074-6.6-10.839-1.141-22.243-5.378-22.243-24.283 0-5.378 1.94-9.778 5.014-13.2-.485-1.222-2.184-6.275.486-13.038 0 0 4.125-1.304 13.426 5.052a46.97 46.97 0 0 1 12.214-1.63c4.125 0 8.33.571 12.213 1.63 9.302-6.356 13.427-5.052 13.427-5.052 2.67 6.763.97 11.816.485 13.038 3.155 3.422 5.015 7.822 5.015 13.2 0 18.905-11.404 23.06-22.324 24.283 1.78 1.548 3.316 4.481 3.316 9.126 0 6.6-.08 11.897-.08 13.526 0 1.304.89 2.853 3.316 2.364 19.412-6.52 33.405-24.935 33.405-46.691C97.707 22 75.788 0 48.854 0z"
+                    fill="currentColor"
+                  />
+                </svg>
+                <div>
+                  <p class="github-preview-url" id="github-preview-url">—</p>
+                  <p class="github-preview-hint">
+                    Repositorio de GitHub detectado
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="upload-status hidden" id="a-status"></div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-submit-exercise" id="btn-do-add">
+            <i class="fa-solid fa-paper-plane"></i> Publicar actividad
+          </button>
+          <p class="submit-note">Se notificará a los coders automáticamente.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ MODAL: Subir recurso RAG ══════════ -->
+    <div class="modal-overlay hidden" id="upload-resource-modal">
+      <div class="modal-box" style="max-width: 500px">
+        <div class="modal-header">
+          <div class="modal-title-block">
+            <i
+              class="fa-solid fa-book-open"
+              style="color: var(--code-blue); font-size: 16px"
+            ></i>
+            <h2 class="modal-title">Subir recurso RAG</h2>
+          </div>
+          <button class="icon-btn" id="btn-close-rag">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div
+          style="
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+          "
+        >
+          <div class="form-group">
+            <label class="form-label">Título del recurso *</label>
+            <input
+              type="text"
+              id="upload-title"
+              class="form-input"
+              placeholder="Ej: Guía de JOINs en PostgreSQL"
+              maxlength="200"
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Módulo</label>
+            <select id="upload-module" class="form-input">
+              <option value="4">Bases de Datos (Módulo 4)</option>
+              <option value="1">Python (Módulo 1)</option>
+              <option value="2">HTML/CSS (Módulo 2)</option>
+              <option value="3">JavaScript (Módulo 3)</option>
+            </select>
+          </div>
+          <div class="drop-zone" id="drop-zone">
+            <input
+              type="file"
+              id="upload-file-input"
+              accept="application/pdf"
+              style="display: none"
+            />
+            <div id="drop-zone-content">
+              <i
+                class="fa-solid fa-file-pdf"
+                style="font-size: 28px; color: #ef4444; margin-bottom: 8px"
+              ></i>
+              <p
+                style="
+                  font-size: 13px;
+                  font-weight: 600;
+                  color: var(--text-main);
+                  margin: 0;
+                "
+              >
+                Haz clic o arrastra el PDF aquí
+              </p>
+              <p
+                style="
+                  font-size: 11px;
+                  color: var(--text-muted);
+                  margin: 4px 0 0;
+                "
+              >
+                Máximo 20 MB · Solo PDF
+              </p>
+            </div>
+          </div>
+          <div class="upload-status hidden" id="upload-status"></div>
+          <div class="upload-progress hidden" id="upload-progress">
+            <div
+              class="upload-progress-bar"
+              id="upload-progress-bar"
+              style="width: 0%"
+            ></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-submit-exercise" id="btn-do-upload">
+            <i class="fa-solid fa-upload"></i> Subir PDF
+          </button>
+          <p class="submit-note">
+            El embedding se procesa en segundo plano (~10s).
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast hidden" id="toast">
+      <i class="fa-solid fa-circle-check" id="toast-icon"></i>
+      <span id="toast-msg">—</span>
+    </div>
+
+    <script type="module" src="../../../assets/js/assignmentTL.js"></script>
+  </body>
+</html>

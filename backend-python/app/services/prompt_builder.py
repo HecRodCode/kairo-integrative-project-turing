@@ -1,23 +1,4 @@
-"""
-app/services/prompt_builder.py
-
-Two prompt modes:
-
-  · build_interpretive_prompt(context)
-      First plan ever — triggered immediately after onboarding.
-      Reads the coder's DNA (learning style + soft skills) and the current
-      module structure to create a foundational 4-week plan.
-      Tone: "basado en cómo aprendes, vamos a trabajar así..."
-
-  · build_analytical_prompt(context)
-      Every subsequent plan — triggered each Monday.
-      Reads the same DNA PLUS last week's performance (score, struggling
-      topics, weeks_completed trend) to build a corrective/progressive plan.
-      Tone: "la semana pasada detectamos X, esta semana lo atacamos así..."
-
-learning_style is the MASTER VARIABLE in both modes — it dictates the
-format and resource type of every single activity without exception.
-"""
+""" app/services/prompt_builder.py """
 
 from typing import Dict, List, Tuple
 
@@ -122,9 +103,7 @@ SKILL_EXERCISES = {
     ),
 }
 
-
 # ── Internal helpers ──────────────────────────────────────────────────────────
-
 def _get_style(learning_style: str) -> Dict:
     s = (learning_style or "mixed").lower().strip()
     if s in ("v", "visual"):                         return STYLE_INSTRUCTIONS["visual"]
@@ -133,11 +112,9 @@ def _get_style(learning_style: str) -> Dict:
     if s in ("a", "auditory", "auditivo", "aural"):  return STYLE_INSTRUCTIONS["auditory"]
     return STYLE_INSTRUCTIONS["mixed"]
 
-
 def _get_weakest_skill(skills: Dict) -> Tuple[str, int]:
     """Returns (skill_key, score) for the lowest-scoring soft skill."""
     return min(skills.items(), key=lambda x: x[1])
-
 
 def _weeks_block(weeks: List[Dict]) -> str:
     if not weeks:
@@ -148,13 +125,11 @@ def _weeks_block(weeks: List[Dict]) -> str:
         for w in weeks
     )
 
-
 def _skills_portrait(skills: Dict, weakest_key: str) -> str:
     return "\n".join(
         f"  - {SKILL_LABELS[k]}: {v}/5{'  ← HABILIDAD MÁS DÉBIL' if k == weakest_key else ''}"
         for k, v in skills.items()
     )
-
 
 def _adaptations_block(skills: Dict) -> str:
     rules = []
@@ -196,7 +171,6 @@ def _score_analysis(score: float) -> str:
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
-
 def build_interpretive_prompt(context: Dict) -> str:
     """
     FIRST PLAN — generated right after onboarding completes.
@@ -450,6 +424,145 @@ Este plan COMPLEMENTA el currículo oficial en Moodle. El coder inicia ahora la 
         }}
       ]
     }}
+  ]
+}}
+"""
+
+# ── MODULE → LANGUAGE MAPPING ────────────────────────────────────────────────
+MODULE_LANGUAGE = {
+    "python":          "python",
+    "html":            "html",
+    "html/css":        "html",
+    "css":             "html",
+    "javascript":      "javascript",
+    "js":              "javascript",
+    "base de datos":   "sql",
+    "bases de datos":  "sql",
+    "sql":             "sql",
+    "database":        "sql",
+}
+
+def _detect_language(module_name: str) -> str:
+    """Derives Monaco editor language from module name."""
+    name = (module_name or "").lower().strip()
+    for key, lang in MODULE_LANGUAGE.items():
+        if key in name:
+            return lang
+    return "sql"
+
+# ── EXERCISE PROMPT ───────────────────────────────────────────────────────────
+def build_exercise_prompt(context: Dict) -> str:
+    """
+    Generates a single coding exercise for a specific plan day.
+    Adapts difficulty, format, and hints to the coder's profile.
+
+    Required context keys:
+      topic          : str   (technical_activity.title del día)
+      description    : str   (technical_activity.description del día)
+      language       : str   (sql | python | javascript | html)
+      difficulty     : str   (beginner | intermediate | advanced)
+      learning_style : str
+      module_name    : str
+      coder_name     : str
+      week_number    : int
+      day_number     : int
+      soft_skills    : dict  (para adaptar hints según habilidades)
+    """
+    ss        = context.get("soft_skills", {})
+    style     = _get_style(context.get("learning_style", "mixed"))
+    language  = context.get("language", "sql")
+    difficulty= context.get("difficulty", "intermediate")
+    topic     = context.get("topic", "tema del módulo")
+    desc      = context.get("description", "")
+    module    = context.get("module_name", "Módulo actual")
+    day       = context.get("day_number", 1)
+    week      = context.get("week_number", 1)
+    name      = context.get("coder_name", "Estudiante")
+
+    # Adaptar número de hints a autonomía del coder
+    autonomy = ss.get("autonomy", 3)
+    hint_count = 3 if autonomy <= 2 else 2 if autonomy == 3 else 1
+
+    lang_instructions = {
+        "sql": (
+            "El ejercicio debe usar sintaxis PostgreSQL estándar. "
+            "starter_code debe incluir el esquema CREATE TABLE o WITH necesario para que sea autocontenido. "
+            "solution debe ser una query válida y ejecutable."
+        ),
+        "python": (
+            "El ejercicio debe ser autocontenido: no dependencias externas. "
+            "starter_code incluye la firma de la función y docstring. "
+            "solution completa la función con implementación real."
+        ),
+        "javascript": (
+            "Vanilla JS, sin frameworks. starter_code incluye la función con comentarios guía. "
+            "solution completa la lógica con código limpio y legible."
+        ),
+        "html": (
+            "HTML5 + CSS inline o en <style>. starter_code incluye estructura base. "
+            "solution completa el diseño solicitado."
+        ),
+    }.get(language, "")
+
+    style_adaptation = {
+        "visual":       "El enunciado debe usar analogías visuales y describir el resultado esperado visualmente.",
+        "kinesthetic":  "El enunciado arranca directo al código: 'Escribe X que haga Y'. Sin teoría.",
+        "reading":      "El enunciado puede incluir contexto y referencias breves a documentación.",
+        "auditory":     "El enunciado describe el problema como si se lo explicaras a alguien en voz alta.",
+        "mixed":        "El enunciado combina contexto breve + descripción del resultado esperado.",
+    }.get(style["label"].lower(), "")
+
+    return f"""
+### ROL
+Eres Kairo, el evaluador técnico de Riwi. Tu tarea: generar UN ejercicio de código
+práctico y evaluable para el Día {day} (Semana {week}) del plan de {name}.
+
+---
+### CONTEXTO DEL DÍA
+- Módulo: {module}
+- Semana del plan: {week}  |  Día: {day}
+- Actividad técnica del día: {topic}
+- Descripción de la actividad: {desc}
+- Lenguaje: {language.upper()}
+- Dificultad: {difficulty}
+- Estilo de aprendizaje: {style["label"]}
+
+---
+### REGLAS DE LENGUAJE ({language.upper()})
+{lang_instructions}
+
+### ADAPTACIÓN AL ESTILO DE APRENDIZAJE
+{style_adaptation}
+
+### ADAPTACIÓN A HABILIDADES BLANDAS
+- Autonomía del coder: {autonomy}/5 → incluir exactamente {hint_count} hints ({"detallados y progresivos" if autonomy <= 2 else "concisos" if autonomy == 3 else "solo el primero, el resto lo descubre solo"}).
+- Resolución de problemas: {ss.get("problem_solving", 3)}/5 → {"incluir comentarios guía en starter_code" if ss.get("problem_solving", 3) <= 2 else "starter_code limpio sin pistas en comentarios"}.
+
+---
+### INSTRUCCIONES
+1. El ejercicio debe cubrir exactamente el tema: "{topic}".
+2. starter_code debe ser código real que el coder puede ejecutar/modificar inmediatamente.
+3. solution debe ser la solución completa y correcta.
+4. hints: {hint_count} pistas progresivas (la primera obvia, la última casi revela la solución).
+5. expected_output: descripción textual del resultado correcto (no necesariamente el valor exacto).
+6. El ejercicio debe ser resolvible en 20-30 minutos.
+7. Idioma del enunciado: español colombiano.
+
+---
+### OUTPUT — JSON ESTRICTO
+{{
+  "title": "Título del ejercicio — específico y accionable",
+  "description": "Enunciado completo del ejercicio adaptado al estilo {style["label"]}. Incluye el contexto y lo que se espera lograr.",
+  "language": "{language}",
+  "difficulty": "{difficulty}",
+  "topic": "{topic}",
+  "starter_code": "código inicial que el coder modifica — autocontenido y ejecutable",
+  "solution": "solución completa y correcta",
+  "expected_output": "descripción del resultado esperado cuando la solución es correcta",
+  "hints": [
+    "Hint 1: el más obvio",
+    "Hint 2: más específico",
+    "Hint 3: casi revela la respuesta"
   ]
 }}
 """
