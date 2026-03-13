@@ -2,9 +2,9 @@
  * controllers/resourceControllers.js
  *
  * FIXES:
- *  - uploadResource: obtiene clan del TL → lo guarda en resources.clan_id
- *  - listResources:  filtra por clan del TL
- *  - deleteResource: verifica clan por seguridad
+ *  - uploadResource: obtiene clan_id del TL → lo guarda en resources.clan_id
+ *  - listResources:  filtra por clan_id del TL
+ *  - deleteResource: verifica clan_id por seguridad
  *  - searchResources: pasa clan del coder a Python para filtrar vectores
  */
 

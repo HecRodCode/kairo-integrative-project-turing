@@ -200,13 +200,14 @@ const onboardingController = {
 
   /* PRE-FINISH: ask clan if OAuth user (clan = null) */
   _beforeFinish() {
-    const needsClan = !this.currentUser?.clan;
+    const existingClan = this.currentUser?.clanId;
+    const needsClan = !existingClan;
 
     if (needsClan) {
       this.inClanSelection = true;
       this._showClanModal();
     } else {
-      this._finish(null);
+      this._finish(existingClan);
     }
   },
 
@@ -338,8 +339,8 @@ const onboardingController = {
     }
 
     try {
-      /* Complete onboarding (sets first_login = false, saves clan) */
-      const onboardRes = await authService.completeOnboarding({ clan });
+      /* Complete onboarding (sets first_login = false, saves clanId) */
+      const onboardRes = await authService.completeOnboarding({ clanId: clan });
       if (!onboardRes.ok) throw new Error('completeOnboarding failed');
 
       /* Save diagnostic answers */
