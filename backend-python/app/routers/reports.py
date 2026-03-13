@@ -1,9 +1,6 @@
 """
 app/routers/reports.py
-TL-facing endpoints:
-  POST /generate-report         → AI narrative report for a clan (saved to ai_reports)
-  GET  /generate-pdf/{clan}     → Returns a downloadable PDF report for the clan
-
+BUG FIX #7: OpenAI → Groq (llama-3.3-70b-versatile)
 PDF generation uses fpdf2 (pure Python, no system dependencies).
 """
 
@@ -15,7 +12,7 @@ from datetime import datetime
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from openai import OpenAI
+from groq import Groq
 from supabase import create_client
 from fpdf import FPDF
 
@@ -24,7 +21,7 @@ router = APIRouter(tags=["TL Reports"])
 
 def _get_clients():
     return (
-        OpenAI(api_key=os.getenv("OPENAI_API_KEY")),
+        Groq(api_key=os.getenv("GROQ_API_KEY")),
         create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_KEY"))
     )
 
@@ -47,7 +44,7 @@ async def generate_report(req: ReportRequest):
     Called by Node.js: POST /generate-report
     Generates an AI analytical report for a clan and saves to ai_reports.
     """
-    openai_client, supabase = _get_clients()
+    groq_client, supabase = _get_clients()
 
     try:
         prompt = f"""
@@ -62,11 +59,11 @@ DATA:
 - Soft skills averages: {json.dumps(req.soft_skills_summary) if req.soft_skills_summary else 'Not available'}
 
 Write 3 sections:
-1. Current state summary (what is going well, what is not)
-2. Main risks and concerns (be specific)
-3. Concrete recommendations for the TL (3-5 action items)
+1. Current state summary
+2. Main risks and concerns
+3. Concrete recommendations (3-5 action items)
 
-Return ONLY valid JSON:
+Return ONLY valid JSON with no markdown, no backticks:
 {{
     "report_title": "Clan {req.clan} — Performance Report",
     "generated_date": "{datetime.now().strftime('%B %d, %Y')}",
@@ -78,41 +75,48 @@ Return ONLY valid JSON:
 }}
 """
 
-        completion = openai_client.chat.completions.create(
-            model=os.getenv("MODEL_NAME", "gpt-4o-mini"),
-            response_format={"type": "json_object"},
+        completion = groq_client.chat.completions.create(
+            model=os.getenv("MODEL_NAME", "llama-3.3-70b-versatile"),
             messages=[
-                {"role": "system", "content": "You are an educational analyst. Respond only with valid JSON."},
-                {"role": "user", "content": prompt},
+                {"role": "system", "content": "You are an educational analyst. Respond only with valid JSON, no markdown."},
+                {"role": "user",   "content": prompt},
             ],
-            max_tokens=900,
+            max_tokens=1000,
             temperature=0.6,
         )
 
-        report = json.loads(completion.choices[0].message.content)
+        raw = completion.choices[0].message.content.strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+        report = json.loads(raw)
 
         # Save to ai_reports
         supabase.table("ai_reports").insert({
-            "target_type":    "clan",
-            "target_id":      req.tl_id,
-            "summary_text":   report.get("summary", ""),
-            "risk_level":     report.get("risk_level", "medium"),
+            "target_type":     "clan",
+            "target_id":       req.tl_id,
+            "summary_text":    report.get("summary", ""),
+            "risk_level":      report.get("risk_level", "medium"),
             "recommendations": report.get("recommendations", ""),
-            "clan_id":        req.clan,
-            "viewed_by_tl":   False,
+            "clan_id":         req.clan,
+            "viewed_by_tl":    False,
         }).execute()
 
         # Log generation
         supabase.table("ai_generation_log").insert({
-            "agent_type":    "report_generator",
-            "input_payload": {"clan": req.clan, "total_coders": req.total_coders},
+            "agent_type":     "report_generator",
+            "input_payload":  {"clan": req.clan, "total_coders": req.total_coders},
             "output_payload": report,
-            "model_name":    "gpt-4o-mini",
-            "success":       True,
+            "model_name":     os.getenv("MODEL_NAME", "llama-3.3-70b-versatile"),
+            "success":        True,
         }).execute()
 
         return {"success": True, "report": report}
 
+    except json.JSONDecodeError as e:
+        logger.error(f"JSON parse error: {e}")
+        raise HTTPException(status_code=500, detail="AI returned invalid JSON")
     except Exception as e:
         logger.error(f"Report generation failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -126,13 +130,11 @@ Return ONLY valid JSON:
 async def generate_clan_pdf(clan: str):
     """
     Called by Node.js: GET /generate-pdf/{clan}
-    Fetches coders + their soft skills from Supabase,
-    builds a PDF report, returns it as a downloadable file.
+    No AI needed here — pure data + PDF build.
     """
     _, supabase = _get_clients()
 
     try:
-        # Fetch all coders in the clan with their soft skills
         coders_result = supabase.table("users") \
             .select("id, full_name, email, first_login") \
             .eq("clan", clan) \
@@ -143,31 +145,26 @@ async def generate_clan_pdf(clan: str):
         if not coders:
             raise HTTPException(status_code=404, detail=f"No coders found in clan '{clan}'")
 
-        # Fetch soft skills for each coder
         coder_ids = [c["id"] for c in coders]
+
         skills_result = supabase.table("soft_skills_assessment") \
             .select("coder_id, autonomy, time_management, problem_solving, communication, teamwork, learning_style") \
             .in_("coder_id", coder_ids) \
             .execute()
-
         skills_map = {s["coder_id"]: s for s in (skills_result.data or [])}
 
-        # Fetch moodle progress
         progress_result = supabase.table("moodle_progress") \
             .select("coder_id, average_score, current_week") \
             .in_("coder_id", coder_ids) \
             .execute()
         progress_map = {p["coder_id"]: p for p in (progress_result.data or [])}
 
-        # Build PDF
         pdf_bytes = _build_pdf(clan, coders, skills_map, progress_map)
 
         return StreamingResponse(
             io.BytesIO(pdf_bytes),
             media_type="application/pdf",
-            headers={
-                "Content-Disposition": f"attachment; filename=clan_{clan}_report.pdf"
-            }
+            headers={"Content-Disposition": f"attachment; filename=clan_{clan}_report.pdf"}
         )
 
     except HTTPException:
@@ -178,14 +175,12 @@ async def generate_clan_pdf(clan: str):
 
 
 def _build_pdf(clan: str, coders: list, skills_map: dict, progress_map: dict) -> bytes:
-    """Builds the clan PDF using fpdf2."""
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
 
-    # ── Header ──────────────────────────────────────────────────
     pdf.set_font("Helvetica", "B", 20)
-    pdf.set_fill_color(109, 40, 217)   # Kairo purple
+    pdf.set_fill_color(109, 40, 217)
     pdf.set_text_color(255, 255, 255)
     pdf.cell(0, 14, f"  Clan {clan.upper()} — Performance Report", fill=True, ln=True)
 
@@ -194,9 +189,8 @@ def _build_pdf(clan: str, coders: list, skills_map: dict, progress_map: dict) ->
     pdf.cell(0, 8, f"  Generated by Kairo AI · {datetime.now().strftime('%B %d, %Y')}", ln=True)
     pdf.ln(6)
 
-    # ── Summary stats ───────────────────────────────────────────
-    scores   = [progress_map.get(c["id"], {}).get("average_score", 0) for c in coders]
-    avg      = sum(scores) / len(scores) if scores else 0
+    scores = [progress_map.get(c["id"], {}).get("average_score", 0) for c in coders]
+    avg    = sum(scores) / len(scores) if scores else 0
     assessed = sum(1 for c in coders if c["id"] in skills_map)
 
     pdf.set_font("Helvetica", "B", 12)
@@ -208,7 +202,6 @@ def _build_pdf(clan: str, coders: list, skills_map: dict, progress_map: dict) ->
     pdf.cell(0, 7, f"Diagnostics completed: {assessed}/{len(coders)}", ln=True)
     pdf.ln(6)
 
-    # ── Per-coder section ───────────────────────────────────────
     pdf.set_font("Helvetica", "B", 12)
     pdf.cell(0, 8, "Coder Profiles", ln=True)
     pdf.ln(2)
@@ -225,7 +218,9 @@ def _build_pdf(clan: str, coders: list, skills_map: dict, progress_map: dict) ->
         pdf.set_font("Helvetica", "", 10)
         pdf.set_text_color(60, 60, 60)
         pdf.cell(0, 6, f"Email: {coder['email']}", ln=True)
-        pdf.cell(0, 6, f"Avg score: {progress.get('average_score', 'N/A')}  |  Week: {progress.get('current_week', 'N/A')}", ln=True)
+        pdf.cell(0, 6,
+            f"Avg score: {progress.get('average_score', 'N/A')}  |  "
+            f"Week: {progress.get('current_week', 'N/A')}", ln=True)
 
         if ss:
             pdf.cell(0, 6,

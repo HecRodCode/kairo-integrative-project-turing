@@ -1,81 +1,58 @@
 <!doctype html>
 <html lang="es" data-theme="dark">
-
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard TL · Kairo</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
-    rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
-  <link rel="stylesheet" href="../../../assets/css/global.css" />
-  <link rel="stylesheet" href="../../../assets/css/dashboardTL.css" />
-  <!-- Theme centralizado (igual que en todas las páginas) -->
-  <script src="../../../src/core/utils/theme.js" defer></script>
-</head>
-
-<nav class="bottom-nav" aria-label="Navegación principal">
-  <div class="bottom-nav-inner">
-    <a class="bottom-nav-item active" href="#">
-      <i class="fa-solid fa-table-columns"></i>
-      <span>Dashboard</span>
-    </a>
-    <a class="bottom-nav-item" href="./assignment.html">
-      <i class="fa-solid fa-clipboard-list"></i>
-      <span>Actividades</span>
-    </a>
-    <a class="bottom-nav-item" href="./group.html">
-      <i class="fa-solid fa-users"></i>
-      <span>Grupos</span>
-    </a>
-    <button class="bottom-nav-item btn-logout">
-  <i class="fa-solid fa-arrow-right-from-bracket"></i>
-  <span>Logout</span>
-</button>
-    
-  </div>
-</nav>
-
-<body>
-  <div class="shell">
-    <!-- ══════════════════ SIDEBAR ══════════════════ -->
-    <aside class="sidebar">
-      <div class="sidebar-brand">
-        <img src="../../../assets/img/logo.png" alt="Kairo" class="sidebar-logo" />
-      </div>
-      <nav class="sidebar-nav">
-        <a class="nav-link active" href="#">
-          <span class="nav-icon"><i class="fa-solid fa-table-columns"></i></span>
-          Dashboard
-        </a>
-        <a class="nav-link" href="./assignment.html">
-          <span class="nav-icon"><i class="fa-solid fa-clipboard-list"></i></span>
-          Actividades
-        </a>
-        <a class="nav-link" href="./group.html">
-          <span class="nav-icon"><i class="fa-solid fa-clipboard-list"></i></span>
-          group
-        </a>
-      </nav>
-      <!-- TL Profile card at bottom -->
-      <div class="sidebar-profile">
-        <button class="btn-logout" id="btn-logout" title="Cerrar sesión">
-          <i class="fa-solid fa-arrow-right-from-bracket"></i>
-        </button>
-      </div>
-    </aside>
-    <!-- ══════════════════ MAIN ══════════════════ -->
-    <main class="main">
-      <!-- Topbar -->
-      <header class="topbar">
-        <div class="topbar-left">
-          <h1 class="topbar-title">
-            Clan <span id="clan-heading" class="gradient-text">—</span>
-          </h1>
-          <p class="topbar-sub" id="topbar-date">—</p>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard TL · Kairo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+    <link rel="stylesheet" href="../../../assets/css/global.css" />
+    <link rel="stylesheet" href="../../../assets/css/dashboardTL.css" />
+    <!-- Theme centralizado (igual que en todas las páginas) -->
+    <script src="../../../src/core/utils/theme.js" defer></script>
+  </head>
+  <body>
+    <div class="shell">
+      <!-- ══════════════════ SIDEBAR ══════════════════ -->
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <img src="../../../assets/img/logo.png" alt="Kairo" class="sidebar-logo" />
+        </div>
+        <nav class="sidebar-nav">
+          <a class="nav-link active" href="./dashboard.html">
+            <span class="nav-icon"><i class="fa-solid fa-chart-pie"></i></span>
+            Dashboard
+          </a>
+          <a class="nav-link" href="./profile.html">
+            <span class="nav-icon"><i class="fa-solid fa-user-tie"></i></span>
+            Perfil
+          </a>
+          <a class="nav-link" href="./assignment.html">
+            <span class="nav-icon"
+              ><i class="fa-solid fa-clipboard-list"></i
+            ></span>
+            Actividades
+          </a>
+          <a class="nav-link" href="./group.html">
+            <span class="nav-icon"
+              ><i class="fa-solid fa-clipboard-list"></i
+            ></span>
+            group
+          </a>
+        </nav>
+        <!-- TL Profile card at bottom -->
+        <div class="sidebar-profile">
+          <button class="btn-logout" id="btn-logout" title="Cerrar sesión">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          </button>
         </div>
         <div class="topbar-right">
           <div class="topbar-badge" id="topbar-risk-badge" style="display: none">
@@ -262,10 +239,18 @@
                   <span class="risk-badge hidden" id="d-risk">⚠ En riesgo</span>
                 </div>
               </div>
-              <div class="detail-meta">
-                <div class="meta-row">
-                  <span class="meta-key"><i class="fa-solid fa-envelope"></i> Email</span>
-                  <span class="meta-val" id="d-email">—</span>
+              <!-- Detail body -->
+              <div class="detail-body hidden" id="detail-body">
+                <div class="detail-header">
+                  <div class="detail-avatar">
+                    <i class="fa-solid fa-user"></i>
+                  </div>
+                  <div>
+                    <h3 id="d-name">—</h3>
+                    <span id="d-clan" class="detail-clan-tag">—</span>
+                    <div id="d-profile-link"></div>
+                    <span class="risk-badge hidden" id="d-risk">⚠ En riesgo</span>
+                  </div>
                 </div>
                 <div class="meta-row">
                   <span class="meta-key"><i class="fa-solid fa-layer-group"></i> Semana</span>
