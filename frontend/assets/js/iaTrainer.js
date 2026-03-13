@@ -55,10 +55,7 @@ const el = (id) => document.getElementById(id);
   }
 
   // Populate identity
-  const firstName = session.user.fullName?.split(' ')[0] || '—';
-  el('sidebar-name').textContent = session.user.fullName || '—';
-  el('sidebar-clan').textContent = cap(session.user.clan || '—');
-  el('topbar-name').textContent = firstName;
+  el('topbar-name').textContent = session.user.fullName || '—';
 
   el('loading-overlay').classList.add('hidden');
 
@@ -455,7 +452,8 @@ function syncThemeIcon(theme) {
    UTILS
 ══════════════════════════════════════ */
 function wireLogout() {
-  el('btn-logout').addEventListener('click', () => sessionManager.logout());
+  document.querySelectorAll('.btn-logout')
+    .forEach(btn => btn.addEventListener('click', () => sessionManager.logout()));
 }
 
 /* Language toggle — cycles es/en (UI label only for now) */

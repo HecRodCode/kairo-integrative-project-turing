@@ -811,44 +811,310 @@
   margin: 0;
 }
 
-/* ════════════════════════════════════
-   RESPONSIVE
-════════════════════════════════════ */
-@media (max-width: 1200px) {
+
+/* ════════════════════════════════════════════════════
+   LOADING OVERLAY
+   ════════════════════════════════════════════════════ */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-body);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.35s ease, visibility 0.35s ease;
+}
+.loading-overlay.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.loading-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+.loading-spinner {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 3px solid var(--border-glass);
+  border-top-color: var(--accent);
+  animation: spin 0.8s linear infinite;
+}
+.loading-text {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0;
+  font-weight: 500;
+}
+.loading-dots::after {
+  content: '';
+  animation: dots 1.5s steps(4, end) infinite;
+}
+@keyframes dots {
+  0%   { content: ''; }
+  25%  { content: '.'; }
+  50%  { content: '..'; }
+  75%  { content: '...'; }
+  100% { content: ''; }
+}
+
+/* ════════════════════════════════════════════════════
+   SIDEBAR PROFILE
+   ════════════════════════════════════════════════════ */
+.sidebar-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-glass);
+  margin-top: 16px;
+  flex-shrink: 0;
+}
+
+/* ════════════════════════════════════════════════════
+   1280px — Desktop grande
+   ════════════════════════════════════════════════════ */
+@media (max-width: 1280px) {
   .content-grid {
-    grid-template-columns: 1fr;
-  }
-  .col-aside {
-    position: static;
-  }
-  .stats-row {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr 260px;
   }
 }
 
-@media (max-width: 800px) {
+/* ════════════════════════════════════════════════════
+   1100px — Laptop
+   ════════════════════════════════════════════════════ */
+@media (max-width: 1100px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .col-aside {
+    position: static;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .col-aside > * {
+    height: auto;
+  }
+
+  .stats-row {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   900px — Tablet landscape
+   ════════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .col-aside {
+    grid-template-columns: 1fr;
+  }
+
+  .main {
+    padding: 20px 20px;
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   768px — Tablet portrait: sidebar se oculta, aparece bottom nav
+   ════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* Ocultar sidebar */
+  .sidebar {
+    display: none;
+  }
+
+  /* Main ocupa todo el ancho, con padding inferior para el bottom nav */
   .shell {
     flex-direction: column;
   }
-  .sidebar {
-    width: 100%;
-    height: auto;
-    position: static;
-    flex-direction: row;
-    flex-wrap: wrap;
-    padding: 16px;
-  }
-  .sidebar-nav {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-  .sidebar-profile {
-    width: 100%;
-  }
+
   .main {
+    padding: 16px 16px 80px;
+    width: 100%;
+  }
+
+  /* Mostrar bottom nav */
+  .bottom-nav {
+    display: flex;
+  }
+
+  /* Content grid: una columna */
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .col-aside {
+    position: static;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  /* Welcome card */
+  .welcome-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .welcome-name {
+    font-size: 18px;
+  }
+
+  /* Topbar */
+  .topbar {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .topbar-right {
+    gap: 6px;
+  }
+
+  .topbar-profile-btn span {
+    display: none;
+  }
+
+  /* Cards */
+  .glass-card {
     padding: 16px;
   }
-  .stats-row {
-    grid-template-columns: 1fr 1fr;
+
+  /* Topbar module pill */
+  .module-pill {
+    font-size: 11px;
   }
 }
+
+/* ════════════════════════════════════════════════════
+   480px — Móvil
+   ════════════════════════════════════════════════════ */
+@media (max-width: 480px) {
+  .main {
+    padding: 12px 12px 80px;
+    gap: 14px;
+  }
+
+  .stats-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .stat-card {
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .stat-value {
+    font-size: 16px;
+  }
+
+  .stat-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 13px;
+  }
+
+  .glass-card {
+    padding: 14px;
+  }
+
+  .card-head {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Skill rows */
+  .skill-item {
+    grid-template-columns: 110px 1fr 30px;
+    gap: 8px;
+  }
+
+  /* Score ring más pequeño */
+  .score-ring {
+    width: 90px;
+    height: 90px;
+  }
+
+  .ring-value {
+    font-size: 20px;
+  }
+
+  /* Welcome */
+  .welcome-tags {
+    gap: 5px;
+  }
+
+  .cohort-badge,
+  .clan-badge {
+    font-size: 11px;
+    padding: 3px 9px;
+  }
+
+  /* week dots */
+  .week-dots {
+    gap: 4px;
+  }
+
+  .week-dot {
+    height: 6px;
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   390px — Mínimo
+   ════════════════════════════════════════════════════ */
+@media (max-width: 390px) {
+  .main {
+    padding: 10px 10px 78px;
+    gap: 12px;
+  }
+
+  .stats-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .stat-card {
+    padding: 10px;
+  }
+
+  .stat-value {
+    font-size: 15px;
+  }
+
+  .topbar {
+    gap: 8px;
+  }
+
+  .topbar-right {
+    gap: 4px;
+  }
+
+  .icon-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 13px;
+  }
+}
+
+
+

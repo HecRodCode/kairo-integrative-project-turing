@@ -67,6 +67,7 @@ function renderAll(data) {
   renderTLInfo(data.tl);
   renderStats(data.overview);
   renderSkillsOverview(data.softSkillsAverage);
+  renderLearningStyles(data.coders);
   renderTable(data.coders);
 }
 
@@ -84,7 +85,7 @@ function renderStats(ov) {
   el('st-pending').textContent = ov.pendingOnboarding;
   el('st-risk').textContent = ov.highRiskCoders;
   el('st-score').textContent =
-    ov.clanAvgScore > 0 ? `${parseFloat(ov.clanAvgScore).toFixed(1)}%` : '—';
+    ov.clanAvgScore > 0 ? `${parseFloat(ov.clanAvgScore).toFixed(1)}%` : '0.0%';
   // Risk badge in topbar
   if (ov.highRiskCoders > 0) {
     el('topbar-risk-badge').style.display = 'inline-flex';
@@ -119,9 +120,64 @@ function renderSkillsOverview(avg) {
         <div class="skill-bar-track">
           <div class="skill-bar-fill" style="width:${pct}%"></div>
         </div>
-        <span class="skill-item-val">${val > 0 ? val.toFixed(1) : '—'}</span>
+        <span class="skill-item-val">${val > 0 ? val.toFixed(1) : '0.0'}</span>
       </div>`;
   }).join('');
+}
+
+/* ── Learning styles pie chart ── */
+function renderLearningStyles(coders) {
+  const pie = el('learning-pie');
+  const legend = el('learning-legend');
+  
+  if (!coders || !coders.length) {
+    legend.innerHTML = '<p style="color:var(--text-muted);font-size:12px">Sin datos</p>';
+    return;
+  }
+
+  // 1. Count
+  const counts = {
+    visual: 0,
+    auditory: 0,
+    kinesthetic: 0,
+    read_write: 0,
+    other: 0
+  };
+  
+  coders.forEach(c => {
+    const s = (c.learning_style || 'other').toLowerCase();
+    if (counts.hasOwnProperty(s)) counts[s]++;
+    else counts.other++;
+  });
+
+  const total = coders.length;
+  const data = [
+    { key: 'visual', label: 'Visual', color: 'var(--accent)', count: counts.visual },
+    { key: 'auditory', label: 'Auditivo', color: 'var(--code-blue)', count: counts.auditory },
+    { key: 'kinesthetic', label: 'Kinestésico', color: 'var(--color-success)', count: counts.kinesthetic },
+    { key: 'read_write', label: 'Lecto-escritor', color: 'var(--color-warning)', count: counts.read_write },
+    { key: 'other', label: 'No diagnosticado', color: 'var(--border-glass)', count: counts.other },
+  ].filter(d => d.count > 0);
+
+  // 2. CSS Conic Gradient
+  let cumulative = 0;
+  const gradientParts = data.map(d => {
+    const start = cumulative;
+    const end = start + (d.count / total) * 100;
+    cumulative = end;
+    return `${d.color} ${start}% ${end}%`;
+  });
+
+  pie.style.background = `conic-gradient(${gradientParts.join(', ')})`;
+
+  // 3. Legend
+  legend.innerHTML = data.map(d => `
+    <div class="legend-item">
+      <span class="legend-dot" style="background:${d.color}"></span>
+      <span class="legend-label">${d.label}</span>
+      <span class="legend-val">${Math.round((d.count / total) * 100)}%</span>
+    </div>
+  `).join('');
 }
 
 /* ── Table ── */
@@ -152,9 +208,9 @@ function renderTable(coders) {
         <td>${
           c.average_score > 0
             ? `<span class="score-pill">${parseFloat(c.average_score).toFixed(1)}</span>`
-            : '<span style="color:var(--text-muted)">—</span>'
+            : '<span class="score-pill" style="opacity:0.5">0.0</span>'
         }</td>
-        <td>${c.current_week > 0 ? `Sem. ${c.current_week}` : '—'}</td>
+        <td>${c.current_week > 0 ? `Sem. ${c.current_week}` : 'Sem. 1'}</td>
         <td>${
           c.learning_style
             ? `<span class="style-tag">${cap(c.learning_style)}</span>`
@@ -192,10 +248,21 @@ function renderDetail(c) {
   body.style.display = 'flex';
   el('d-name').textContent = c.full_name;
   el('d-clan').textContent = cap(c.clan_id || '—');
+  
+  // Perfil Link
+  const profileLinkContainer = el('d-profile-link');
+  if (profileLinkContainer) {
+    profileLinkContainer.innerHTML = `
+      <a href="../coder/profile.html?id=${c.id}" class="btn-profile-view">
+        <i class="fa-solid fa-user-tie"></i> Ver Perfil Profesional
+      </a>
+    `;
+  }
   el('d-email').textContent = c.email;
-  el('d-week').textContent = c.current_week > 0 ? `Semana ${c.current_week}` : '—';
+  el('d-week').textContent =
+    c.current_week > 0 ? `Semana ${c.current_week}` : 'Semana 1';
   el('d-score').textContent =
-    c.average_score > 0 ? `${parseFloat(c.average_score).toFixed(1)}%` : '—';
+    c.average_score > 0 ? `${parseFloat(c.average_score).toFixed(1)}%` : '0.0%';
   el('d-style').textContent = c.learning_style
     ? cap(c.learning_style)
     : 'Sin diagnóstico';
@@ -210,7 +277,7 @@ function renderDetail(c) {
         <div class="skill-bar-track">
           <div class="skill-bar-fill" style="width:${pct}%"></div>
         </div>
-        <span class="skill-bar-val">${val || '—'}</span>
+        <span class="skill-bar-val">${val.toFixed(1)}</span>
       </div>`;
   }).join('');
   // Clear feedback area
@@ -322,7 +389,8 @@ function generatePDF(c) {
 
 /* Logout */
 function wireLogout() {
-  el('btn-logout').addEventListener('click', () => sessionManager.logout());
+  document.querySelectorAll('.btn-logout')
+    .forEach(btn => btn.addEventListener('click', () => sessionManager.logout()));
 }
 
 /* ══════════════════════════════════════

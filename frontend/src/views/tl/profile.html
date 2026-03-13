@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="es" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kairo | Mi Perfil TL</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+    <!-- Style -->
+    <link rel="stylesheet" href="../../../assets/css/global.css" />
+    <link rel="stylesheet" href="../../../assets/css/dashboardTL.css" />
+    <link rel="stylesheet" href="../../../assets/css/profile_coder.css" />
+
+    <script src="../../../src/core/utils/theme.js" defer></script>
+  </head>
+  <body class="profile-page">
+    <div class="shell">
+      <main class="main">
+        <!-- Topbar -->
+        <header class="topbar animate-up">
+          <div class="topbar-left">
+            <a
+              href="dashboard.html"
+              class="icon-btn back-btn"
+              title="Volver al Dashboard"
+            >
+              <i class="fa-solid fa-chevron-left"></i>
+            </a>
+            <div class="topbar-title-group">
+              <h2 class="topbar-title">Perfil TL</h2>
+              <p class="topbar-date" id="currentDate">Cargando fecha...</p>
+            </div>
+          </div>
+          <div class="topbar-right">
+            <button
+              class="icon-btn"
+              id="btnEditProfile"
+              title="Configuración de Perfil"
+            >
+              <i class="fa-solid fa-user-gear"></i>
+            </button>
+          </div>
+        </header>
+
+        <!-- Profile Hero Section -->
+        <section class="profile-hero animate-up">
+          <div class="profile-banner"></div>
+          <div class="profile-header">
+            <div class="profile-avatar-container">
+              <div class="profile-avatar" id="mainAvatar">
+                <span id="avatarFallback">TL</span>
+              </div>
+              <label for="avatarInput" class="avatar-edit-overlay">
+                <i class="fa-solid fa-camera"></i>
+                <input type="file" id="avatarInput" accept="image/*" hidden />
+              </label>
+            </div>
+            <div class="profile-info-main">
+              <div class="name-role">
+                <h1 id="fullName">-- --</h1>
+                <span class="badge-role">Team Leader</span>
+              </div>
+              <p class="profile-bio" id="bioText">
+                Liderando el talento del futuro...
+              </p>
+              <textarea
+                id="bioInput"
+                class="edit-input hidden"
+                placeholder="Escribe tu trayectoria como líder..."
+              ></textarea>
+            </div>
+          </div>
+        </section>
+
+        <!-- Profile Grid -->
+        <div class="profile-grid">
+          <!-- Columna Izquierda -->
+          <div class="profile-col">
+            <!-- Info Personal -->
+            <div class="profile-card animate-up" style="animation-delay: 0.1s">
+              <div class="card-header">
+                <i class="fa-solid fa-address-card"></i>
+                <h3>Contacto y Ubicación</h3>
+              </div>
+              <div class="info-list">
+                <div class="info-item">
+                  <i class="fa-regular fa-envelope"></i>
+                  <span id="emailText">--@riwi.io</span>
+                </div>
+                <div class="info-item">
+                  <i class="fa-solid fa-phone"></i>
+                  <span class="display-val" id="phoneText">--- --- ---</span>
+                  <input
+                    type="text"
+                    id="phoneInput"
+                    class="edit-input hidden"
+                  />
+                </div>
+                <div class="info-item">
+                  <i class="fa-solid fa-location-dot"></i>
+                  <span class="display-val" id="locationText"
+                    >Medellín, CO</span
+                  >
+                  <input
+                    type="text"
+                    id="locationInput"
+                    class="edit-input hidden"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- Redes -->
+            <div class="profile-card animate-up" style="animation-delay: 0.2s">
+              <div class="card-header">
+                <i class="fa-solid fa-hashtag"></i>
+                <h3>Redes Profesionales</h3>
+              </div>
+              <div class="info-list">
+                <div class="info-item">
+                  <i class="fa-brands fa-linkedin"></i>
+                  <span class="display-val" id="linkedinText"
+                    >linkedin.com/in/--</span
+                  >
+                  <input
+                    type="text"
+                    id="linkedinInput"
+                    class="edit-input hidden"
+                  />
+                </div>
+                <div class="info-item">
+                  <i class="fa-brands fa-github"></i>
+                  <span class="display-val" id="githubText">github.com/--</span>
+                  <input
+                    type="text"
+                    id="githubInput"
+                    class="edit-input hidden"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Columna Derecha -->
+          <div class="profile-col">
+            <!-- Métricas de Liderazgo -->
+            <div class="profile-card animate-up" style="animation-delay: 0.3s">
+              <div class="card-header">
+                <i class="fa-solid fa-rocket"></i>
+                <h3>Métricas de Liderazgo</h3>
+              </div>
+              <div class="stats-row">
+                <div class="stat-box">
+                  <span class="stat-num" id="statClans">--</span>
+                  <span class="stat-label">Clanes Liderados</span>
+                </div>
+                <div class="stat-box">
+                  <span class="stat-num" id="statCoders">--</span>
+                  <span class="stat-label">Coders a cargo</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Skills de Gestión -->
+            <div class="profile-card animate-up" style="animation-delay: 0.4s">
+              <div class="card-header">
+                <i class="fa-solid fa-brain"></i>
+                <h3>Habilidades de Gestión</h3>
+              </div>
+              <div class="skills-container" id="skillsList">
+                <!-- Inyectado por JS -->
+              </div>
+              <div class="edit-actions hidden" id="skillEditArea">
+                <div class="input-group">
+                  <input
+                    type="text"
+                    id="newSkillInput"
+                    placeholder="Nueva habilidad..."
+                  />
+                  <button id="btnAddSkill">
+                    <i class="fa-solid fa-plus"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Float Actions -->
+        <div class="profile-actions animate-up">
+          <button class="btn-success hidden" id="btnSaveProfile">
+            <i class="fa-solid fa-floppy-disk"></i>
+            Guardar Cambios
+          </button>
+        </div>
+      </main>
+    </div>
+
+    <!-- Theme Switch Wrapper (Global) -->
+    <div class="theme-switch-wrapper">
+      <button class="theme-btn" id="btn-theme" title="Cambiar Tema">
+        <i id="icon-moon" class="fa-solid fa-moon"></i>
+        <i id="icon-sun" class="fa-solid fa-sun" style="display: none"></i>
+      </button>
+    </div>
+
+    <script type="module" src="../../../assets/js/profile_tl.js"></script>
+  </body>
+</html>

@@ -29,11 +29,11 @@ async function start() {
     return;
   }
 
-  if (btnLogout) {
-    btnLogout.addEventListener('click', function () {
-      sessionManager.logout();
-    });
-  }
+document.querySelectorAll('.btn-logout').forEach(btn => {
+  btn.addEventListener('click', function () {
+    sessionManager.logout();
+  });
+});
 
   await loadCoders();
   renderCoderList();

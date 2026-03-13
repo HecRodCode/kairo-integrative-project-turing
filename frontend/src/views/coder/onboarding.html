@@ -75,6 +75,10 @@
 
     <!-- ── FLOATING BUTTONS ── -->
     <div class="theme-switch-wrapper">
+
+      <!-- Botón de ayuda -->
+      <button class="theme-btn" id="help-toggle" title="¿Cómo funciona?" onclick="openHelp()" style="font-size:20px;font-weight:800;color:var(--accent);border-color:var(--accent-border);background:var(--accent-dim);">?</button>
+
       <button class="theme-btn" id="language-toggle" title="Change language">
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -132,6 +136,100 @@
       </button>
     </div>
 
-    <script type="module" src="./../../../src/core/utils/onboarding-ui.js"></script>
+    <script
+      type="module"
+      src="./../../../src/core/utils/onboarding-ui.js"
+    ></script>
+
+    <!-- ── HELP MODAL ── -->
+    <div class="help-overlay" id="helpOverlay" onclick="closeHelpOutside(event)">
+      <div class="help-modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+
+        <div class="modal-header">
+          <div>
+            <p class="modal-eyebrow">Diagnóstico de aprendizaje</p>
+            <h2 class="modal-title" id="helpTitle">¿Cómo funciona esto?</h2>
+          </div>
+          <button class="modal-close" onclick="closeHelp()" aria-label="Cerrar">✕</button>
+        </div>
+
+        <div class="modal-section">
+          <div class="section-label">
+            <div class="section-icon">🎯</div>
+            <span class="section-title">¿Para qué es este diagnóstico?</span>
+          </div>
+          <p class="modal-text">
+            Cada persona aprende diferente. Algunas prefieren ver diagramas, otras escuchar,
+            otras leer, otras simplemente hacer. Este test de <strong>30 preguntas</strong>
+            descubre tu forma natural de aprender para que Kairo pueda adaptar el contenido
+            exactamente a ti — no a una versión genérica de "estudiante promedio".
+          </p>
+        </div>
+
+        <div class="modal-divider"></div>
+
+        <div class="modal-section">
+          <div class="section-label">
+            <div class="section-icon">📦</div>
+            <span class="section-title">¿Qué son los bloques B1, B2…?</span>
+          </div>
+          <p class="modal-text" style="margin-bottom:0.75rem;">
+            Las 30 preguntas están divididas en 7 bloques. Cada uno explora una dimensión distinta de cómo aprendes:
+          </p>
+          <div class="blocks-grid">
+            <div class="block-chip"><span class="block-badge-sm">B1</span><span class="block-desc"><strong>Canales sensoriales</strong> — ¿Aprendes mejor viendo, escuchando, leyendo o practicando?</span></div>
+            <div class="block-chip"><span class="block-badge-sm">B2</span><span class="block-desc"><strong>Activo vs. Reflexivo</strong> — ¿Te lanzas de inmediato o prefieres pensar antes de actuar?</span></div>
+            <div class="block-chip"><span class="block-badge-sm">B3</span><span class="block-desc"><strong>Concreto vs. Intuitivo</strong> — ¿Te atraen más los ejemplos reales o las ideas abstractas?</span></div>
+            <div class="block-chip"><span class="block-badge-sm">B4</span><span class="block-desc"><strong>Secuencial vs. Global</strong> — ¿Paso a paso o primero el panorama completo?</span></div>
+            <div class="block-chip"><span class="block-badge-sm">B5</span><span class="block-desc"><strong>Visual vs. Verbal</strong> — ¿Te funciona mejor un gráfico o una buena descripción escrita?</span></div>
+            <div class="block-chip"><span class="block-badge-sm">B6</span><span class="block-desc"><strong>Ciclo de experiencia</strong> — ¿Cómo procesas lo que aprendes: viviendo, observando, analizando o experimentando?</span></div>
+            <div class="block-chip"><span class="block-badge-sm">B7</span><span class="block-desc"><strong>Perfil integrador</strong> — Preguntas finales que cruzan todo lo anterior para construir tu perfil completo.</span></div>
+          </div>
+        </div>
+
+        <div class="modal-divider"></div>
+
+        <div class="modal-section">
+          <div class="section-label">
+            <div class="section-icon">🖱️</div>
+            <span class="section-title">¿Cómo respondo y me muevo?</span>
+          </div>
+          <div class="tips-list">
+            <div class="tip-item"><span class="tip-key">Clic</span> Toca la opción que más te identifique. La siguiente pregunta aparece sola.</div>
+            <div class="tip-item"><span class="tip-key">A B C D</span> Si prefieres el teclado, las teclas A, B, C y D funcionan igual que hacer clic.</div>
+            <div class="tip-item"><span class="tip-key">← Atrás</span> ¿Quieres cambiar algo? Usa el botón Atrás para retroceder cuando quieras.</div>
+          </div>
+          <p class="modal-text" style="margin-top:10px;">
+            No hay respuestas correctas ni incorrectas. Elige siempre con tu
+            <strong>primera reacción</strong> — la que más se parezca a cómo eres de verdad.
+          </p>
+        </div>
+
+        <div class="modal-divider"></div>
+
+        <div class="modal-section">
+          <div class="section-label">
+            <div class="section-icon">✨</div>
+            <span class="section-title">¿Qué pasa cuando termino?</span>
+          </div>
+          <p class="modal-text">
+            Kairo analiza tus respuestas con base en tres modelos internacionales —
+            <strong>VARK, Felder-Soloman y Kolb</strong>. Con eso construye tu perfil personal:
+            qué formatos te funcionan mejor, a qué ritmo aprendes y cómo procesas la información.
+            A partir de ahí, tu experiencia en la plataforma se adapta a ti de manera automática.
+          </p>
+        </div>
+
+        <div class="modal-footer">
+          <span style="font-size:18px">💡</span>
+          <p class="modal-footer-text">
+            Tarda aproximadamente <strong>5–8 minutos</strong>. Solo se hace una vez, pero
+            podrás actualizar tu perfil cuando quieras desde ajustes.
+          </p>
+        </div>
+
+      </div>
+    </div>
+
   </body>
 </html>
