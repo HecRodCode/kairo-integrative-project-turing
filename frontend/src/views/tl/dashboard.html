@@ -1,6 +1,5 @@
 <!doctype html>
 <html lang="es" data-theme="dark">
-<<<<<<< HEAD
 
 <head>
   <meta charset="UTF-8" />
@@ -77,61 +76,6 @@
             Clan <span id="clan-heading" class="gradient-text">—</span>
           </h1>
           <p class="topbar-sub" id="topbar-date">—</p>
-=======
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dashboard TL · Kairo</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
-    />
-    <link rel="stylesheet" href="../../../assets/css/global.css" />
-    <link rel="stylesheet" href="../../../assets/css/dashboardTL.css" />
-    <!-- Theme centralizado (igual que en todas las páginas) -->
-    <script src="../../../src/core/utils/theme.js" defer></script>
-  </head>
-  <body>
-    <div class="shell">
-      <!-- ══════════════════ SIDEBAR ══════════════════ -->
-      <aside class="sidebar">
-        <div class="sidebar-brand">
-          <img src="../../../assets/img/logo.png" alt="Kairo" class="sidebar-logo" />
-        </div>
-        <nav class="sidebar-nav">
-          <a class="nav-link active" href="./dashboard.html">
-            <span class="nav-icon"><i class="fa-solid fa-chart-pie"></i></span>
-            Dashboard
-          </a>
-          <a class="nav-link" href="./profile.html">
-            <span class="nav-icon"><i class="fa-solid fa-user-tie"></i></span>
-            Perfil
-          </a>
-          <a class="nav-link" href="./assignment.html">
-            <span class="nav-icon"
-              ><i class="fa-solid fa-clipboard-list"></i
-            ></span>
-            Actividades
-          </a>
-          <a class="nav-link" href="./group.html">
-            <span class="nav-icon"
-              ><i class="fa-solid fa-clipboard-list"></i
-            ></span>
-            group
-          </a>
-        </nav>
-        <!-- TL Profile card at bottom -->
-        <div class="sidebar-profile">
-          <button class="btn-logout" id="btn-logout" title="Cerrar sesión">
-            <i class="fa-solid fa-arrow-right-from-bracket"></i>
-          </button>
->>>>>>> a5e2ce0ac7d2a4cd445a77e13c3972890ca977ba
         </div>
         <div class="topbar-right">
           <div class="topbar-badge" id="topbar-risk-badge" style="display: none">
@@ -263,6 +207,9 @@
             <div class="card-head">
               <h2 class="card-title">Coders del Clan</h2>
               <div class="filter-row" id="filter-row">
+                <button class="btn-ghost" id="btn-report" onclick="generateReportClan(sessionStorage.getItem('clan'))">
+                <i class="fa-solid fa-file-pdf"></i> Reporte PDF Clan
+                </button>
                 <button class="chip active" data-filter="all">Todos</button>
                 <button class="chip" data-filter="risk">En riesgo</button>
                 <button class="chip" data-filter="pending">Pendientes</button>
@@ -367,7 +314,7 @@
                   <button class="btn-primary" id="btn-feedback">
                     <i class="fa-solid fa-paper-plane"></i> Enviar
                   </button>
-                  <button class="btn-ghost" id="btn-report">
+                   <button class="btn-ghost" id="btn-report" onclick="generateReport(sessionStorage.getItem('id'))">
                     <i class="fa-solid fa-file-pdf"></i> PDF
                   </button>
                 </div>

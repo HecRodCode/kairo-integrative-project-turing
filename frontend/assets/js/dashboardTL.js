@@ -74,6 +74,7 @@ function renderAll(data) {
 /* ── TL info ── */
 function renderTLInfo(tl) {
   if (!tl) return;
+  sessionStorage.setItem('clan', tl.clanId);
   el('clan-heading').textContent = cap(tl.clanId);
   el('topbar-name').textContent = tl.fullName;
 }
@@ -194,6 +195,7 @@ function renderTable(coders) {
   const tbody = el('coder-tbody');
   tbody.innerHTML = filtered
     .map((c) => {
+      sessionStorage.setItem('id', c.id);
       const isRisk = c.risk_level === 'high' || c.risk_level === 'critical';
       const isPend = c.first_login;
       const statusHTML = isRisk
