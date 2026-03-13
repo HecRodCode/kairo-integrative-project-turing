@@ -1,19 +1,19 @@
 """
 app/routers/chat.py
+BUG FIX #7: OpenAI → Groq (llama-3.3-70b-versatile)
 """
-
 import os
 import logging
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from openai import OpenAI
+from groq import Groq
 
 logger = logging.getLogger("kairo-chat")
 router = APIRouter(prefix="/chat", tags=["AI Tutor"])
 
 class ChatRequest(BaseModel):
     message:  str
-    coder_id: int | None = None   # optional — for context personalization later
+    coder_id: int | None = None
 
 @router.post("/ask")
 async def ask_tutor(req: ChatRequest):
@@ -25,10 +25,10 @@ async def ask_tutor(req: ChatRequest):
         raise HTTPException(status_code=400, detail="Message cannot be empty")
 
     try:
-        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
         response = client.chat.completions.create(
-            model=os.getenv("MODEL_NAME", "gpt-4o-mini"),
+            model=os.getenv("MODEL_NAME", "llama-3.3-70b-versatile"),
             messages=[
                 {
                     "role": "system",

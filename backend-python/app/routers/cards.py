@@ -1,13 +1,13 @@
 """
 app/routers/cards.py
+BUG FIX #7: OpenAI → Groq (llama-3.3-70b-versatile)
 """
-
 import os
 import json
 import logging
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from openai import OpenAI
+from groq import Groq
 from supabase import create_client
 
 logger = logging.getLogger("kairo-cards")
@@ -15,28 +15,24 @@ router = APIRouter(tags=["Focus Cards"])
 
 def _get_clients():
     return (
-        OpenAI(api_key=os.getenv("OPENAI_API_KEY")),
+        Groq(api_key=os.getenv("GROQ_API_KEY")),
         create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_KEY"))
     )
 
-# ── DTO ────────────────────────────────────────────────────────
 class FocusCardsRequest(BaseModel):
-    coder_id:         int
-    module_id:        int
+    coder_id:          int
+    module_id:         int
     struggling_topics: list[str] = []
 
-# ── Endpoint ───────────────────────────────────────────────────
 @router.post("/generate-focus-cards")
 async def generate_focus_cards(req: FocusCardsRequest):
     """
     Called by Node.js: POST /generate-focus-cards
     Returns 6 cards: 2 High / 2 Medium / 2 Low priority
-    with theory, practice, and pro_tips for each.
     """
-    openai_client, supabase = _get_clients()
+    groq_client, supabase = _get_clients()
 
     try:
-        # Fetch soft skills for personalization
         result = supabase.table("soft_skills_assessment") \
             .select("learning_style, problem_solving, autonomy") \
             .eq("coder_id", req.coder_id) \
@@ -48,7 +44,6 @@ async def generate_focus_cards(req: FocusCardsRequest):
 
         prompt = f"""
 You are Kairo, an AI tutor for Riwi coding bootcamp.
-
 STUDENT CONTEXT:
 - Learning style: {ss.get('learning_style', 'mixed')}
 - Problem solving: {ss.get('problem_solving', 3)}/5
@@ -58,21 +53,18 @@ STUDENT CONTEXT:
 
 Generate exactly 6 smart study cards.
 Distribution: 2 HIGH priority, 2 MEDIUM priority, 2 LOW priority.
-High priority = critical gaps that block progress.
-Medium priority = needs reinforcement.
-Low priority = good to know / enrichment.
 
-Return ONLY valid JSON:
+Return ONLY valid JSON with no markdown, no backticks:
 {{
     "cards": [
         {{
             "priority": "high",
             "topic": "topic name",
             "title": "card title",
-            "theory": "3-4 sentence explanation of the concept",
+            "theory": "3-4 sentence explanation",
             "practice": {{
                 "description": "what to do",
-                "example": "code snippet or step-by-step exercise"
+                "example": "code snippet or step-by-step"
             }},
             "pro_tips": ["tip 1", "tip 2"]
         }}
@@ -80,20 +72,24 @@ Return ONLY valid JSON:
 }}
 """
 
-        completion = openai_client.chat.completions.create(
-            model=os.getenv("MODEL_NAME", "gpt-4o-mini"),
-            response_format={"type": "json_object"},
+        completion = groq_client.chat.completions.create(
+            model=os.getenv("MODEL_NAME", "llama-3.3-70b-versatile"),
             messages=[
-                {"role": "system", "content": "You are an expert coding tutor. Respond only with valid JSON."},
-                {"role": "user", "content": prompt},
+                {"role": "system", "content": "You are an expert coding tutor. Respond only with valid JSON, no markdown."},
+                {"role": "user",   "content": prompt},
             ],
-            max_tokens=1800,
+            max_tokens=2048,
             temperature=0.7,
         )
 
-        data = json.loads(completion.choices[0].message.content)
+        raw = completion.choices[0].message.content.strip()
+        # Strip accidental markdown fences
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+        data = json.loads(raw)
 
-        # Validate we got 6 cards
         cards = data.get("cards", [])
         if len(cards) != 6:
             logger.warning(f"Expected 6 cards, got {len(cards)}")

@@ -248,6 +248,16 @@ function renderDetail(c) {
   body.style.display = 'flex';
   el('d-name').textContent = c.full_name;
   el('d-clan').textContent = cap(c.clan_id || '—');
+  
+  // Perfil Link
+  const profileLinkContainer = el('d-profile-link');
+  if (profileLinkContainer) {
+    profileLinkContainer.innerHTML = `
+      <a href="../coder/profile.html?id=${c.id}" class="btn-profile-view">
+        <i class="fa-solid fa-user-tie"></i> Ver Perfil Profesional
+      </a>
+    `;
+  }
   el('d-email').textContent = c.email;
   el('d-week').textContent =
     c.current_week > 0 ? `Semana ${c.current_week}` : 'Semana 1';
