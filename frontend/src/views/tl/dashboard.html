@@ -1,338 +1,369 @@
 <!doctype html>
 <html lang="es" data-theme="dark">
-
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard TL · Kairo</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
-    rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
-  <link rel="stylesheet" href="../../../assets/css/global.css" />
-  <link rel="stylesheet" href="../../../assets/css/dashboardTL.css" />
-  <!-- Theme centralizado (igual que en todas las páginas) -->
-  <script src="../../../src/core/utils/theme.js" defer></script>
-</head>
-
-<nav class="bottom-nav" aria-label="Navegación principal">
-  <div class="bottom-nav-inner">
-    <a class="bottom-nav-item active" href="#">
-      <i class="fa-solid fa-table-columns"></i>
-      <span>Dashboard</span>
-    </a>
-    <a class="bottom-nav-item" href="./assignment.html">
-      <i class="fa-solid fa-clipboard-list"></i>
-      <span>Actividades</span>
-    </a>
-    <a class="bottom-nav-item" href="./group.html">
-      <i class="fa-solid fa-users"></i>
-      <span>Grupos</span>
-    </a>
-    <button class="bottom-nav-item btn-logout">
-      <i class="fa-solid fa-arrow-right-from-bracket"></i>
-      <span>Logout</span>
-    </button>
-
-  </div>
-</nav>
-
-<body>
-  <div class="shell">
-    <!-- ══════════════════ SIDEBAR ══════════════════ -->
-    <aside class="sidebar">
-      <div class="sidebar-brand">
-        <img src="../../../assets/img/logo.png" alt="Kairo" class="sidebar-logo" />
-      </div>
-      <nav class="sidebar-nav">
-        <a class="nav-link active" href="#">
-          <span class="nav-icon"><i class="fa-solid fa-table-columns"></i></span>
-          Dashboard
-        </a>
-        <a class="nav-link" href="./assignment.html">
-          <span class="nav-icon"><i class="fa-solid fa-clipboard-list"></i></span>
-          Actividades
-        </a>
-        <a class="nav-link" href="./group.html">
-          <span class="nav-icon"><i class="fa-solid fa-clipboard-list"></i></span>
-          group
-        </a>
-      </nav>
-      <!-- TL Profile card at bottom -->
-      <div class="sidebar-profile">
-        <button class="btn-logout" id="btn-logout" title="Cerrar sesión">
-          <i class="fa-solid fa-arrow-right-from-bracket"></i>
-        </button>
-      </div>
-    </aside>
-    <!-- ══════════════════ MAIN ══════════════════ -->
-    <main class="main">
-      <!-- Topbar -->
-      <header class="topbar">
-        <div class="topbar-left">
-          <h1 class="topbar-title">
-            Clan <span id="clan-heading" class="gradient-text">—</span>
-          </h1>
-          <p class="topbar-sub" id="topbar-date">—</p>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard TL · Kairo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+    <link rel="stylesheet" href="../../../assets/css/global.css" />
+    <link rel="stylesheet" href="../../../assets/css/dashboardTL.css" />
+    <script src="../../../src/core/utils/theme.js" defer></script>
+  </head>
+  <body>
+    <div class="shell">
+      <!-- ══════════════════ SIDEBAR ══════════════════ -->
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <img
+            src="../../../assets/img/logo.png"
+            alt="Kairo"
+            class="sidebar-logo"
+          />
         </div>
-        <div class="topbar-right">
-          <div class="topbar-badge" id="topbar-risk-badge" style="display: none">
-            <i class="fa-solid fa-triangle-exclamation"></i>
-            <span id="badge-risk-count">0</span> en riesgo
-          </div>
-        </div>
-        <div class="topbar-right">
-          <!-- Risk badge (TL) -->
-          <div class="topbar-badge" id="topbar-risk-badge" style="display: none">
-            <i class="fa-solid fa-triangle-exclamation"></i>
-            <span id="badge-risk-count">0</span> en riesgo
-          </div>
-          <!-- Notification bell -->
-          <div class="notif-wrapper">
-            <button class="icon-btn" id="btn-notif" title="Notificaciones">
-              <i class="fa-solid fa-bell"></i>
-              <span class="notif-dot hidden" id="notif-dot"></span>
-            </button>
-            <!-- Dropdown -->
-            <div class="notif-dropdown hidden" id="notif-dropdown">
-              <p class="notif-header">Notificaciones</p>
-              <div id="notif-list">
-                <p class="notif-empty">Sin notificaciones nuevas</p>
-              </div>
-            </div>
-          </div>
-          <!-- Language toggle -->
-          <button class="icon-btn" id="btn-lang" title="Idioma">
-            <i class="fa-solid fa-earth-americas"></i>
-          </button>
-          <!-- Theme toggle -->
-          <button class="icon-btn" id="btn-theme" title="Cambiar tema">
-            <i class="fa-solid fa-moon" id="icon-moon"></i>
-            <i class="fa-solid fa-sun" id="icon-sun" style="display: none"></i>
-          </button>
-          <!-- Profile button -->
-          <a href="./profile.html" class="topbar-profile-btn" id="topbar-profile-btn">
-            <div class="topbar-avatar"><i class="fa-solid fa-user"></i></div>
-            <span id="topbar-name">—</span>
+        <nav class="sidebar-nav">
+          <a class="nav-link active" href="#">
+            <span class="nav-icon"
+              ><i class="fa-solid fa-table-columns"></i
+            ></span>
+            Dashboard
           </a>
+          <a class="nav-link" href="./assignment.html">
+            <span class="nav-icon"
+              ><i class="fa-solid fa-clipboard-list"></i
+            ></span>
+            Actividades
+          </a>
+          <a class="nav-link" href="./group.html">
+            <span class="nav-icon"><i class="fa-solid fa-users"></i></span>
+            Grupos
+          </a>
+        </nav>
+        <div class="sidebar-profile">
+          <button class="btn-logout" id="btn-logout" title="Cerrar sesión">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          </button>
         </div>
-      </header>
-      <!-- ── Error state (no spinner, solo mensaje limpio) ── -->
-      <div class="error-banner hidden" id="error-banner">
-        <i class="fa-solid fa-plug-circle-xmark"></i>
-        <div>
-          <strong>No se pudo conectar con el servidor</strong>
-          <p id="error-msg">Verifica que el backend esté corriendo en localhost:3000</p>
-        </div>
-        <button class="btn-retry" onclick="loadDashboard()">
-          <i class="fa-solid fa-rotate-right"></i> Reintentar
-        </button>
-      </div>
-      <!-- ── Stats ── -->
-      <section class="stats-row" id="stats-row">
-        <div class="stat-card">
-          <div class="stat-top">
-            <span class="stat-icon purple"><i class="fa-solid fa-users"></i></span>
-            <span class="stat-value" id="st-total">—</span>
+      </aside>
+
+      <!-- ══════════════════ MAIN ══════════════════ -->
+      <main class="main">
+        <!-- Topbar -->
+        <header class="topbar">
+          <div class="topbar-left">
+            <h1 class="topbar-title">
+              Clan <span id="clan-heading" class="gradient-text">—</span>
+            </h1>
+            <p class="topbar-sub" id="topbar-date">—</p>
           </div>
-          <span class="stat-label">Coders en el clan</span>
-        </div>
-        <div class="stat-card">
-          <div class="stat-top">
-            <span class="stat-icon green"><i class="fa-solid fa-circle-check"></i></span>
-            <span class="stat-value" id="st-done">—</span>
-          </div>
-          <span class="stat-label">Onboarding completo</span>
-        </div>
-        <div class="stat-card">
-          <div class="stat-top">
-            <span class="stat-icon amber"><i class="fa-solid fa-hourglass-half"></i></span>
-            <span class="stat-value" id="st-pending">—</span>
-          </div>
-          <span class="stat-label">Pendientes</span>
-        </div>
-        <div class="stat-card">
-          <div class="stat-top">
-            <span class="stat-icon red"><i class="fa-solid fa-triangle-exclamation"></i></span>
-            <span class="stat-value" id="st-risk">—</span>
-          </div>
-          <span class="stat-label">En riesgo</span>
-        </div>
-        <div class="stat-card">
-          <div class="stat-top">
-            <span class="stat-icon blue"><i class="fa-solid fa-chart-line"></i></span>
-            <span class="stat-value" id="st-score">—</span>
-          </div>
-          <span class="stat-label">Score promedio</span>
-        </div>
-      </section>
-      <!-- ── Content ── -->
-      <section class="content-grid">
-        <!-- Columna izquierda -->
-        <div class="col-main">
-          <!-- Charts Row -->
-          <div class="charts-row">
-            <!-- Soft skills del clan -->
-            <div class="glass-card">
-              <div class="card-head">
-                <h2 class="card-title">Habilidades blandas del clan</h2>
-                <span class="card-meta">Promedio 1–5</span>
+          <div class="topbar-right">
+            <!-- Risk badge -->
+            <div
+              class="topbar-badge"
+              id="topbar-risk-badge"
+              style="display: none"
+            >
+              <i class="fa-solid fa-triangle-exclamation"></i>
+              <span id="badge-risk-count">0</span> en riesgo
+            </div>
+            <!-- Notification bell -->
+            <div class="notif-wrapper">
+              <button class="icon-btn" id="btn-notif" title="Notificaciones">
+                <i class="fa-solid fa-bell"></i>
+                <span class="notif-dot hidden" id="notif-dot"></span>
+              </button>
+              <div class="notif-dropdown hidden" id="notif-dropdown">
+                <p class="notif-header">Notificaciones</p>
+                <div id="notif-list">
+                  <p class="notif-empty">Sin notificaciones nuevas</p>
+                </div>
               </div>
-              <div class="skills-overview" id="skills-overview">
-                <!-- populated by JS -->
+            </div>
+            <!-- Language -->
+            <button class="icon-btn" id="btn-lang" title="Idioma">
+              <i class="fa-solid fa-earth-americas"></i>
+            </button>
+            <!-- Theme -->
+            <button class="icon-btn" id="btn-theme" title="Cambiar tema">
+              <i class="fa-solid fa-moon" id="icon-moon"></i>
+              <i
+                class="fa-solid fa-sun"
+                id="icon-sun"
+                style="display: none"
+              ></i>
+            </button>
+            <!-- Profile button -->
+            <a
+              href="./profile.html"
+              class="topbar-profile-btn"
+              id="topbar-profile-btn"
+            >
+              <div class="topbar-avatar"><i class="fa-solid fa-user"></i></div>
+              <span id="topbar-name">—</span>
+            </a>
+          </div>
+        </header>
+
+        <!-- Error banner -->
+        <div class="error-banner hidden" id="error-banner">
+          <i class="fa-solid fa-plug-circle-xmark"></i>
+          <div>
+            <strong>No se pudo conectar con el servidor</strong>
+            <p id="error-msg">
+              Verifica que el backend esté corriendo en localhost:3000
+            </p>
+          </div>
+          <button class="btn-retry" onclick="loadDashboard()">
+            <i class="fa-solid fa-rotate-right"></i> Reintentar
+          </button>
+        </div>
+
+        <!-- Stats -->
+        <section class="stats-row" id="stats-row">
+          <div class="stat-card">
+            <div class="stat-top">
+              <span class="stat-icon purple"
+                ><i class="fa-solid fa-users"></i
+              ></span>
+              <span class="stat-value" id="st-total">—</span>
+            </div>
+            <span class="stat-label">Coders en el clan</span>
+          </div>
+          <div class="stat-card">
+            <div class="stat-top">
+              <span class="stat-icon green"
+                ><i class="fa-solid fa-circle-check"></i
+              ></span>
+              <span class="stat-value" id="st-done">—</span>
+            </div>
+            <span class="stat-label">Onboarding completo</span>
+          </div>
+          <div class="stat-card">
+            <div class="stat-top">
+              <span class="stat-icon amber"
+                ><i class="fa-solid fa-hourglass-half"></i
+              ></span>
+              <span class="stat-value" id="st-pending">—</span>
+            </div>
+            <span class="stat-label">Pendientes</span>
+          </div>
+          <div class="stat-card">
+            <div class="stat-top">
+              <span class="stat-icon red"
+                ><i class="fa-solid fa-triangle-exclamation"></i
+              ></span>
+              <span class="stat-value" id="st-risk">—</span>
+            </div>
+            <span class="stat-label">En riesgo</span>
+          </div>
+          <div class="stat-card">
+            <div class="stat-top">
+              <span class="stat-icon blue"
+                ><i class="fa-solid fa-chart-line"></i
+              ></span>
+              <span class="stat-value" id="st-score">—</span>
+            </div>
+            <span class="stat-label">Score promedio</span>
+          </div>
+        </section>
+
+        <!-- Content grid -->
+        <section class="content-grid">
+          <!-- Columna izquierda -->
+          <div class="col-main">
+            <div class="charts-row">
+              <!-- Soft skills -->
+              <div class="glass-card">
+                <div class="card-head">
+                  <h2 class="card-title">Habilidades blandas del clan</h2>
+                  <span class="card-meta">Promedio 1–5</span>
+                </div>
+                <div class="skills-overview" id="skills-overview"></div>
+              </div>
+              <!-- Estilos de aprendizaje -->
+              <div class="glass-card">
+                <div class="card-head">
+                  <h2 class="card-title">Estilos de aprendizaje</h2>
+                  <span class="card-meta">Distribución del clan</span>
+                </div>
+                <div class="learning-styles-box">
+                  <div class="pie-chart-wrapper">
+                    <div class="pie-chart" id="learning-pie"></div>
+                  </div>
+                  <div class="chart-legend" id="learning-legend"></div>
+                </div>
               </div>
             </div>
 
-            <!-- Estilos de aprendizaje -->
-            <div class="glass-card">
+            <!-- Tabla de coders -->
+            <div class="glass-card glass-card-scroll">
               <div class="card-head">
-                <h2 class="card-title">Estilos de aprendizaje</h2>
-                <span class="card-meta">Distribución del clan</span>
-              </div>
-              <div class="learning-styles-box">
-                <div class="pie-chart-wrapper">
-                  <div class="pie-chart" id="learning-pie"></div>
+                <h2 class="card-title">Coders del Clan</h2>
+                <div class="filter-row" id="filter-row">
+                  <button class="chip active" data-filter="all">Todos</button>
+                  <button class="chip" data-filter="risk">En riesgo</button>
+                  <button class="chip" data-filter="pending">Pendientes</button>
                 </div>
-                <div class="chart-legend" id="learning-legend">
-                  <!-- populated by JS -->
+              </div>
+              <div class="tbl-loading" id="tbl-loading">
+                <div class="skeleton-row"></div>
+                <div class="skeleton-row"></div>
+                <div class="skeleton-row"></div>
+              </div>
+              <div class="tbl-empty hidden" id="tbl-empty">
+                <i class="fa-regular fa-face-meh-blank"></i>
+                <p>Sin coders para mostrar con este filtro</p>
+              </div>
+              <div class="tbl-wrap hidden" id="tbl-wrap">
+                <div class="tbl-head-fixed">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Nombre</th>
+                        <th>Score</th>
+                        <th>Semana</th>
+                        <th>Aprendizaje</th>
+                        <th>Estado</th>
+                      </tr>
+                    </thead>
+                  </table>
+                </div>
+                <div class="tbl-body-scroll">
+                  <table class="data-table">
+                    <tbody id="coder-tbody"></tbody>
+                  </table>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Tabla de coders -->
-          <div class="glass-card glass-card-scroll">
-            <div class="card-head">
-              <h2 class="card-title">Coders del Clan</h2>
-              <div class="filter-row" id="filter-row">
-                <button class="btn-ghost" id="btn-report" onclick="generateReportClan(sessionStorage.getItem('clan'))">
-                <i class="fa-solid fa-file-pdf"></i> Reporte PDF Clan
-                </button>
-                <button class="chip active" data-filter="all">Todos</button>
-                <button class="chip" data-filter="risk">En riesgo</button>
-                <button class="chip" data-filter="pending">Pendientes</button>
-              </div>
-            </div>
-            <!-- Loading skeleton -->
-            <div class="tbl-loading" id="tbl-loading">
-              <div class="skeleton-row"></div>
-              <div class="skeleton-row"></div>
-              <div class="skeleton-row"></div>
-            </div>
-            <!-- Empty state -->
-            <div class="tbl-empty hidden" id="tbl-empty">
-              <i class="fa-regular fa-face-meh-blank"></i>
-              <p>Sin coders para mostrar con este filtro</p>
-            </div>
-            <!-- Table -->
-            <div class="tbl-wrap hidden" id="tbl-wrap">
-              <div class="tbl-head-fixed">
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th>Nombre</th>
-                      <th>Score</th>
-                      <th>Semana</th>
-                      <th>Aprendizaje</th>
-                      <th>Estado</th>
-                    </tr>
-                  </thead>
-                </table>
-              </div>
-              <div class="tbl-body-scroll">
-                <table class="data-table">
-                  <tbody id="coder-tbody"></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-        <!-- Columna derecha: Panel del coder -->
-        <aside class="col-aside">
-          <div class="glass-card detail-card">
-            <!-- Placeholder -->
-            <div class="detail-placeholder" id="detail-placeholder">
-              <div class="placeholder-icon">
-                <i class="fa-solid fa-arrow-left-long"></i>
-              </div>
-              <p>Selecciona un coder<br />para ver su detalle</p>
-            </div>
-            <!-- Detail body -->
-            <div class="detail-body hidden" id="detail-body">
-              <div class="detail-header">
-                <div class="detail-avatar">
-                  <i class="fa-solid fa-user"></i>
+          <!-- Columna derecha: Panel del coder -->
+          <aside class="col-aside">
+            <div class="glass-card detail-card">
+              <!-- Placeholder -->
+              <div class="detail-placeholder" id="detail-placeholder">
+                <div class="placeholder-icon">
+                  <i class="fa-solid fa-arrow-left-long"></i>
                 </div>
-                <div>
-                  <h3 id="d-name">—</h3>
-                  <span id="d-clan" class="detail-clan-tag">—</span>
-                  <span class="risk-badge hidden" id="d-risk">⚠ En riesgo</span>
-                </div>
+                <p>Selecciona un coder<br />para ver su detalle</p>
               </div>
-              <!-- Detail body -->
+
+              <!-- ── Detail body (UN SOLO div, sin duplicados) ── -->
               <div class="detail-body hidden" id="detail-body">
+                <!-- Header: avatar + nombre + clan -->
                 <div class="detail-header">
-                  <div class="detail-avatar">
+                  <div class="detail-avatar" id="detail-avatar">
                     <i class="fa-solid fa-user"></i>
                   </div>
                   <div>
                     <h3 id="d-name">—</h3>
                     <span id="d-clan" class="detail-clan-tag">—</span>
                     <div id="d-profile-link"></div>
-                    <span class="risk-badge hidden" id="d-risk">⚠ En riesgo</span>
+                    <span class="risk-badge hidden" id="d-risk"
+                      >⚠ En riesgo</span
+                    >
                   </div>
                 </div>
-                <div class="meta-row">
-                  <span class="meta-key"><i class="fa-solid fa-layer-group"></i> Semana</span>
-                  <span class="meta-val" id="d-week">—</span>
+
+                <!-- Meta info -->
+                <div class="detail-meta">
+                  <div class="meta-row">
+                    <span class="meta-key"
+                      ><i class="fa-solid fa-envelope"></i> Email</span
+                    >
+                    <span class="meta-val" id="d-email">—</span>
+                  </div>
+                  <div class="meta-row">
+                    <span class="meta-key"
+                      ><i class="fa-solid fa-layer-group"></i> Semana</span
+                    >
+                    <span class="meta-val" id="d-week">—</span>
+                  </div>
+                  <div class="meta-row">
+                    <span class="meta-key"
+                      ><i class="fa-solid fa-star"></i> Score</span
+                    >
+                    <span class="meta-val" id="d-score">—</span>
+                  </div>
+                  <div class="meta-row">
+                    <span class="meta-key"
+                      ><i class="fa-solid fa-brain"></i> Estilo</span
+                    >
+                    <span class="meta-val" id="d-style">—</span>
+                  </div>
                 </div>
-                <div class="meta-row">
-                  <span class="meta-key"><i class="fa-solid fa-star"></i> Score</span>
-                  <span class="meta-val" id="d-score">—</span>
-                </div>
-                <div class="meta-row">
-                  <span class="meta-key"><i class="fa-solid fa-brain"></i> Estilo</span>
-                  <span class="meta-val" id="d-style">—</span>
+
+                <!-- Skill bars -->
+                <div class="detail-skills" id="d-skill-bars"></div>
+
+                <!-- Feedback -->
+                <div class="feedback-section">
+                  <p class="section-label">Dar feedback</p>
+                  <select class="f-input" id="feedback-type">
+                    <option value="">Tipo de feedback...</option>
+                    <option value="encouragement">Motivación</option>
+                    <option value="improvement">Área de mejora</option>
+                    <option value="achievement">Logro destacado</option>
+                    <option value="warning">Advertencia</option>
+                  </select>
+                  <textarea
+                    class="f-input"
+                    id="feedback-text"
+                    rows="3"
+                    placeholder="Escribe tu comentario..."
+                  ></textarea>
+                  <p class="feedback-status hidden" id="feedback-status"></p>
+                  <div class="detail-actions">
+                    <button class="btn-primary" id="btn-feedback">
+                      <i class="fa-solid fa-paper-plane"></i> Enviar
+                    </button>
+                    <button class="btn-ghost" id="btn-report">
+                      <i class="fa-solid fa-file-pdf"></i> PDF
+                    </button>
+                  </div>
                 </div>
               </div>
-              <div class="detail-skills" id="d-skill-bars"></div>
-              <!-- Feedback inline -->
-              <div class="feedback-section">
-                <p class="section-label">Dar feedback</p>
-                <select class="f-input" id="feedback-type">
-                  <option value="">Tipo de feedback...</option>
-                  <option value="encouragement">Motivación</option>
-                  <option value="improvement">Área de mejora</option>
-                  <option value="achievement">Logro destacado</option>
-                  <option value="warning">Advertencia</option>
-                </select>
-                <textarea class="f-input" id="feedback-text" rows="3" placeholder="Escribe tu comentario..."></textarea>
-                <p class="feedback-status hidden" id="feedback-status"></p>
-                <div class="detail-actions">
-                  <button class="btn-primary" id="btn-feedback">
-                    <i class="fa-solid fa-paper-plane"></i> Enviar
-                  </button>
-                   <button class="btn-ghost" id="btn-report" onclick="generateReport(sessionStorage.getItem('id'))">
-                    <i class="fa-solid fa-file-pdf"></i> PDF
-                  </button>
-                </div>
-              </div>
+              <!-- fin detail-body -->
             </div>
-          </div>
-        </aside>
-      </section>
-    </main>
-  </div>
-  <!-- Toast -->
-  <div class="toast hidden" id="toast">
-    <i class="fa-solid fa-circle-check" id="toast-icon"></i>
-    <span id="toast-msg">—</span>
-  </div>
+          </aside>
+        </section>
+      </main>
+    </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script type="module" src="../../../assets/js/dashboardTL.js"></script>
-</body>
+    <!-- Toast -->
+    <div class="toast hidden" id="toast">
+      <i class="fa-solid fa-circle-check" id="toast-icon"></i>
+      <span id="toast-msg">—</span>
+    </div>
 
+    <!-- Bottom nav mobile -->
+    <nav class="bottom-nav" aria-label="Navegación principal">
+      <div class="bottom-nav-inner">
+        <a class="bottom-nav-item active" href="#">
+          <i class="fa-solid fa-table-columns"></i><span>Dashboard</span>
+        </a>
+        <a class="bottom-nav-item" href="./assignment.html">
+          <i class="fa-solid fa-clipboard-list"></i><span>Actividades</span>
+        </a>
+        <a class="bottom-nav-item" href="./group.html">
+          <i class="fa-solid fa-users"></i><span>Grupos</span>
+        </a>
+        <button class="bottom-nav-item btn-logout">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i
+          ><span>Logout</span>
+        </button>
+      </div>
+    </nav>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script type="module" src="../../../assets/js/dashboardTL.js"></script>
+  </body>
 </html>

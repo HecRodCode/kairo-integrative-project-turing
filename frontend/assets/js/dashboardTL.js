@@ -1,43 +1,43 @@
 /**
  * assets/js/dashboardTL.js
  * Dashboard TL — Kairo Project.
- * Conectado al endpoint real GET /api/tl/dashboard.
  */
 import { guards, sessionManager } from '../../src/core/auth/session.js';
+import {
+  loadMyAvatar,
+  loadCoderAvatar,
+} from '../../src/core/utils/avatarService.js';
 
 const API = 'http://localhost:3000/api';
-/* ── State ── */
 let dashboardData = null;
 let selectedCoder = null;
 let activeFilter = 'all';
-/* ── Shorthand ── */
-const $ = (id) => document.getElementById(id);
 const el = (id) => document.getElementById(id);
 
 /* ══════════════════════════════════════
    BOOTSTRAP
 ══════════════════════════════════════ */
 (async function init() {
-  // Guard: must be auth'd TL
   const session = await guards.requireAuth();
   if (!session) return;
   if (session.user.role !== 'tl') {
     sessionManager.redirectByRole(session.user);
     return;
   }
-  
-  // Wire static interactions
+
   wireFilters();
   wireFeedback();
   wireLogout();
   setDate();
+
+  // Carga avatar del TL en el topbar (no bloquea el dashboard)
+  loadMyAvatar();
+
   await loadDashboard();
 
-  // Real-time Sync: refresh if relevant notifications arrive
   window.addEventListener('kairo-notification', (e) => {
     const n = e.detail;
     if (n.type === 'feedback_read' || n.type === 'system') {
-      console.log('[SSE-Sync] Refreshing local dashboard stats...');
       loadDashboard();
     }
   });
@@ -71,15 +71,12 @@ function renderAll(data) {
   renderTable(data.coders);
 }
 
-/* ── TL info ── */
 function renderTLInfo(tl) {
   if (!tl) return;
-  sessionStorage.setItem('clan', tl.clanId);
   el('clan-heading').textContent = cap(tl.clanId);
   el('topbar-name').textContent = tl.fullName;
 }
 
-/* ── Stats ── */
 function renderStats(ov) {
   el('st-total').textContent = ov.totalCoders;
   el('st-done').textContent = ov.completedOnboarding;
@@ -87,14 +84,12 @@ function renderStats(ov) {
   el('st-risk').textContent = ov.highRiskCoders;
   el('st-score').textContent =
     ov.clanAvgScore > 0 ? `${parseFloat(ov.clanAvgScore).toFixed(1)}%` : '0.0%';
-  // Risk badge in topbar
   if (ov.highRiskCoders > 0) {
     el('topbar-risk-badge').style.display = 'inline-flex';
     el('badge-risk-count').textContent = ov.highRiskCoders;
   }
 }
 
-/* ── Soft skills overview ── */
 const SKILL_MAP = [
   { key: 'autonomy', label: 'Autonomía' },
   { key: 'time_management', label: 'Gest. del tiempo' },
@@ -106,10 +101,7 @@ const SKILL_MAP = [
 function renderSkillsOverview(avg) {
   const container = el('skills-overview');
   if (!avg || Object.values(avg).every((v) => !v || v === 0)) {
-    container.innerHTML = `
-      <p style="font-size:13px;color:var(--text-muted);padding:8px 0">
-        Sin datos de habilidades blandas — los coders aún no completaron el onboarding.
-      </p>`;
+    container.innerHTML = `<p style="font-size:13px;color:var(--text-muted);padding:8px 0">Sin datos de habilidades blandas.</p>`;
     return;
   }
   container.innerHTML = SKILL_MAP.map(({ key, label }) => {
@@ -118,70 +110,85 @@ function renderSkillsOverview(avg) {
     return `
       <div class="skill-item">
         <span class="skill-item-label">${label}</span>
-        <div class="skill-bar-track">
-          <div class="skill-bar-fill" style="width:${pct}%"></div>
-        </div>
+        <div class="skill-bar-track"><div class="skill-bar-fill" style="width:${pct}%"></div></div>
         <span class="skill-item-val">${val > 0 ? val.toFixed(1) : '0.0'}</span>
       </div>`;
   }).join('');
 }
 
-/* ── Learning styles pie chart ── */
 function renderLearningStyles(coders) {
   const pie = el('learning-pie');
   const legend = el('learning-legend');
-  
-  if (!coders || !coders.length) {
-    legend.innerHTML = '<p style="color:var(--text-muted);font-size:12px">Sin datos</p>';
+  if (!coders?.length) {
+    legend.innerHTML =
+      '<p style="color:var(--text-muted);font-size:12px">Sin datos</p>';
     return;
   }
-
-  // 1. Count
   const counts = {
     visual: 0,
     auditory: 0,
     kinesthetic: 0,
     read_write: 0,
-    other: 0
+    other: 0,
   };
-  
-  coders.forEach(c => {
+  coders.forEach((c) => {
     const s = (c.learning_style || 'other').toLowerCase();
-    if (counts.hasOwnProperty(s)) counts[s]++;
-    else counts.other++;
+    counts.hasOwnProperty(s) ? counts[s]++ : counts.other++;
   });
-
   const total = coders.length;
   const data = [
-    { key: 'visual', label: 'Visual', color: 'var(--accent)', count: counts.visual },
-    { key: 'auditory', label: 'Auditivo', color: 'var(--code-blue)', count: counts.auditory },
-    { key: 'kinesthetic', label: 'Kinestésico', color: 'var(--color-success)', count: counts.kinesthetic },
-    { key: 'read_write', label: 'Lecto-escritor', color: 'var(--color-warning)', count: counts.read_write },
-    { key: 'other', label: 'No diagnosticado', color: 'var(--border-glass)', count: counts.other },
-  ].filter(d => d.count > 0);
-
-  // 2. CSS Conic Gradient
-  let cumulative = 0;
-  const gradientParts = data.map(d => {
-    const start = cumulative;
-    const end = start + (d.count / total) * 100;
-    cumulative = end;
-    return `${d.color} ${start}% ${end}%`;
-  });
-
-  pie.style.background = `conic-gradient(${gradientParts.join(', ')})`;
-
-  // 3. Legend
-  legend.innerHTML = data.map(d => `
+    {
+      key: 'visual',
+      label: 'Visual',
+      color: 'var(--accent)',
+      count: counts.visual,
+    },
+    {
+      key: 'auditory',
+      label: 'Auditivo',
+      color: 'var(--code-blue)',
+      count: counts.auditory,
+    },
+    {
+      key: 'kinesthetic',
+      label: 'Kinestésico',
+      color: 'var(--color-success)',
+      count: counts.kinesthetic,
+    },
+    {
+      key: 'read_write',
+      label: 'Lecto-escritor',
+      color: 'var(--color-warning)',
+      count: counts.read_write,
+    },
+    {
+      key: 'other',
+      label: 'No diagnosticado',
+      color: 'var(--border-glass)',
+      count: counts.other,
+    },
+  ].filter((d) => d.count > 0);
+  let cum = 0;
+  pie.style.background = `conic-gradient(${data
+    .map((d) => {
+      const s = cum;
+      const e = s + (d.count / total) * 100;
+      cum = e;
+      return `${d.color} ${s}% ${e}%`;
+    })
+    .join(', ')})`;
+  legend.innerHTML = data
+    .map(
+      (d) => `
     <div class="legend-item">
       <span class="legend-dot" style="background:${d.color}"></span>
       <span class="legend-label">${d.label}</span>
       <span class="legend-val">${Math.round((d.count / total) * 100)}%</span>
-    </div>
-  `).join('');
+    </div>`
+    )
+    .join('');
 }
 
-/* ── Table ── */
 function renderTable(coders) {
   const filtered = applyFilter(coders);
   el('tbl-loading').style.display = 'none';
@@ -195,7 +202,6 @@ function renderTable(coders) {
   const tbody = el('coder-tbody');
   tbody.innerHTML = filtered
     .map((c) => {
-      sessionStorage.setItem('id', c.id);
       const isRisk = c.risk_level === 'high' || c.risk_level === 'critical';
       const isPend = c.first_login;
       const statusHTML = isRisk
@@ -203,7 +209,6 @@ function renderTable(coders) {
         : isPend
           ? `<span class="status-pending"><i class="fa-regular fa-clock"></i> Pendiente</span>`
           : `<span class="status-ok"><i class="fa-solid fa-circle-check"></i> Activo</span>`;
-      const avgSkill = avgSoftSkills(c);
       return `
       <tr data-id="${c.id}" class="${selectedCoder?.id === c.id ? 'selected' : ''}">
         <td><strong>${c.full_name}</strong></td>
@@ -222,12 +227,15 @@ function renderTable(coders) {
       </tr>`;
     })
     .join('');
+
   tbody.querySelectorAll('tr[data-id]').forEach((row) => {
     row.addEventListener('click', () => {
       const id = parseInt(row.dataset.id);
       const coder = dashboardData.coders.find((c) => c.id === id);
       if (!coder) return;
-      tbody.querySelectorAll('tr').forEach((r) => r.classList.remove('selected'));
+      tbody
+        .querySelectorAll('tr')
+        .forEach((r) => r.classList.remove('selected'));
       row.classList.add('selected');
       selectedCoder = coder;
       renderDetail(coder);
@@ -243,23 +251,31 @@ const SKILL_DETAIL = [
   { key: 'communication', label: 'Comunicación' },
   { key: 'teamwork', label: 'Equipo' },
 ];
+
 function renderDetail(c) {
   el('detail-placeholder').style.display = 'none';
   const body = el('detail-body');
   body.classList.remove('hidden');
   body.style.display = 'flex';
+
   el('d-name').textContent = c.full_name;
   el('d-clan').textContent = cap(c.clan_id || '—');
-  
-  // Perfil Link
+
+  // ── Avatar del coder — carga async desde MongoDB ──────────────
+  const avatarContainer = el('detail-avatar');
+  if (avatarContainer) {
+    loadCoderAvatar(c.id, avatarContainer, c.full_name);
+  }
+
+  // Perfil link
   const profileLinkContainer = el('d-profile-link');
   if (profileLinkContainer) {
     profileLinkContainer.innerHTML = `
-      <a href="../coder/profile.html?id=${c.id}" class="btn-profile-view">
+      <a href="/frontend/src/views/coder/profile.html?id=${c.id}" class="btn-profile-view">
         <i class="fa-solid fa-user-tie"></i> Ver Perfil Profesional
-      </a>
-    `;
+      </a>`;
   }
+
   el('d-email').textContent = c.email;
   el('d-week').textContent =
     c.current_week > 0 ? `Semana ${c.current_week}` : 'Semana 1';
@@ -268,21 +284,21 @@ function renderDetail(c) {
   el('d-style').textContent = c.learning_style
     ? cap(c.learning_style)
     : 'Sin diagnóstico';
+
   const isRisk = c.risk_level === 'high' || c.risk_level === 'critical';
   el('d-risk').classList.toggle('hidden', !isRisk);
+
   el('d-skill-bars').innerHTML = SKILL_DETAIL.map(({ key, label }) => {
     const val = c[key] || 0;
     const pct = (val / 5) * 100;
     return `
       <div class="skill-bar-row">
         <span class="skill-bar-label">${label}</span>
-        <div class="skill-bar-track">
-          <div class="skill-bar-fill" style="width:${pct}%"></div>
-        </div>
+        <div class="skill-bar-track"><div class="skill-bar-fill" style="width:${pct}%"></div></div>
         <span class="skill-bar-val">${val.toFixed(1)}</span>
       </div>`;
   }).join('');
-  // Clear feedback area
+
   el('feedback-text').value = '';
   el('feedback-type').value = '';
   el('feedback-status').className = 'feedback-status hidden';
@@ -292,7 +308,6 @@ function renderDetail(c) {
 /* ══════════════════════════════════════
    INTERACTIONS
 ══════════════════════════════════════ */
-/* Filters */
 function wireFilters() {
   el('filter-row').addEventListener('click', (e) => {
     const chip = e.target.closest('.chip');
@@ -305,7 +320,7 @@ function wireFilters() {
     if (dashboardData) renderTable(dashboardData.coders);
   });
 }
-/* Feedback */
+
 function wireFeedback() {
   el('btn-feedback').addEventListener('click', async () => {
     if (!selectedCoder) return;
@@ -344,11 +359,11 @@ function wireFeedback() {
   });
 }
 
-/* PDF */
 el('btn-report')?.addEventListener('click', () => {
   if (!selectedCoder) return;
   generatePDF(selectedCoder);
 });
+
 function generatePDF(c) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
@@ -366,14 +381,14 @@ function generatePDF(c) {
       c.average_score > 0 ? `${parseFloat(c.average_score).toFixed(1)}%` : '—',
     ],
     ['Semana actual', c.current_week > 0 ? `Semana ${c.current_week}` : '—'],
-    ['Estilo de aprendizaje', c.learning_style ? cap(c.learning_style) : 'Sin diagnóstico'],
-    ['Estado de riesgo', c.risk_level ? `${cap(c.risk_level)}` : 'Sin flags activos'],
-    ['—————————', '—————————'],
+    ['Estilo', c.learning_style ? cap(c.learning_style) : 'Sin diagnóstico'],
+    ['Riesgo', c.risk_level ? cap(c.risk_level) : 'Sin flags activos'],
+    ['—————', '—————'],
     ['Autonomía', c.autonomy ? `${c.autonomy}/5` : '—'],
-    ['Gestión tiempo', c.time_management ? `${c.time_management}/5` : '—'],
+    ['Gest. tiempo', c.time_management ? `${c.time_management}/5` : '—'],
     ['Resolución', c.problem_solving ? `${c.problem_solving}/5` : '—'],
     ['Comunicación', c.communication ? `${c.communication}/5` : '—'],
-    ['Trabajo en equipo', c.teamwork ? `${c.teamwork}/5` : '—'],
+    ['Equipo', c.teamwork ? `${c.teamwork}/5` : '—'],
   ];
   let y = 34;
   rows.forEach(([k, v]) => {
@@ -386,13 +401,13 @@ function generatePDF(c) {
   doc.setFontSize(8);
   doc.setTextColor(150, 150, 150);
   doc.text(`Generado: ${new Date().toLocaleString('es-CO')}`, 14, 280);
-  doc.save(`reporte-${c.id}-${c.full_name.toLowerCase().replace(/\s+/g, '-')}.pdf`);
+  doc.save(
+    `reporte-${c.id}-${c.full_name.toLowerCase().replace(/\s+/g, '-')}.pdf`
+  );
 }
 
-/* Logout */
 function wireLogout() {
-  document.querySelectorAll('.btn-logout')
-    .forEach(btn => btn.addEventListener('click', () => sessionManager.logout()));
+  el('btn-logout').addEventListener('click', () => sessionManager.logout());
 }
 
 /* ══════════════════════════════════════
@@ -400,31 +415,20 @@ function wireLogout() {
 ══════════════════════════════════════ */
 function applyFilter(coders) {
   if (activeFilter === 'risk')
-    return coders.filter((c) => c.risk_level === 'high' || c.risk_level === 'critical');
-  if (activeFilter === 'pending') return coders.filter((c) => c.first_login === true);
+    return coders.filter(
+      (c) => c.risk_level === 'high' || c.risk_level === 'critical'
+    );
+  if (activeFilter === 'pending')
+    return coders.filter((c) => c.first_login === true);
   return coders;
 }
-
-function avgSoftSkills(c) {
-  const vals = [
-    c.autonomy,
-    c.time_management,
-    c.problem_solving,
-    c.communication,
-    c.teamwork,
-  ].filter(Boolean);
-  return vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1) : null;
-}
-
 function showBanner(msg) {
   el('error-banner').classList.remove('hidden');
   if (msg) el('error-msg').textContent = msg;
 }
-
 function hideBanner() {
   el('error-banner').classList.add('hidden');
 }
-
 function setDate() {
   el('topbar-date').textContent = new Date().toLocaleDateString('es-CO', {
     weekday: 'long',
@@ -433,11 +437,8 @@ function setDate() {
     day: 'numeric',
   });
 }
-
 function cap(str) {
   if (!str) return '—';
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
-// Expose for retry button inline onclick
 window.loadDashboard = loadDashboard;
-// Upload modal moved to activitiesTL.js
