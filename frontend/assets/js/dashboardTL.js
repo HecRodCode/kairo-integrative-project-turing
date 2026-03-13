@@ -32,6 +32,15 @@ const el = (id) => document.getElementById(id);
   wireLogout();
   setDate();
   await loadDashboard();
+
+  // Real-time Sync: refresh if relevant notifications arrive
+  window.addEventListener('kairo-notification', (e) => {
+    const n = e.detail;
+    if (n.type === 'feedback_read' || n.type === 'system') {
+      console.log('[SSE-Sync] Refreshing local dashboard stats...');
+      loadDashboard();
+    }
+  });
 })();
 
 /* ══════════════════════════════════════

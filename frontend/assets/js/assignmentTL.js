@@ -215,10 +215,9 @@ function renderCard(item) {
     item.content_type === 'pdf'
       ? '<i class="fa-solid fa-file-pdf"></i>'
       : '<i class="fa-brands fa-github"></i>';
-  const scopeLabel =
     item.scope === 'all'
       ? 'Todos los coders'
-      : `Clan ${cap(item.clan_id || '—')}`;
+      : `Clan ${cap(item.clan || '—')}`;
   const scopeIcon = item.scope === 'all' ? 'earth-americas' : 'users';
 
   return `
