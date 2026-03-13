@@ -5,7 +5,6 @@
  *   import assignmentRoutes from './routes/assignmentRoutes.js';
  *   app.use('/api', assignmentRoutes);
  */
-
 import { Router } from 'express';
 import multer from 'multer';
 import { isAuthenticated, hasRole } from '../middlewares/authMiddlewares.js';
@@ -15,6 +14,8 @@ import {
   deleteAssignment,
   listAssignmentsCoder,
   getAssignmentDownload,
+  getNotifications,
+  markNotificationsRead,
 } from '../controllers/assignmentControllers.js';
 
 const router = Router();
@@ -29,38 +30,16 @@ const upload = multer({
 });
 
 /* ── TL ── */
-router.post(
-  '/tl/assignment',
-  isAuthenticated,
-  hasRole('tl'),
-  upload.single('file'),
-  createAssignment
-);
-router.get(
-  '/tl/assignments',
-  isAuthenticated,
-  hasRole('tl'),
-  listAssignmentsTL
-);
-router.delete(
-  '/tl/assignment/:id',
-  isAuthenticated,
-  hasRole('tl'),
-  deleteAssignment
-);
+router.post('/tl/assignment',       isAuthenticated, hasRole('tl'), upload.single('file'), createAssignment);
+router.get('/tl/assignments',       isAuthenticated, hasRole('tl'), listAssignmentsTL);
+router.delete('/tl/assignment/:id', isAuthenticated, hasRole('tl'), deleteAssignment);
 
 /* ── Coder ── */
-router.get(
-  '/coder/assignments',
-  isAuthenticated,
-  hasRole('coder'),
-  listAssignmentsCoder
-);
-router.get(
-  '/coder/assignment/:id/download',
-  isAuthenticated,
-  hasRole('coder'),
-  getAssignmentDownload
-);
+router.get('/coder/assignments',              isAuthenticated, hasRole('coder'), listAssignmentsCoder);
+router.get('/coder/assignment/:id/download',  isAuthenticated, hasRole('coder'), getAssignmentDownload);
+
+/* ── Shared (TL + coder tienen notificaciones) ── */
+router.get('/notifications',        isAuthenticated, getNotifications);
+router.post('/notifications/read',  isAuthenticated, markNotificationsRead);
 
 export default router;

@@ -1,7 +1,7 @@
 """
 app/services/supabase_service.py
 Singleton Supabase client. SERVICE_ROLE key — bypasses RLS.
-Python owns all data retrieval (Slim Communication architecture).
+BUG FIX: log_generation model_name default hardcoded 'gpt-4o-mini' → reads from env.
 """
 
 import os
@@ -24,7 +24,6 @@ class SupabaseManager:
         logger.info("Supabase client initialized.")
 
     # ── READ ───────────────────────────────────────────────────
-
     def get_soft_skills(self, coder_id: int) -> Optional[Dict]:
         try:
             r = self.client.table("soft_skills_assessment") \
@@ -76,10 +75,6 @@ class SupabaseManager:
     # ── WRITE ──────────────────────────────────────────────────
 
     def deactivate_plans(self, coder_id: int) -> None:
-        """
-        Marks all existing active plans for a coder as inactive
-        before inserting a new one. Ensures only one plan is active at a time.
-        """
         try:
             self.client.table("complementary_plans") \
                 .update({"is_active": False}) \
@@ -91,11 +86,6 @@ class SupabaseManager:
             logger.warning(f"Could not deactivate plans for coder {coder_id}: {e}")
 
     def get_moodle_progress(self, coder_id: int) -> Optional[Dict]:
-        """
-        Fetches the current moodle_progress row for a coder.
-        Used by the Monday analytical plan trigger to get
-        current_week, average_score, struggling_topics, weeks_completed.
-        """
         try:
             r = self.client.table("moodle_progress") \
                 .select("current_week, average_score, struggling_topics, weeks_completed") \
@@ -114,13 +104,13 @@ class SupabaseManager:
                   targeted_soft_skill: Optional[str] = None) -> Optional[int]:
         try:
             r = self.client.table("complementary_plans").insert({
-                "coder_id":              coder_id,
-                "module_id":             module_id,
-                "plan_content":          plan,
-                "soft_skills_snapshot":  soft_skills_snapshot,
-                "moodle_status_snapshot": moodle_status_snapshot,  # snapshot of academic state at generation time
-                "targeted_soft_skill":   targeted_soft_skill,
-                "is_active":             True,
+                "coder_id":               coder_id,
+                "module_id":              module_id,
+                "plan_content":           plan,
+                "soft_skills_snapshot":   soft_skills_snapshot,
+                "moodle_status_snapshot": moodle_status_snapshot,
+                "targeted_soft_skill":    targeted_soft_skill,
+                "is_active":              True,
             }).execute()
             plan_id = r.data[0]["id"] if r.data else None
             logger.info(f"Plan saved: id={plan_id} for coder {coder_id}")
@@ -136,10 +126,11 @@ class SupabaseManager:
         try:
             self.client.table("ai_generation_log").insert({
                 "coder_id":          coder_id,
-                "agent_type":        agent_type,       # plan_generator | report_generator | diagnostic | risk_detector
+                "agent_type":        agent_type,
                 "input_payload":     input_payload,
                 "output_payload":    output_payload,
-                "model_name":        os.getenv("MODEL_NAME", "gpt-4o-mini"),
+                # BUG FIX: was hardcoded to "gpt-4o-mini" — now reads from env
+                "model_name":        os.getenv("MODEL_NAME", "llama-3.3-70b-versatile"),
                 "execution_time_ms": execution_time_ms,
                 "success":           success,
                 "error_message":     error_message,
@@ -150,29 +141,32 @@ class SupabaseManager:
     # ── EXERCISES ──────────────────────────────────────────────
 
     def get_exercise(self, plan_id: int, day_number: int) -> Optional[Dict]:
-        """Returns cached exercise for a plan day, or None if not yet generated."""
         try:
-            r = self.client.table("exercises")                 .select("id, title, description, language, starter_code, solution, hints, topic, difficulty, expected_output")                 .eq("plan_id", plan_id)                 .eq("day_number", day_number)                 .single()                 .execute()
+            r = self.client.table("exercises") \
+                .select("id, title, description, language, starter_code, solution, hints, topic, difficulty, expected_output") \
+                .eq("plan_id", plan_id) \
+                .eq("day_number", day_number) \
+                .single() \
+                .execute()
             return r.data
         except Exception:
             return None
 
     def save_exercise(self, plan_id: int, coder_id: int, day_number: int,
                       exercise: Dict) -> Optional[int]:
-        """Inserts exercise; on conflict (plan_id, day_number) does nothing and returns existing id."""
         try:
             r = self.client.table("exercises").upsert({
-                "plan_id":        plan_id,
-                "coder_id":       coder_id,
-                "day_number":     day_number,
-                "title":          exercise.get("title", ""),
-                "description":    exercise.get("description", ""),
-                "language":       exercise.get("language", "sql"),
-                "starter_code":   exercise.get("starter_code", ""),
-                "solution":       exercise.get("solution", ""),
-                "hints":          exercise.get("hints", []),
-                "topic":          exercise.get("topic", ""),
-                "difficulty":     exercise.get("difficulty", "intermediate"),
+                "plan_id":         plan_id,
+                "coder_id":        coder_id,
+                "day_number":      day_number,
+                "title":           exercise.get("title", ""),
+                "description":     exercise.get("description", ""),
+                "language":        exercise.get("language", "sql"),
+                "starter_code":    exercise.get("starter_code", ""),
+                "solution":        exercise.get("solution", ""),
+                "hints":           exercise.get("hints", []),
+                "topic":           exercise.get("topic", ""),
+                "difficulty":      exercise.get("difficulty", "intermediate"),
                 "expected_output": exercise.get("expected_output", ""),
             }, on_conflict="plan_id,day_number").execute()
             return r.data[0]["id"] if r.data else None
@@ -193,4 +187,4 @@ class SupabaseManager:
             return None
 
 
-db_manager = SupabaseManager()
+db_manager = SupabaseManager()  
