@@ -665,9 +665,9 @@ function setDate() {
 }
 
 function wireLogout() {
-  el('btn-logout').addEventListener('click', () => sessionManager.logout());
+  document.querySelectorAll('.btn-logout')
+    .forEach(btn => btn.addEventListener('click', () => sessionManager.logout()));
 }
-
 /* ── Custom Confirm Modal ── */
 function confirmAction({ title, text, type = 'info' }) {
   return new Promise((resolve) => {

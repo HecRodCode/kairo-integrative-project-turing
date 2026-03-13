@@ -467,12 +467,84 @@
 /* ════════════════════════════════════
    RESPONSIVE
 ════════════════════════════════════ */
-@media (max-width: 768px) {
-  .act-grid {
-    grid-template-columns: 1fr;
+
+/* ── 900px ── */
+@media (max-width: 900px) {
+  .act-grid,
+  .act-loading {
+    grid-template-columns: repeat(2, 1fr);
   }
+
+  .filter-chips {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    padding-bottom: 2px;
+  }
+}
+
+/* ── 768px ── */
+@media (max-width: 768px) {
   .act-filter-bar {
     flex-direction: column;
     align-items: flex-start;
+    gap: 10px;
+  }
+
+  .act-grid,
+  .act-loading {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-chips {
+    width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+
+  .filter-chips .chip {
+    padding: 8px 14px;
+    font-size: 12px;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 }
+
+/* ── 480px ── */
+@media (max-width: 480px) {
+  .act-card-footer {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .btn-act-primary,
+  .btn-act-ghost {
+    font-size: 12px;
+    padding: 8px 10px;
+  }
+
+  .act-card-body {
+    padding: 14px 14px;
+  }
+
+  .act-card-footer {
+    padding: 10px 14px;
+  }
+}
+
+/* ── 390px ── */
+@media (max-width: 390px) {
+  .section-title-act {
+    font-size: 13px;
+  }
+
+  .act-chips {
+    gap: 4px;
+  }
+
+  .act-chip {
+    font-size: 10px;
+    padding: 2px 7px;
+  }
+}
+

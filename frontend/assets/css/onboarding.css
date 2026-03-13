@@ -526,20 +526,134 @@ body {
 /* ════════════════════════════════════════
    RESPONSIVE
 ════════════════════════════════════════ */
-@media (max-width: 768px) {
+
+/* ── 1024px ── */
+@media (max-width: 1024px) {
+  .onboarding-main {
+    max-width: 760px;
+  }
+
   .diagnostic-container {
-    padding: 2rem 1.5rem 2.5rem;
+    padding: 2.5rem 2.5rem 2.5rem;
   }
+}
+
+/* ── 768px ── */
+@media (max-width: 768px) {
+  .onboarding-nav {
+    height: auto;
+    padding: 12px 0;
+  }
+
+  .nav-container {
+    padding: 0 1rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .global-progress {
+    max-width: 100%;
+    flex: 1 1 200px;
+    order: 3;
+    width: 100%;
+  }
+
+  .brand-name {
+    font-size: 15px;
+  }
+
+  .onboarding-main {
+    padding: 1.5rem 1rem 3rem;
+  }
+
+  .diagnostic-container {
+    padding: 1.8rem 1.5rem 2rem;
+  }
+
   .question-display {
-    font-size: 1.35rem;
+    font-size: 1.4rem;
   }
+
   .options-layout {
     grid-template-columns: 1fr;
+    gap: 0.75rem;
   }
-  .global-progress {
-    max-width: 180px;
+
+  .editor-tabs {
+    gap: 4px;
   }
+
+  .tab-item {
+    font-size: 13px;
+    padding: 6px 12px;
+  }
+}
+
+/* ── 480px ── */
+@media (max-width: 480px) {
+  .onboarding-main {
+    padding: 1rem 0.75rem 2.5rem;
+  }
+
+  .diagnostic-container {
+    padding: 1.4rem 1rem 1.6rem;
+    border-radius: 0 0 14px 14px;
+  }
+
+  .question-display {
+    font-size: 1.2rem;
+    margin-bottom: 1.4rem;
+  }
+
+  .option-btn {
+    padding: 1rem 1rem;
+    font-size: 14px;
+  }
+
+  .option-key {
+    width: 24px;
+    height: 24px;
+    font-size: 11px;
+  }
+
+  .workspace-footer {
+    padding-top: 1.2rem;
+    margin-top: 1.2rem;
+  }
+
+  .progress-label {
+    font-size: 14px;
+  }
+
+  .btn-back {
+    padding: 7px 16px;
+    font-size: 13px;
+  }
+
+  .tab-item {
+    font-size: 12px;
+    padding: 5px 10px;
+  }
+}
+
+/* ── 390px ── */
+@media (max-width: 390px) {
+  .question-display {
+    font-size: 1.1rem;
+    letter-spacing: -0.01em;
+  }
+
+  .option-btn {
+    padding: 0.9rem 0.75rem;
+    font-size: 13px;
+    gap: 8px;
+  }
+
   .brand-name {
     display: none;
+  }
+
+  .nav-container {
+    justify-content: center;
   }
 }

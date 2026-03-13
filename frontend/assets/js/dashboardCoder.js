@@ -335,7 +335,8 @@ function renderStrugglingTopics(progress) {
    INTERACTIONS
 ══════════════════════════════════════ */
 function wireLogout() {
-  el('btn-logout').addEventListener('click', () => sessionManager.logout());
+  document.querySelectorAll('.btn-logout')
+    .forEach(btn => btn.addEventListener('click', () => sessionManager.logout()));
 }
 /* Language toggle — cycles es/en (UI label only for now) */
 const LANGS = ['ES', 'EN'];
