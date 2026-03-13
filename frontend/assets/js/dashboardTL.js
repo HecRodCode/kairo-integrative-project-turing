@@ -70,9 +70,10 @@ function renderAll(data) {
   renderTable(data.coders);
 }
 
+/* ── TL info ── */
 function renderTLInfo(tl) {
   if (!tl) return;
-  el('clan-heading').textContent = cap(tl.clan);
+  el('clan-heading').textContent = cap(tl.clanId);
   el('topbar-name').textContent = tl.fullName;
 }
 
