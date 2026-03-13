@@ -78,3 +78,31 @@ li a {
   background: #000000;
   min-height: 100vh;
 }
+
+
+
+/* ── 768px ── */
+@media (max-width: 768px) {
+  .sidebar {
+    display: none;
+  }
+
+  .main {
+    margin-left: 0;
+    padding: 14px 16px 80px;
+    background: #000000;
+    min-height: 100vh;
+  }
+
+  .topbar {
+    padding: 12px 14px;
+    border-radius: 10px;
+  }
+}
+
+/* ── 480px ── */
+@media (max-width: 480px) {
+  .main {
+    padding: 10px 12px 80px;
+  }
+}
