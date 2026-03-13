@@ -223,30 +223,38 @@
 /* ════════════════════════════════════
     FILTER CHIPS
 ════════════════════════════════════ */
-.filter-chips .chip {
-  padding: 8px 18px;
-  border-radius: 10px;
+.filter-chips {
+  display: flex;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 4px;
+  border-radius: 14px;
   border: 1px solid var(--border-glass);
-  background: rgba(255, 255, 255, 0.03);
+}
+.filter-chips .chip {
+  padding: 10px 22px;
+  border-radius: 11px;
+  border: 1px solid transparent;
+  background: transparent;
   color: var(--text-muted);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   font-family: inherit;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
-
 .filter-chips .chip:hover {
   background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.2);
   color: var(--text-main);
 }
-
 .filter-chips .chip.active {
-  background: linear-gradient(135deg, var(--accent), #f472b6);
-  border-color: transparent;
-  color: #fff;
-  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
+  background: var(--bg-card);
+  border-color: var(--border-glass);
+  color: var(--accent);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2), inset 0 0 10px rgba(168, 85, 247, 0.05);
 }
 
 .act-preview-text {
@@ -316,6 +324,11 @@
   background: rgba(239, 68, 68, 0.1);
   color: var(--color-error);
   border: 1px solid rgba(239, 68, 68, 0.25);
+}
+.act-deadline.resource-date {
+  background: rgba(168, 85, 247, 0.08);
+  color: var(--accent);
+  border: 1px solid rgba(168, 85, 247, 0.2);
 }
 .act-deadline.no-date {
   background: rgba(255, 255, 255, 0.04);

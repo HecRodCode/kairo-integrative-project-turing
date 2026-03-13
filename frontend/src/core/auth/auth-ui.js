@@ -181,7 +181,7 @@ async function handleRegister(e) {
     fullName: document.getElementById('name').value.trim(),
     email: document.getElementById('email').value.trim(),
     password: pass,
-    clan,
+    clanId: clan,
     role: document.getElementById('role-select')?.value || 'coder',
   };
 

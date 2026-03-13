@@ -32,6 +32,15 @@ const el = (id) => document.getElementById(id);
   wireLogout();
   setDate();
   await loadDashboard();
+
+  // Real-time Sync: refresh if relevant notifications arrive
+  window.addEventListener('kairo-notification', (e) => {
+    const n = e.detail;
+    if (n.type === 'feedback_read' || n.type === 'system') {
+      console.log('[SSE-Sync] Refreshing local dashboard stats...');
+      loadDashboard();
+    }
+  });
 })();
 
 /* ══════════════════════════════════════
@@ -62,10 +71,10 @@ function renderAll(data) {
 }
 
 /* ── TL info ── */
-function renderTLInfo( user, clan ) {
-  const firstName = user.fullName?.split(' ')[0] || user.fullName || '—';
-  el('clan-heading').textContent = cap(clan);
-  el('topbar-name').textContent = firstName;
+function renderTLInfo(tl) {
+  if (!tl) return;
+  el('clan-heading').textContent = cap(tl.clanId);
+  el('topbar-name').textContent = tl.fullName;
 }
 
 /* ── Stats ── */
@@ -182,7 +191,7 @@ function renderDetail(c) {
   body.classList.remove('hidden');
   body.style.display = 'flex';
   el('d-name').textContent = c.full_name;
-  el('d-clan').textContent = cap(c.clan || '—');
+  el('d-clan').textContent = cap(c.clan_id || '—');
   el('d-email').textContent = c.email;
   el('d-week').textContent = c.current_week > 0 ? `Semana ${c.current_week}` : '—';
   el('d-score').textContent =
@@ -282,8 +291,11 @@ function generatePDF(c) {
   const rows = [
     ['Nombre', c.full_name],
     ['Email', c.email],
-    ['Clan', cap(c.clan || '—')],
-    ['Score promedio', c.average_score > 0 ? `${parseFloat(c.average_score).toFixed(1)}%` : '—'],
+    ['Clan', cap(c.clan_id || '—')],
+    [
+      'Score promedio',
+      c.average_score > 0 ? `${parseFloat(c.average_score).toFixed(1)}%` : '—',
+    ],
     ['Semana actual', c.current_week > 0 ? `Semana ${c.current_week}` : '—'],
     ['Estilo de aprendizaje', c.learning_style ? cap(c.learning_style) : 'Sin diagnóstico'],
     ['Estado de riesgo', c.risk_level ? `${cap(c.risk_level)}` : 'Sin flags activos'],

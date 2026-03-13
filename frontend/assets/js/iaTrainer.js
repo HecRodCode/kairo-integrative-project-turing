@@ -40,6 +40,7 @@ const el = (id) => document.getElementById(id);
 (async function init() {
   applyTheme();
   wireTheme();
+  wireLang();
   wireLogout();
   setDate();
 
@@ -63,6 +64,15 @@ const el = (id) => document.getElementById(id);
 
   await checkPlan();
   wireRequestPlan();
+
+  // Real-time Sync: refresh plan if TL sends feedback or activity
+  window.addEventListener('kairo-notification', (e) => {
+    const n = e.detail;
+    if (n.type === 'feedback' || n.type === 'assignment') {
+      console.log('[SSE-Sync] New TL update, refreshing plan...');
+      checkPlan();
+    }
+  });
 })();
 
 /* ══════════════════════════════════════
@@ -446,6 +456,17 @@ function syncThemeIcon(theme) {
 ══════════════════════════════════════ */
 function wireLogout() {
   el('btn-logout').addEventListener('click', () => sessionManager.logout());
+}
+
+/* Language toggle — cycles es/en (UI label only for now) */
+const LANGS = ['ES', 'EN'];
+let langIdx = 0;
+function wireLang() {
+  el('btn-lang').addEventListener('click', () => {
+    langIdx = (langIdx + 1) % LANGS.length;
+    el('btn-lang').title = `Idioma: ${LANGS[langIdx]}`;
+    // Full i18n implementation in i18n.js
+  });
 }
 
 function setDate() {
