@@ -40,3 +40,6 @@ logs/
 # Build
 dist/
 build/
+
+# Local QA artifacts
+docs/QA_CHECKLIST_LOCAL.md

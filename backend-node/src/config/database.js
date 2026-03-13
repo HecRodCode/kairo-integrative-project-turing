@@ -77,9 +77,7 @@ export const query = async (text, params) => {
  */
 export async function testConnection() {
   try {
-    const result = await pool.query(
-      'SELECT NOW(), current_database(), current_user, version()'
-    );
+    const result = await pool.query('SELECT NOW(), current_database(), current_user, version()');
 
     console.log('------------------------------------------------------------');
     console.log('✅ DATABASE HANDSHAKE SUCCESSFUL');
@@ -91,13 +89,9 @@ export async function testConnection() {
 
     return true;
   } catch (error) {
-    console.error(
-      '\n------------------------------------------------------------'
-    );
+    console.error('\n------------------------------------------------------------');
     console.error('❌ DATABASE CONNECTION FAILED');
-    console.error(
-      '------------------------------------------------------------'
-    );
+    console.error('------------------------------------------------------------');
     console.error(`   Error Code : ${error.code}`);
     console.error(`   Message    : ${error.message}`);
 
@@ -110,9 +104,7 @@ export async function testConnection() {
       console.error('  3. Ensure SSL is enabled in connection settings');
     }
 
-    console.error(
-      '------------------------------------------------------------\n'
-    );
+    console.error('------------------------------------------------------------\n');
     throw error;
   }
 }

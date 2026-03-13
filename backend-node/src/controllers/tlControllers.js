@@ -294,10 +294,7 @@ export async function getDashboardData(req, res) {
       clanAvgScore:
         totalCoders > 0
           ? (
-              coders.reduce(
-                (acc, c) => acc + parseFloat(c.average_score || 0),
-                0
-              ) / totalCoders
+              coders.reduce((acc, c) => acc + parseFloat(c.average_score || 0), 0) / totalCoders
             ).toFixed(1)
           : 0,
     };

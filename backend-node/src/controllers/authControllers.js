@@ -72,12 +72,10 @@ export const login = async (req, res) => {
       .eq('email', email)
       .single();
 
-    if (error || !user)
-      return res.status(401).json({ error: 'Credenciales inválidas.' });
+    if (error || !user) return res.status(401).json({ error: 'Credenciales inválidas.' });
 
     const validPassword = await bcrypt.compare(password, user.password);
-    if (!validPassword)
-      return res.status(401).json({ error: 'Credenciales inválidas.' });
+    if (!validPassword) return res.status(401).json({ error: 'Credenciales inválidas.' });
 
     if (!user.otp_verified) {
       try {
@@ -88,8 +86,7 @@ export const login = async (req, res) => {
 
       return res.status(403).json({
         requiresOtp: true,
-        error:
-          'Debes verificar tu correo antes de ingresar. Te enviamos un nuevo código.',
+        error: 'Debes verificar tu correo antes de ingresar. Te enviamos un nuevo código.',
       });
     }
 
@@ -129,9 +126,7 @@ export const login = async (req, res) => {
 ══════════════════════════════════════════════════════════════ */
 export const socialAuthSuccess = (req, res) => {
   if (!req.user)
-    return res.redirect(
-      `${process.env.FRONTEND_URL}/src/views/auth/login.html?error=auth_failed`
-    );
+    return res.redirect(`${process.env.FRONTEND_URL}/src/views/auth/login.html?error=auth_failed`);
 
   req.session.userId = req.user.id;
   req.session.save((err) => {
@@ -238,8 +233,7 @@ export const verifyOtp = async (req, res) => {
       .gte('expires_at', new Date().toISOString())
       .single();
 
-    if (error || !record)
-      return res.status(400).json({ error: 'Código incorrecto o expirado.' });
+    if (error || !record) return res.status(400).json({ error: 'Código incorrecto o expirado.' });
 
     await supabase.from('otp_verifications').update({ is_used: true }).eq('id', record.id);
     await supabase.from('users').update({ otp_verified: true }).eq('email', email);
@@ -286,8 +280,7 @@ export const resendOtp = async (req, res) => {
       .single();
 
     if (!user) return res.status(404).json({ error: 'Usuario no encontrado.' });
-    if (user.otp_verified)
-      return res.status(400).json({ error: 'El correo ya está verificado.' });
+    if (user.otp_verified) return res.status(400).json({ error: 'El correo ya está verificado.' });
 
     await _createAndSendOtp(email, user.full_name);
     return res.status(200).json({ success: true, message: 'OTP reenviado.' });
@@ -312,9 +305,7 @@ export const updateFirstLoginStatus = async (req, res) => {
       .eq('id', req.session.userId);
 
     if (error) throw error;
-    return res
-      .status(200)
-      .json({ success: true, message: 'Onboarding completado.' });
+    return res.status(200).json({ success: true, message: 'Onboarding completado.' });
   } catch (error) {
     console.error('[updateFirstLoginStatus] Error:', error.message);
     return res.status(500).json({ error: 'Error al actualizar estado.' });

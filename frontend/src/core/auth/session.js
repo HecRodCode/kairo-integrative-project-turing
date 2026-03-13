@@ -54,9 +54,7 @@ export const sessionManager = {
     }
 
     // Coder: first_login drives the split
-    window.location.href = user.firstLogin
-      ? PATHS.onboarding
-      : PATHS.coderDashboard;
+    window.location.href = user.firstLogin ? PATHS.onboarding : PATHS.coderDashboard;
   },
 };
 
