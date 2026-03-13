@@ -79,9 +79,8 @@ function renderAll(d) {
 /* ── User / welcome ── */
 function renderUser(user, plan, riskFlags) {
   if (!user) return;
-  const firstName = user.fullName?.split(' ')[0] || user.fullName || '—';
   el('welcome-name').textContent = user.fullName;
-  el('topbar-name').textContent = firstName;
+  el('topbar-name').textContent = user.fullName || '—';
   el('clan-badge').textContent = cap(user.clanId || '—');
   // Plan badge
   if (plan) {
@@ -119,7 +118,7 @@ function renderStats(user, progress) {
   el('st-score').textContent =
     progress?.averageScore != null
       ? `${parseFloat(progress.averageScore).toFixed(1)}`
-      : 'Sin datos';
+      : '0.0';
   el('st-weeks-done').textContent =
     progress?.weeksCompletedCount != null
       ? `${progress.weeksCompletedCount}`
@@ -254,7 +253,7 @@ function renderPerformanceTests(tests) {
   if (!tests || tests.length === 0) return;
   el('perf-list').innerHTML = tests
     .map((t) => {
-      const score = t.score != null ? Math.round(t.score) : '—';
+      const score = t.score != null ? Math.round(t.score) : '0';
       const status = (t.status || 'pending').toLowerCase();
       const label =
         {

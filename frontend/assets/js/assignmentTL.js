@@ -65,10 +65,10 @@ async function loadAll() {
     });
     if (tlRes.ok) {
       const d = await tlRes.json();
-      const clan = d.tl?.clan || '';
+      const clan = d.tl?.clanId || d.tl?.clan_id || d.tl?.clan || '';
       if (clan) {
-        el('clan-heading').textContent = cap(clan);
-        el('scope-clan-label').textContent = `Coders del clan ${cap(clan)}`;
+        el('clan-heading').textContent = String(clan).toUpperCase();
+        el('scope-clan-label').textContent = `Coders del clan ${String(clan).toUpperCase()}`;
       }
     }
   } catch {
@@ -215,9 +215,10 @@ function renderCard(item) {
     item.content_type === 'pdf'
       ? '<i class="fa-solid fa-file-pdf"></i>'
       : '<i class="fa-brands fa-github"></i>';
+  const scopeLabel =
     item.scope === 'all'
       ? 'Todos los coders'
-      : `Clan ${cap(item.clan || '—')}`;
+      : `Clan ${cap(item.clan_id || item.clan || '—')}`;
   const scopeIcon = item.scope === 'all' ? 'earth-americas' : 'users';
 
   return `
@@ -265,8 +266,14 @@ function renderCard(item) {
    DELETE
 ══════════════════════════════════════ */
 async function deleteAssignment(id) {
-  if (!confirm('¿Eliminar esta actividad? Los coders ya no podrán verla.'))
-    return;
+  const confirmed = await confirmAction({
+    title: '¿Eliminar actividad?',
+    text: 'Esta acción notificará a todos los coders que la actividad ya no está disponible.',
+    type: 'danger'
+  });
+  
+  if (!confirmed) return;
+
   try {
     const res = await fetch(`${API}/tl/assignment/${id}`, {
       method: 'DELETE',
@@ -282,8 +289,14 @@ async function deleteAssignment(id) {
 }
 
 async function deleteResource(id) {
-  if (!confirm('¿Eliminar este recurso? Los coders ya no podrán usarlo.'))
-    return;
+  const confirmed = await confirmAction({
+    title: '¿Eliminar recurso?',
+    text: 'Los coders ya no podrán utilizar este material de estudio en sus planes.',
+    type: 'danger'
+  });
+
+  if (!confirmed) return;
+
   try {
     const res = await fetch(`${API}/tl/resource/${id}`, {
       method: 'DELETE',
@@ -653,6 +666,45 @@ function setDate() {
 
 function wireLogout() {
   el('btn-logout').addEventListener('click', () => sessionManager.logout());
+}
+
+/* ── Custom Confirm Modal ── */
+function confirmAction({ title, text, type = 'info' }) {
+  return new Promise((resolve) => {
+    const modal = el('confirm-modal');
+    el('confirm-title').textContent = title;
+    el('confirm-text').textContent = text;
+    
+    const icon = el('confirm-icon');
+    icon.className = `confirm-icon ${type}`;
+    icon.innerHTML = type === 'danger' 
+      ? '<i class="fa-solid fa-trash-can"></i>' 
+      : '<i class="fa-solid fa-circle-exclamation"></i>';
+
+    const onCancel = () => {
+      modal.classList.add('hidden');
+      cleanup();
+      resolve(false);
+    };
+    
+    const onConfirm = () => {
+      modal.classList.add('hidden');
+      cleanup();
+      resolve(true);
+    };
+
+    const cleanup = () => {
+      el('btn-confirm-cancel').removeEventListener('click', onCancel);
+      el('btn-confirm-ok').removeEventListener('click', onConfirm);
+      document.body.style.overflow = '';
+    };
+
+    el('btn-confirm-cancel').addEventListener('click', onCancel);
+    el('btn-confirm-ok').addEventListener('click', onConfirm);
+    
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  });
 }
 
 // Expose for HTML error banner retry button

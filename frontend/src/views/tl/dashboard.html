@@ -184,10 +184,40 @@
         <section class="content-grid">
           <!-- Columna izquierda -->
           <div class="col-main">
+            <!-- Charts Row -->
+            <div class="charts-row">
+              <!-- Soft skills del clan -->
+              <div class="glass-card">
+                <div class="card-head">
+                  <h2 class="card-title">Habilidades blandas del clan</h2>
+                  <span class="card-meta">Promedio 1–5</span>
+                </div>
+                <div class="skills-overview" id="skills-overview">
+                  <!-- populated by JS -->
+                </div>
+              </div>
+
+              <!-- Estilos de aprendizaje -->
+              <div class="glass-card">
+                <div class="card-head">
+                  <h2 class="card-title">Estilos de aprendizaje</h2>
+                  <span class="card-meta">Distribución del clan</span>
+                </div>
+                <div class="learning-styles-box">
+                  <div class="pie-chart-wrapper">
+                    <div class="pie-chart" id="learning-pie"></div>
+                  </div>
+                  <div class="chart-legend" id="learning-legend">
+                    <!-- populated by JS -->
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- Tabla de coders -->
             <div class="glass-card">
               <div class="card-head">
-                <h2 class="card-title">Coders</h2>
+                <h2 class="card-title">Coders del Clan</h2>
                 <div class="filter-row" id="filter-row">
                   <button class="chip active" data-filter="all">Todos</button>
                   <button class="chip" data-filter="risk">En riesgo</button>
@@ -219,16 +249,6 @@
                   </thead>
                   <tbody id="coder-tbody"></tbody>
                 </table>
-              </div>
-            </div>
-            <!-- Soft skills del clan -->
-            <div class="glass-card">
-              <div class="card-head">
-                <h2 class="card-title">Habilidades blandas del clan</h2>
-                <span class="card-meta">Promedio 1–5</span>
-              </div>
-              <div class="skills-overview" id="skills-overview">
-                <!-- populated by JS -->
               </div>
             </div>
           </div>
