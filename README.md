@@ -125,8 +125,13 @@ GITHUB_CLIENT_SECRET=your_client_secret
 GOOGLE_CLIENT_ID=your_client
 GOOGLE_CLIENT_SECRET=your_client_secret
 
-# AUTHENTICATION RESEND
-RESEND_API_KEY=your_resend_key
+# AUTHENTICATION SMTP
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=your_email
+SMTP_PASS=your_app_password
+SMTP_FROM="Kairo <your_email>"
 
 # API KEY AI
 RIWI_IA_KEY=your_ia_key

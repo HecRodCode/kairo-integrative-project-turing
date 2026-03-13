@@ -1,14 +1,35 @@
 /**
  * backend-node/services/emailService.js
- * Resend integration — sends OTP verification emails.
+ * Nodemailer integration — sends OTP verification emails via SMTP.
  *
- * Install: npm install resend
+ * Install: npm install nodemailer
  */
 
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM = process.env.RESEND_FROM ?? 'Kairo <onboarding@resend.dev>';
+const SMTP_HOST = process.env.SMTP_HOST ?? 'smtp.gmail.com';
+const SMTP_PORT = Number(process.env.SMTP_PORT ?? 465);
+const SMTP_SECURE =
+  process.env.SMTP_SECURE !== undefined
+    ? process.env.SMTP_SECURE === 'true'
+    : SMTP_PORT === 465;
+
+const SMTP_USER = process.env.SMTP_USER;
+const SMTP_PASS = process.env.SMTP_PASS;
+const FROM =
+  process.env.SMTP_FROM ??
+  (SMTP_USER ? `Kairo <${SMTP_USER}>` : 'Kairo <no-reply@kairo.local>');
+
+if (!SMTP_USER || !SMTP_PASS) {
+  console.warn('[emailService] Missing SMTP_USER/SMTP_PASS; emails will fail to send.');
+}
+
+const transporter = nodemailer.createTransport({
+  host: SMTP_HOST,
+  port: SMTP_PORT,
+  secure: SMTP_SECURE,
+  auth: SMTP_USER && SMTP_PASS ? { user: SMTP_USER, pass: SMTP_PASS } : undefined,
+});
 
 // ── Generate 6-digit numeric code ─────────────────────────────
 export function generateOtpCode() {
@@ -17,19 +38,19 @@ export function generateOtpCode() {
 
 // ── Send OTP email ─────────────────────────────────────────────
 export async function sendOtpEmail(toEmail, code, userName = '') {
-  const { data, error } = await resend.emails.send({
-    from: FROM,
-    to: toEmail,
-    subject: `${code} — Código de verificación Kairo`,
-    html: buildOtpEmailHtml(code, userName),
-  });
+  try {
+    const info = await transporter.sendMail({
+      from: FROM,
+      to: toEmail,
+      subject: `${code} — Código de verificación Kairo`,
+      html: buildOtpEmailHtml(code, userName),
+    });
 
-  if (error) {
-    console.error('[emailService] Resend error:', JSON.stringify(error));
+    return info;
+  } catch (error) {
+    console.error('[emailService] Nodemailer error:', error?.message ?? error);
     throw new Error('Failed to send OTP email');
   }
-
-  return data;
 }
 
 // ── Email HTML ─────────────────────────────────────────────────
