@@ -394,6 +394,6 @@ async function _createAndSendOtp(email, userName = '') {
     attempts: 0,
   });
 
-  // Send via Resend
+  // Send via Nodemailer (SMTP)
   await sendOtpEmail(email, code, userName);
 }
