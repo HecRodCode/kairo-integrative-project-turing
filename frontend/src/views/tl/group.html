@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="es" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Actividades · Kairo TL</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+    <link rel="stylesheet" href="../../../assets/css/global.css" />
+    <link rel="stylesheet" href="../../../assets/css/dashboardTL.css" />
+    <link rel="stylesheet" href="../../../assets/css/assignmentTL.css" />
+  </head>
+
+  <body>
+    <div class="shell">
+      <!-- ══════════════════ SIDEBAR ══════════════════ -->
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <img
+            src="../../../assets/img/logo.png"
+            alt="Kairo"
+            class="sidebar-logo"
+          />
+        </div>
+
+        <nav class="sidebar-nav">
+          <a class="nav-link" href="./dashboard.html">
+            <span class="nav-icon"
+              ><i class="fa-solid fa-table-columns"></i
+            ></span>
+            Dashboard
+          </a>
+          <a class="nav-link" href="./assignment.html">
+            <span class="nav-icon"
+              ><i class="fa-solid fa-clipboard-list"></i
+            ></span>
+            Actividades
+          </a>
+          <a class="nav-link active" href="#">
+            <span class="nav-icon"
+              ><i class="fa-solid fa-comment-dots"></i
+            ></span>
+            Groups
+          </a>
+          <!-- <a class="nav-link" href="./AssignmentTimeline.html">
+            <span class="nav-icon"
+              ><i class="fa-solid fa-calendar-lines"></i
+            ></span>
+            Timeline
+          </a> -->
+        </nav>
+
+        <div class="sidebar-profile">
+          <div class="tl-info"></div>
+          <button class="btn-logout" id="btn-logout" title="Cerrar sesión">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          </button>
+        </div>
+      </aside>
+
+      <!-- ══════════════════ MAIN ══════════════════ -->
+      
+      <main class="main">
+        <header class="topbar">
+          <div class="topbar-left">
+            <h1 class="topbar-title">Grupos</h1>
+            <p class="topbar-sub">Gestión de coders por clan</p>
+          </div>
+          <div class="topbar-right">
+            <span class="badge" id="coders-count">0 coders</span>
+          </div>
+        </header>
+
+        <section class="groups-toolbar">
+          <div class="groups-actions">
+            <button class="btn-action-secondary" id="btn-random">
+              <i class="fa-solid fa-shuffle"></i> Grupos al azar
+            </button>
+            <button class="btn-action-secondary" id="btn-manual">
+              <i class="fa-solid fa-hand-pointer"></i> Grupos manuales
+            </button>
+            <button class="btn-action-primary" id="btn-level">
+              <i class="fa-solid fa-layer-group"></i> Grupo por nivel
+            </button>
+          </div>
+          <p class="groups-hint" id="groups-hint">Selecciona un modo para agrupar coders.</p>
+        </section>
+
+        <section class="groups-body">
+          <div class="coder-list" id="coder-list"></div>
+          <div class="groups-container" id="groups-container"></div>
+        </section>
+      </main>
+
+    </div>
+
+    <script type="module" src="../../../assets/js/group.js"></script>
+  </body>
+</html>
