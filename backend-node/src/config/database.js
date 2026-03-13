@@ -14,18 +14,39 @@ const { Pool } = pkg;
  * FIXED: aws-1-us-east-1 cluster connectivity.
  * FIXED: SSL enabled with unauthorized rejection bypass for cloud compatibility.
  */
+/**
+ * Build connection options to support both full DATABASE_URL and
+ * individual env vars (DB_HOST/DB_USER/DB_PASSWORD/DB_NAME).
+ */
+function buildConnectionString() {
+  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
+
+  const host = process.env.DB_HOST || 'localhost';
+  const port = process.env.DB_PORT || '5432';
+  const database = process.env.DB_NAME || 'postgres';
+  const user = process.env.DB_USER || 'postgres';
+  const password = process.env.DB_PASSWORD || '';
+
+  if (!user || !password) {
+    console.warn(
+      '[Database] Missing DB_USER/DB_PASSWORD; connection may fail.'
+    );
+  }
+
+  return `postgresql://${user}:${password}@${host}:${port}/${database}`;
+}
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: buildConnectionString(),
 
   // Mandatory for Supabase cloud connections
-  ssl: {
-    rejectUnauthorized: false,
-  },
+  // Set SSL to false if running against local Postgres.
+  ssl: process.env.DB_SSL === 'false' ? false : { rejectUnauthorized: false },
 
   // Resource Management
   max: 10, // Maximum concurrent connections
   idleTimeoutMillis: 30000, // Close idle clients after 30s
-  connectionTimeoutMillis: 10000, // Fail fast if connection takes >10s
+  connectionTimeoutMillis: 30000, // Fail fast if connection takes >30s
 
   // Query Performance
   statement_timeout: 30000, // Terminate queries exceeding 30s
@@ -77,7 +98,9 @@ export const query = async (text, params) => {
  */
 export async function testConnection() {
   try {
-    const result = await pool.query('SELECT NOW(), current_database(), current_user, version()');
+    const result = await pool.query(
+      'SELECT NOW(), current_database(), current_user, version()'
+    );
 
     console.log('------------------------------------------------------------');
     console.log('✅ DATABASE HANDSHAKE SUCCESSFUL');
@@ -89,11 +112,33 @@ export async function testConnection() {
 
     return true;
   } catch (error) {
-    console.error('\n------------------------------------------------------------');
+    console.error(
+      '\n------------------------------------------------------------'
+    );
     console.error('❌ DATABASE CONNECTION FAILED');
-    console.error('------------------------------------------------------------');
+    console.error(
+      '------------------------------------------------------------'
+    );
     console.error(`   Error Code : ${error.code}`);
     console.error(`   Message    : ${error.message}`);
+
+    // Common troubleshooting tips
+    if (error.code === 'ETIMEDOUT' || error.message?.includes('timeout')) {
+      console.error('\n[Diagnostic] Connection timeout detected.');
+      console.error('Checklist:');
+      console.error(
+        `  - Asegúrate de que la base de datos está accesible desde este equipo.`
+      );
+      console.error(
+        `  - Verifica que la URL/host en DATABASE_URL/DB_HOST esté correctamente configurada.`
+      );
+      console.error(
+        `  - Para Supabase, revisa que el host sea del tipo aws-1-us-east-1.pooler.supabase.com y que tu red permite salidas al puerto 5432.`
+      );
+      console.error(
+        `  - Si estás usando Postgres local, establece DB_SSL=false y ajusta DB_HOST a localhost.`
+      );
+    }
 
     // Specific Troubleshooting for Supabase Pooler
     if (error.code === 'XX000') {
@@ -104,7 +149,9 @@ export async function testConnection() {
       console.error('  3. Ensure SSL is enabled in connection settings');
     }
 
-    console.error('------------------------------------------------------------\n');
+    console.error(
+      '------------------------------------------------------------\n'
+    );
     throw error;
   }
 }
