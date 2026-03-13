@@ -398,7 +398,8 @@ function setDate() {
 }
 
 function wireLogout() {
-  el('btn-logout').addEventListener('click', () => sessionManager.logout());
+  document.querySelectorAll('.btn-logout')
+    .forEach(btn => btn.addEventListener('click', () => sessionManager.logout()));
 }
 
 function applyTheme() {

@@ -308,3 +308,114 @@ input:focus,
   width: 100%;
   background: var(--color-success);
 }
+
+
+
+/* ── 1024px: card un poco más estrecha ── */
+@media (max-width: 1024px) {
+  .card-content {
+    width: 88%;
+  }
+}
+
+/* ── 768px: apila logo + form verticalmente ── */
+@media (max-width: 768px) {
+  .body-content {
+    align-items: flex-start;
+    padding: 24px 16px;
+  }
+
+  .card-content {
+    width: 100%;
+    flex-direction: column;
+    min-height: unset;
+    border-radius: 20px;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  /* Panel del logo: se convierte en banner superior compacto */
+  .content-logo {
+    width: 100%;
+    min-height: 140px;
+    border-right: none;
+    border-bottom: 1px solid var(--border-glass);
+    padding: 24px 16px;
+  }
+
+  .content-logo img {
+    max-width: 120px;
+  }
+
+  .content-logo::after {
+    width: 120px;
+    height: 120px;
+  }
+
+  /* Panel del form: ocupa todo el ancho */
+  .content-form {
+    width: 100%;
+    padding: 24px 20px 28px;
+  }
+
+  .header h1 {
+    font-size: 24px;
+  }
+}
+
+/* ── 480px: ajustes finales para móvil pequeño ── */
+@media (max-width: 480px) {
+  .body-content {
+    padding: 12px;
+  }
+
+  .card-content {
+    border-radius: 16px;
+  }
+
+  .content-form {
+    padding: 20px 16px 24px;
+  }
+
+  /* Password row pasa a columna en pantallas muy pequeñas */
+  .password-row {
+    grid-template-columns: 1fr;
+  }
+
+  .header h1 {
+    font-size: 22px;
+  }
+
+  .btn-auth {
+    padding: 13px;
+    font-size: 14px;
+  }
+
+  /* OTP grid: inputs más pequeños */
+  .otp-grid {
+    gap: 6px;
+  }
+
+  .otp-digit {
+    height: 50px;
+    font-size: 18px;
+  }
+}
+
+/* ── 390px: mínimo soporte ── */
+@media (max-width: 390px) {
+  .content-form {
+    padding: 16px 12px 20px;
+  }
+
+  .otp-digit {
+    height: 44px;
+    font-size: 16px;
+  }
+
+  .timer-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}

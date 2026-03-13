@@ -441,3 +441,200 @@ body::before {
 [data-theme='light'] .logo-filter {
   filter: none;
 }
+
+
+
+
+/* ── 1024px: tablet landscape ── */
+@media (max-width: 1024px) {
+  .hero {
+    padding: 120px 0 80px;
+  }
+
+  .hero-title {
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    letter-spacing: -2px;
+  }
+
+  .hero-text {
+    font-size: 1.1rem;
+  }
+
+  .cta-card {
+    padding: 60px 30px !important;
+    border-radius: 28px;
+  }
+}
+
+/* ── 768px: tablet portrait ── */
+@media (max-width: 768px) {
+  /* Navbar */
+  .main-header {
+    padding: 10px 0;
+  }
+
+  /* Bootstrap toggler visual mejora */
+  .navbar-toggler {
+    border-color: var(--border-glass);
+    padding: 6px 10px;
+  }
+
+  .navbar-toggler-icon {
+    filter: invert(1);
+  }
+
+  [data-theme='light'] .navbar-toggler-icon {
+    filter: none;
+  }
+
+  /* Menú colapsado tiene fondo */
+  .navbar-collapse {
+    background: var(--bg-card);
+    border: 1px solid var(--border-glass);
+    border-radius: 14px;
+    padding: 16px;
+    margin-top: 10px;
+    backdrop-filter: blur(16px);
+  }
+
+  .navbar-nav {
+    gap: 4px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .navbar-nav .nav-link {
+    padding: 10px 12px;
+    border-radius: 8px;
+  }
+
+  .navbar-nav .nav-link:hover {
+    background: var(--accent-dim);
+  }
+
+  /* Botones en navbar colapsado */
+  .d-flex.align-items-center.gap-3 {
+    flex-direction: column;
+    gap: 8px !important;
+  }
+
+  .btn-log-in,
+  .btn-register {
+    width: 100%;
+    text-align: center;
+    padding: 10px;
+  }
+
+  /* Hero */
+  .hero {
+    padding: 100px 0 60px;
+  }
+
+  .main-hero-logo {
+    height: 120px;
+  }
+
+  .hero-title {
+    letter-spacing: -1.5px;
+    margin: 20px 0 16px;
+  }
+
+  .hero-text {
+    font-size: 1rem;
+    margin-bottom: 32px;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .btn-primary-custom,
+  .btn-secondary-custom {
+    width: 100%;
+    max-width: 320px;
+    padding: 15px 20px;
+  }
+
+  /* Sections */
+  .py-100 {
+    padding: 60px 0;
+  }
+
+  .section-title {
+    font-size: clamp(1.6rem, 5vw, 2.2rem);
+  }
+
+  /* Cards */
+  .card-simple {
+    padding: 28px 22px;
+  }
+
+  /* CTA */
+  .cta-card {
+    padding: 40px 20px !important;
+    border-radius: 20px;
+  }
+
+  /* Footer */
+  .footer {
+    padding: 50px 0 20px;
+  }
+
+  .footer-legal {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+}
+
+/* ── 480px: móvil ── */
+@media (max-width: 480px) {
+  .hero {
+    padding: 88px 0 48px;
+  }
+
+  .badge-ai {
+    font-size: 0.75rem;
+    padding: 6px 14px;
+  }
+
+  .hero-title {
+    font-size: clamp(1.8rem, 8vw, 2.8rem);
+    letter-spacing: -1px;
+  }
+
+  .hero-text {
+    font-size: 0.95rem;
+  }
+
+  .main-hero-logo {
+    height: 90px;
+  }
+
+  .skill-preview-container {
+    padding: 20px 16px;
+  }
+
+  .footer-newsletter {
+    flex-direction: column;
+  }
+
+  .btn-newsletter {
+    width: 100%;
+    height: 42px;
+    border-radius: 8px;
+  }
+}
+
+/* ── 390px: mínimo ── */
+@media (max-width: 390px) {
+  .hero-title {
+    font-size: 1.75rem;
+    letter-spacing: -0.5px;
+  }
+
+  .btn-primary-custom,
+  .btn-secondary-custom {
+    font-size: 14px;
+    padding: 13px 16px;
+  }
+}

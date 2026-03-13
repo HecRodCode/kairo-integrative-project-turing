@@ -1568,3 +1568,190 @@
   justify-content: center;
   gap: 8px;
 }
+
+/* ── 1100px ── */
+@media (max-width: 1100px) {
+  .activity-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .plan-header {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .plan-header-right {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .overall-track {
+    width: 100%;
+  }
+}
+
+/* ── 900px ── */
+@media (max-width: 900px) {
+  .week-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    gap: 6px;
+    padding-bottom: 4px;
+  }
+
+  .week-tab {
+    flex-shrink: 0;
+    min-width: 80px;
+  }
+}
+
+/* ── 768px ── */
+@media (max-width: 768px) {
+  /* sidebar → bottom nav */
+  .sidebar {
+    display: none;
+  }
+
+  .shell {
+    flex-direction: column;
+  }
+
+  .main {
+    padding: 16px 16px 80px;
+    width: 100%;
+  }
+
+  .bottom-nav {
+    display: flex;
+  }
+
+  .plan-chips {
+    gap: 6px;
+  }
+
+  .day-dots {
+    gap: 6px;
+  }
+
+  .day-dot {
+    width: 32px;
+    height: 32px;
+    font-size: 11px;
+  }
+
+  /* Modal de ejercicio */
+  .modal-box {
+    max-width: 100%;
+    border-radius: 16px 16px 0 0;
+    max-height: 96vh;
+    align-self: flex-end;
+  }
+
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .monaco-container {
+    height: 240px;
+  }
+}
+
+/* ── 480px ── */
+@media (max-width: 480px) {
+  .main {
+    padding: 12px 12px 80px;
+  }
+
+  .generating-box,
+  .no-plan-box {
+    margin-top: 40px;
+  }
+
+  .generating-title,
+  .no-plan-title {
+    font-size: 18px;
+  }
+
+  .plan-header {
+    padding: 16px;
+  }
+
+  .week-tabs {
+    gap: 5px;
+  }
+
+  .week-tab {
+    min-width: 70px;
+    font-size: 11.5px;
+    padding: 7px 0;
+  }
+
+  .day-header {
+    gap: 12px;
+  }
+
+  .day-label .day-number {
+    font-size: 15px;
+  }
+
+  .card-body {
+    padding: 14px;
+  }
+
+  .card-footer,
+  .card-footer-actions {
+    padding: 0 14px 14px;
+  }
+
+  .resource-sections {
+    padding: 14px;
+  }
+
+  /* Modal */
+  .modal-header {
+    padding: 14px 16px;
+  }
+
+  .modal-content {
+    padding: 14px 16px;
+    gap: 12px;
+  }
+
+  .modal-footer {
+    padding: 12px 16px;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .btn-submit-exercise {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .monaco-container {
+    height: 200px;
+  }
+}
+
+/* ── 390px ── */
+@media (max-width: 390px) {
+  .day-dots {
+    gap: 4px;
+  }
+
+  .day-dot {
+    width: 28px;
+    height: 28px;
+    font-size: 10px;
+  }
+
+  .btn-request-plan {
+    font-size: 13px;
+    padding: 11px 20px;
+  }
+}
+
