@@ -66,3 +66,18 @@ function _syncIcons(isDark, moon, sun) {
   if (moon) moon.style.display = isDark ? 'block' : 'none';
   if (sun) sun.style.display = isDark ? 'none' : 'block';
 }
+
+// MODAL
+
+ function openHelp() {
+        document.getElementById('helpOverlay').classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+      function closeHelp() {
+        document.getElementById('helpOverlay').classList.remove('open');
+        document.body.style.overflow = '';
+      }
+      function closeHelpOutside(e) {
+        if (e.target === document.getElementById('helpOverlay')) closeHelp();
+      }
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') closeHelp(); });
