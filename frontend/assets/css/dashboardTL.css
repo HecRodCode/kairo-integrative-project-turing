@@ -411,7 +411,43 @@
   border-radius: 16px;
   padding: 22px;
   backdrop-filter: blur(12px);
+  
 }
+
+.tbl-head-fixed {
+  width: 100%;
+}
+
+.tbl-body-scroll {
+  max-height: 240px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.tbl-body-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.tbl-head-fixed .data-table,
+.tbl-body-scroll .data-table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.tbl-head-fixed th:nth-child(1),
+.tbl-body-scroll td:nth-child(1) { width: 35%; }
+
+.tbl-head-fixed th:nth-child(2),
+.tbl-body-scroll td:nth-child(2) { width: 15%; }
+
+.tbl-head-fixed th:nth-child(3),
+.tbl-body-scroll td:nth-child(3) { width: 15%; }
+
+.tbl-head-fixed th:nth-child(4),
+.tbl-body-scroll td:nth-child(4) { width: 20%; }
+
+.tbl-head-fixed th:nth-child(5),
+.tbl-body-scroll td:nth-child(5) { width: 15%; }
 
 .card-head {
   display: flex;
@@ -613,7 +649,7 @@
 .skill-bar-fill {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--purple-mid), var(--accent));
+  background: linear-gradient(90deg, var(--purple-mid));
   transition: width 0.7s ease;
 }
 

@@ -32,10 +32,10 @@
       <span>Grupos</span>
     </a>
     <button class="bottom-nav-item btn-logout">
-  <i class="fa-solid fa-arrow-right-from-bracket"></i>
-  <span>Logout</span>
-</button>
-    
+      <i class="fa-solid fa-arrow-right-from-bracket"></i>
+      <span>Logout</span>
+    </button>
+
   </div>
 </nav>
 
@@ -203,7 +203,7 @@
           </div>
 
           <!-- Tabla de coders -->
-          <div class="glass-card">
+          <div class="glass-card glass-card-scroll">
             <div class="card-head">
               <h2 class="card-title">Coders del Clan</h2>
               <div class="filter-row" id="filter-row">
@@ -225,18 +225,24 @@
             </div>
             <!-- Table -->
             <div class="tbl-wrap hidden" id="tbl-wrap">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Nombre</th>
-                    <th>Score</th>
-                    <th>Semana</th>
-                    <th>Aprendizaje</th>
-                    <th>Estado</th>
-                  </tr>
-                </thead>
-                <tbody id="coder-tbody"></tbody>
-              </table>
+              <div class="tbl-head-fixed">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Nombre</th>
+                      <th>Score</th>
+                      <th>Semana</th>
+                      <th>Aprendizaje</th>
+                      <th>Estado</th>
+                    </tr>
+                  </thead>
+                </table>
+              </div>
+              <div class="tbl-body-scroll">
+                <table class="data-table">
+                  <tbody id="coder-tbody"></tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
