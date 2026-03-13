@@ -55,8 +55,6 @@ const el = (id) => document.getElementById(id);
   }
 
   // Populate identity
-  el('sidebar-name').textContent = session.user.fullName || '—';
-  el('sidebar-clan').textContent = cap(session.user.clan || '—');
   el('topbar-name').textContent = session.user.fullName || '—';
 
   el('loading-overlay').classList.add('hidden');

@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 
 // ── CONFIGURACIÓN ──────────────────────────────────────────────
-const passwordPlana = '123Antony'; // <--- CAMBIA ESTO por la clave que quieras
+const passwordPlana = '123'; // <--- CAMBIA ESTO por la clave que quieras
 const saltRounds = 10;
 
 console.log('--------------------------------------------------');

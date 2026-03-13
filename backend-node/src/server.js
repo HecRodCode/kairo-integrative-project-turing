@@ -24,6 +24,7 @@ import aiRoutes from './routes/iaRoutes.js';
 import assignmentRoutes from './routes/assignmentRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import basicRoutes from './routes/basicRoutes.js';
+import profileRoutes from './routes/profileRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -95,6 +96,7 @@ if (isBasicMode) {
   app.use('/api/tl', tlRoutes);
   app.use('/api/ai', aiRoutes);
   app.use('/api/notifications', notificationRoutes);
+  app.use('/api/profile', profileRoutes);
   app.use('/api', assignmentRoutes);
 }
 
@@ -130,6 +132,7 @@ async function startServer() {
     process.stdout.write('🔄 Initializing Kairo services... ');
     if (!isBasicMode) {
       await testConnection();
+      await connectMongo();
     }
     app.listen(PORT, '0.0.0.0', () => {
       console.log('DONE');
