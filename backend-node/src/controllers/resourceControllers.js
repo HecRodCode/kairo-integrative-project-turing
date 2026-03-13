@@ -136,7 +136,7 @@ export async function listResources(req, res) {
     }
 
     const result = await query(
-      `SELECT id, title, file_name, preview_text, uploaded_at, module_id
+      `SELECT id, title, file_name, preview_text, uploaded_at, module_id, clan_id AS clan
        FROM resources
        WHERE ${filter} AND is_active = true
        ORDER BY uploaded_at DESC`,
@@ -177,6 +177,7 @@ export async function listResourcesCoder(req, res) {
 
     const result = await query(
       `SELECT r.id, r.title, r.file_name, r.preview_text, r.uploaded_at, r.module_id,
+              r.clan_id AS clan,
               m.name as module_name,
               u.full_name as tl_name
        FROM resources r

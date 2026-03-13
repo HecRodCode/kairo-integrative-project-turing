@@ -29,6 +29,15 @@ const el = (id) => document.getElementById(id);
   }
   
   await loadDashboard();
+
+  // Real-time Sync: refresh if TL sends feedback or activity
+  window.addEventListener('kairo-notification', (e) => {
+    const n = e.detail;
+    if (n.type === 'feedback' || n.type === 'assignment') {
+      console.log('[SSE-Sync] New TL update, refreshing dashboard...');
+      loadDashboard();
+    }
+  });
 })();
 
 /* ══════════════════════════════════════

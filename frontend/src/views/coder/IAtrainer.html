@@ -86,6 +86,24 @@
             <p class="topbar-date" id="topbar-date">—</p>
           </div>
           <div class="topbar-right">
+            <!-- Notification bell -->
+            <div class="notif-wrapper">
+              <button class="icon-btn" id="btn-notif" title="Notificaciones">
+                <i class="fa-solid fa-bell"></i>
+                <span class="notif-dot hidden" id="notif-dot"></span>
+              </button>
+              <!-- Dropdown -->
+              <div class="notif-dropdown hidden" id="notif-dropdown">
+                <p class="notif-header">Notificaciones</p>
+                <div id="notif-list">
+                  <p class="notif-empty">Sin notificaciones nuevas</p>
+                </div>
+              </div>
+            </div>
+            <!-- Language toggle -->
+            <button class="icon-btn" id="btn-lang" title="Idioma">
+              <i class="fa-solid fa-earth-americas"></i>
+            </button>
             <button class="icon-btn" id="btn-theme" title="Cambiar tema">
               <i class="fa-solid fa-moon" id="icon-moon"></i>
               <i
