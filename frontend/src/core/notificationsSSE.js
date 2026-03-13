@@ -2,11 +2,10 @@
  * src/core/notificationsSSE.js
  * Singleton SSE Client — Kairo real-time notification hub.
  *
- * KEY DESIGN:
- *   connect() is called from guards.requireAuth() which runs BEFORE the page JS
- *   finishes, so the DOM elements (#btn-notif, #notif-list, etc.) may not exist yet.
- *   All DOM wiring is therefore deferred to DOMContentLoaded (or runs immediately
- *   if the DOM is already interactive/complete).
+ * FIXES:
+ * - onerror: para de reintentar si nunca conectó (404/auth) → evita loop infinito
+ * - onerror: backoff exponencial 5s→10s→20s→máx 60s en lugar de fijo 5s
+ * - onopen movido antes de onmessage para que _everConnected se setee correctamente
  */
 
 const API_BASE = 'http://localhost:3000/api';
@@ -15,25 +14,27 @@ class NotificationService {
   constructor() {
     this.eventSource = null;
     this.isConnected = false;
+    this._everConnected = false; // true solo si onopen disparó al menos una vez
+    this._retryDelay = 5000; // backoff inicial 5s
     this.userRole = null;
     this.toastTimer = null;
-    // Queue of notifications that arrived before the DOM was ready
     this._pendingToast = null;
   }
 
-  /** Called from session.js after auth succeeds. Opens the SSE pipe. */
   connect(userRole) {
     if (this.isConnected) return;
     this.userRole = userRole;
 
-    // ── Open the SSE stream immediately (HTTP, no DOM needed) ──
     this.eventSource = new EventSource(`${API_BASE}/notifications/stream`, {
       withCredentials: true,
     });
 
+    // onopen PRIMERO — para detectar si el stream nunca llegó a abrir
     this.eventSource.onopen = () => {
       console.log('[SSE] Connected to Kairo Realtime Notifications.');
       this.isConnected = true;
+      this._everConnected = true;
+      this._retryDelay = 5000; // reset backoff al reconectar con éxito
     };
 
     this.eventSource.onmessage = (event) => {
@@ -43,8 +44,6 @@ class NotificationService {
           this.showVisualToast(payload.data);
           this.updateBell();
           this.injectToDropdown(payload.data);
-
-          // Dispatch custom event for page-specific logic (e.g., auto-refresh)
           window.dispatchEvent(
             new CustomEvent('kairo-notification', { detail: payload.data })
           );
@@ -57,10 +56,22 @@ class NotificationService {
     this.eventSource.onerror = () => {
       this.isConnected = false;
       this.eventSource.close();
-      setTimeout(() => this.connect(userRole), 5000);
+
+      // Si nunca llegó a conectar (404, 401, servidor caído) → no reintentar en loop
+      if (!this._everConnected) {
+        console.warn(
+          '[SSE] Stream no disponible — notificaciones en tiempo real deshabilitadas.'
+        );
+        return;
+      }
+
+      // Backoff exponencial: 5s → 10s → 20s → 40s → máx 60s
+      this._retryDelay = Math.min(this._retryDelay * 2, 60000);
+      console.warn(`[SSE] Reconectando en ${this._retryDelay / 1000}s...`);
+      setTimeout(() => this.connect(userRole), this._retryDelay);
     };
 
-    // ── Defer all DOM wiring until the page is fully parsed ──
+    // Defer DOM wiring until page is fully parsed
     this._whenDOMReady(() => {
       this._wireToast();
       this._wireBellDropdown();
@@ -68,7 +79,6 @@ class NotificationService {
     });
   }
 
-  /** Run fn now if DOM is ready, otherwise queue it for DOMContentLoaded. */
   _whenDOMReady(fn) {
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', fn, { once: true });
@@ -78,12 +88,13 @@ class NotificationService {
   }
 
   // ─────────────────────────────────────────────────────────────
-  //  DOM WIRING — called once per page after DOM is ready
+  //  DOM WIRING
   // ─────────────────────────────────────────────────────────────
 
   _wireToast() {
-    if (document.getElementById('toast')) return; // already in HTML
-    const cls = this.userRole === 'coder' ? 'toast-coder hidden' : 'toast hidden';
+    if (document.getElementById('toast')) return;
+    const cls =
+      this.userRole === 'coder' ? 'toast-coder hidden' : 'toast hidden';
     const div = document.createElement('div');
     div.className = cls;
     div.id = 'toast';
@@ -100,11 +111,12 @@ class NotificationService {
     const list = document.getElementById('notif-list');
 
     if (!btn || !dropdown || !list) {
-      console.warn('[SSE] Notification bell elements not found in DOM. Skipping wire-up.');
+      console.warn(
+        '[SSE] Notification bell elements not found in DOM. Skipping wire-up.'
+      );
       return;
     }
-
-    if (btn.dataset.ssebound) return; // already wired
+    if (btn.dataset.ssebound) return;
     btn.dataset.ssebound = 'true';
 
     btn.addEventListener('click', async (e) => {
@@ -113,11 +125,12 @@ class NotificationService {
       if (dropdown.classList.contains('hidden')) return;
 
       try {
-        const res = await fetch(`${API_BASE}/notifications`, { credentials: 'include' });
+        const res = await fetch(`${API_BASE}/notifications`, {
+          credentials: 'include',
+        });
         if (!res.ok) return;
         const data = await res.json();
 
-        // Update the red dot badge
         const dot = document.getElementById('notif-dot');
         if (dot) {
           if (data.unread > 0) {
@@ -129,28 +142,26 @@ class NotificationService {
           }
         }
 
-        // Render notification list
         list.innerHTML = data.notifications?.length
           ? data.notifications
               .slice(0, 10)
               .map(
                 (n) => `
-                <div class="notif-item ${!n.is_read ? 'notif-item-unread' : ''}" id="notif-box-${n.id}">
-                  <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                    <p class="notif-title" style="margin:0">${this._esc(n.title)}</p>
-                    <button class="btn-delete-notif" data-id="${n.id}" title="Eliminar"
-                      style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:12px;padding:2px;">
-                      <i class="fa-solid fa-xmark"></i>
-                    </button>
-                  </div>
-                  <p class="notif-text" style="font-size:12px;margin:4px 0 0;">${this._esc(n.message || n.text || '')}</p>
-                  <p class="notif-time" style="margin-top:4px;">${this._ftm(n.created_at)}</p>
-                </div>`
+              <div class="notif-item ${!n.is_read ? 'notif-item-unread' : ''}" id="notif-box-${n.id}">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                  <p class="notif-title" style="margin:0">${this._esc(n.title)}</p>
+                  <button class="btn-delete-notif" data-id="${n.id}" title="Eliminar"
+                    style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:12px;padding:2px;">
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+                <p class="notif-text" style="font-size:12px;margin:4px 0 0;">${this._esc(n.message || n.text || '')}</p>
+                <p class="notif-time" style="margin-top:4px;">${this._ftm(n.created_at)}</p>
+              </div>`
               )
               .join('')
           : '<p class="notif-empty">Sin notificaciones nuevas</p>';
 
-        // Mark all as read passively
         fetch(`${API_BASE}/notifications/read`, {
           method: 'POST',
           credentials: 'include',
@@ -160,7 +171,6 @@ class NotificationService {
       }
     });
 
-    // Close dropdown on outside click
     document.addEventListener('click', (e) => {
       if (
         !dropdown.classList.contains('hidden') &&
@@ -189,8 +199,9 @@ class NotificationService {
         });
         if (res.ok) {
           document.getElementById(`notif-box-${id}`)?.remove();
-          if (list.children.length === 0) {
-            list.innerHTML = '<p class="notif-empty">Sin notificaciones nuevas</p>';
+          if (!list.querySelector('.notif-item')) {
+            list.innerHTML =
+              '<p class="notif-empty">Sin notificaciones nuevas</p>';
           }
         }
       } catch (err) {
@@ -200,17 +211,17 @@ class NotificationService {
   }
 
   // ─────────────────────────────────────────────────────────────
-  //  LIVE SSE HANDLERS (called when a new event arrives)
+  //  LIVE SSE HANDLERS
   // ─────────────────────────────────────────────────────────────
 
   injectToDropdown(notif) {
     const list = document.getElementById('notif-list');
     if (!list) return;
     list.querySelector('.notif-empty')?.remove();
-
     list.insertAdjacentHTML(
       'afterbegin',
-      `<div class="notif-item notif-item-unread" id="notif-box-${notif.id}">
+      `
+      <div class="notif-item notif-item-unread" id="notif-box-${notif.id}">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;">
           <p class="notif-title" style="margin:0">${this._esc(notif.title)}</p>
           <button class="btn-delete-notif" data-id="${notif.id}" title="Eliminar"
@@ -225,15 +236,15 @@ class NotificationService {
   }
 
   showVisualToast(notification) {
-    const icons = { 
-      feedback: 'fa-comment-dots', 
+    const icons = {
+      feedback: 'fa-comment-dots',
       assignment: 'fa-clipboard-list',
-      feedback_read: 'fa-envelope-open-text'
+      feedback_read: 'fa-envelope-open-text',
     };
-    const types = { 
-      feedback: 'warning', 
+    const types = {
+      feedback: 'warning',
       assignment: 'success',
-      feedback_read: 'info'
+      feedback_read: 'info',
     };
     const icon = icons[notification.type] || 'fa-bell';
     const typeClass = types[notification.type] || 'info';
@@ -266,10 +277,12 @@ class NotificationService {
     this.isConnected = false;
   }
 
-  // ─── Utilities ───────────────────────────────────────────────
   _esc(str) {
     if (!str) return '';
-    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
   }
 
   _ftm(iso) {

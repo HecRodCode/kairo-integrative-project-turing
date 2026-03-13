@@ -1,10 +1,5 @@
 /**
  * app.js — Kairo API Gateway
- *
- * FIXES:
- *  - CORS: added explicit methods and headers so OPTIONS preflight passes
- *  - CORS: unified allowed origins (localhost only, no 127.0.0.1 mix)
- *  - Session cookie: sameSite kept as 'lax' in dev (correct for cross-origin fetches)
  */
 
 import 'dotenv/config';
@@ -23,24 +18,19 @@ import tlRoutes from './routes/tlRoutes.js';
 import aiRoutes from './routes/iaRoutes.js';
 import assignmentRoutes from './routes/assignmentRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
-import basicRoutes from './routes/basicRoutes.js';
 import profileRoutes from './routes/profileRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
-const isBasicMode = String(process.env.BASIC_BACKEND || '').toLowerCase() === 'true';
 
 /* ════════════════════════════════════════
    CORS
-   FIX: unified to localhost only — mixing localhost/127.0.0.1 breaks cookies.
-        Added explicit methods + headers so OPTIONS preflight never fails.
 ════════════════════════════════════════ */
 const ALLOWED_ORIGINS = isProduction
   ? [process.env.FRONTEND_URL].filter(Boolean)
   : ['http://localhost:5500', 'http://localhost:5173'];
 
-// Definir primero — app.use y app.options lo referencian
 const _corsOptions = {
   origin(origin, callback) {
     if (!origin) return callback(null, true);
@@ -54,17 +44,17 @@ const _corsOptions = {
 };
 
 app.use(cors(_corsOptions));
-app.options('/{*path}', cors(_corsOptions)); // preflight — Express 5 syntax
+app.options('/{*path}', cors(_corsOptions));
 
-/* ── Standard middleware ── */
+/* ════════════════════════════════════════
+   MIDDLEWARE
+════════════════════════════════════════ */
 app.use(morgan('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '5mb' }));
+app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 
 /* ════════════════════════════════════════
    SESSION
-   sameSite: 'lax'  → correct for dev cross-origin fetches with credentials
-   secure: false    → required in dev (http), true in prod (https)
 ════════════════════════════════════════ */
 app.use(
   session({
@@ -73,9 +63,9 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: isProduction, // false in dev
+      secure: isProduction,
       httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000, // 24 h
+      maxAge: 24 * 60 * 60 * 1000,
       sameSite: isProduction ? 'none' : 'lax',
     },
   })
@@ -87,18 +77,14 @@ app.use(passport.session());
 /* ════════════════════════════════════════
    ROUTES
 ════════════════════════════════════════ */
-if (isBasicMode) {
-  app.use('/api', basicRoutes);
-} else {
-  app.use('/api/auth', authRoutes);
-  app.use('/api/diagnostics', diagnosticRoutes);
-  app.use('/api/coder', coderRoutes);
-  app.use('/api/tl', tlRoutes);
-  app.use('/api/ai', aiRoutes);
-  app.use('/api/notifications', notificationRoutes);
-  app.use('/api/profile', profileRoutes);
-  app.use('/api', assignmentRoutes);
-}
+app.use('/api/auth', authRoutes);
+app.use('/api/diagnostics', diagnosticRoutes);
+app.use('/api/coder', coderRoutes);
+app.use('/api/tl', tlRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/profile', profileRoutes);
+app.use('/api', assignmentRoutes);
 
 app.get('/api/health', async (req, res) => {
   try {
@@ -113,15 +99,20 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+/* ════════════════════════════════════════
+   ERROR HANDLERS
+════════════════════════════════════════ */
 app.use((req, res) => res.status(404).json({ error: 'Endpoint not found' }));
 
 app.use((err, req, res, next) => {
   const status = err.status || 500;
   console.error(`[System Error] ${err.stack}`);
-  res.status(status).json({
-    error: true,
-    message: isProduction ? 'Internal Server Error' : err.message,
-  });
+  res
+    .status(status)
+    .json({
+      error: true,
+      message: isProduction ? 'Internal Server Error' : err.message,
+    });
 });
 
 /* ════════════════════════════════════════
@@ -130,22 +121,23 @@ app.use((err, req, res, next) => {
 async function startServer() {
   try {
     process.stdout.write('🔄 Initializing Kairo services... ');
-    if (!isBasicMode) {
-      await testConnection();
-      await connectMongo();
-    }
+    await testConnection();
+    await connectMongo(); // non-fatal: si falla, el servidor sigue
     app.listen(PORT, '0.0.0.0', () => {
       console.log('DONE');
-      console.log('------------------------------------------------------------');
+      console.log(
+        '------------------------------------------------------------'
+      );
       console.log('🚀 KAIRO API GATEWAY STARTED SUCCESSFULLY');
-      console.log('------------------------------------------------------------');
+      console.log(
+        '------------------------------------------------------------'
+      );
       console.log(`📡 URL      : http://localhost:${PORT}`);
       console.log(`🌐 Origins  : ${ALLOWED_ORIGINS.join(', ')}`);
       console.log(`🛠️  ENV      : ${process.env.NODE_ENV || 'development'}`);
-      if (isBasicMode) {
-        console.log('🧪 MODE     : basic (mock endpoints enabled)');
-      }
-      console.log('------------------------------------------------------------');
+      console.log(
+        '------------------------------------------------------------'
+      );
     });
   } catch (error) {
     console.error('FAILED', error);

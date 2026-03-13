@@ -1,16 +1,12 @@
 /**
  * assets/js/dashboardCoder.js
  * Dashboard del Coder — Kairo
- *
- * Datos reales del endpoint GET /api/coder/dashboard.
- * Sin mock data. Sin spinners de carga — skeleton shimmer implícito en CSS.
  */
 import { guards, sessionManager } from '../../src/core/auth/session.js';
+import { loadMyAvatar } from '../../src/core/utils/avatarService.js';
 
 const API = 'http://localhost:3000/api';
-/* ── State ── */
 let dashData = null;
-/* ── Shorthand ── */
 const el = (id) => document.getElementById(id);
 
 /* ══════════════════════════════════════
@@ -20,21 +16,22 @@ const el = (id) => document.getElementById(id);
   wireLang();
   wireLogout();
   setDate();
-  // requireCompleted: verifica sesión activa + firstLogin === false.
+
   const session = await guards.requireCompleted();
   if (!session) return;
   if (session.user.role !== 'coder') {
     sessionManager.redirectByRole(session.user);
     return;
   }
-  
+
+  // Carga avatar del coder en el topbar (no bloquea el dashboard)
+  loadMyAvatar();
+
   await loadDashboard();
 
-  // Real-time Sync: refresh if TL sends feedback or activity
   window.addEventListener('kairo-notification', (e) => {
     const n = e.detail;
     if (n.type === 'feedback' || n.type === 'assignment') {
-      console.log('[SSE-Sync] New TL update, refreshing dashboard...');
       loadDashboard();
     }
   });
@@ -55,8 +52,8 @@ async function loadDashboard() {
   } catch (err) {
     console.error('[Dashboard Coder]', err);
     el('error-banner').classList.remove('hidden');
-    el('error-msg').textContent = err.message || 'No se pudo conectar con el servidor.';
-  } finally {
+    el('error-msg').textContent =
+      err.message || 'No se pudo conectar con el servidor.';
   }
 }
 
@@ -75,26 +72,23 @@ function renderAll(d) {
   renderStrugglingTopics(d.progress);
 }
 
-/* ── User / welcome ── */
 function renderUser(user, plan, riskFlags) {
   if (!user) return;
   el('welcome-name').textContent = user.fullName;
   el('topbar-name').textContent = user.fullName || '—';
   el('clan-badge').textContent = cap(user.clanId || '—');
-  // Plan badge
-  if (plan) {
-    el('plan-badge').classList.remove('hidden');
-  }
-  // Risk alert
-  const activeRisks = (riskFlags || []).filter((r) => r.level === 'high' || r.level === 'critical');
+  if (plan) el('plan-badge').classList.remove('hidden');
+  const activeRisks = (riskFlags || []).filter(
+    (r) => r.level === 'high' || r.level === 'critical'
+  );
   if (activeRisks.length > 0) {
     el('risk-alert').classList.remove('hidden');
     el('risk-msg').textContent =
-      activeRisks[0].reason || `Flag de riesgo activo (${activeRisks[0].level})`;
+      activeRisks[0].reason ||
+      `Flag de riesgo activo (${activeRisks[0].level})`;
   }
 }
 
-/* ── Topbar module info ── */
 function renderTopbar(user, progress) {
   el('module-pill').textContent = user?.moduleName
     ? truncate(user.moduleName, 22)
@@ -105,7 +99,6 @@ function renderTopbar(user, progress) {
     : `Semana ${week}`;
 }
 
-/* ── Stats row ── */
 function renderStats(user, progress) {
   el('st-module').textContent = user?.moduleName
     ? truncate(user.moduleName, 14)
@@ -116,10 +109,11 @@ function renderStats(user, progress) {
       ? `${parseFloat(progress.averageScore).toFixed(1)}`
       : '0.0';
   el('st-weeks-done').textContent =
-    progress?.weeksCompletedCount != null ? `${progress.weeksCompletedCount}` : '0';
+    progress?.weeksCompletedCount != null
+      ? `${progress.weeksCompletedCount}`
+      : '0';
 }
 
-/* ── Module progress dots ── */
 function renderModuleProgress(progress, user) {
   const total = user?.moduleTotalWeeks || 0;
   const current = progress?.currentWeek ?? 1;
@@ -143,16 +137,14 @@ function renderModuleProgress(progress, user) {
   }).join('');
 }
 
-/* ── Score ring ── */
 function renderScoreRing(softSkills) {
   if (!softSkills?.average) {
     el('ring-value').textContent = '—';
     return;
   }
-  const avg = softSkills.average; // 1-5
-  const pct = ((avg - 1) / 4) * 100; // normalize 1-5 to 0-100%
+  const avg = softSkills.average;
+  const pct = ((avg - 1) / 4) * 100;
   el('ring-value').textContent = avg.toFixed(1);
-  // Animate the conic gradient
   requestAnimationFrame(() => {
     setTimeout(() => {
       el('score-ring').style.background =
@@ -161,7 +153,6 @@ function renderScoreRing(softSkills) {
   });
 }
 
-/* ── Learning style in aside ── */
 const STYLE_DESCRIPTIONS = {
   visual: 'Aprendes mejor con diagramas, videos y elementos visuales.',
   kinesthetic: 'Aprendes mejor construyendo y practicando con código real.',
@@ -170,7 +161,6 @@ const STYLE_DESCRIPTIONS = {
   mixed: 'Tu aprendizaje es versátil — combinas múltiples enfoques.',
 };
 
-/* ── Soft skills bars ── */
 const SKILL_DEFS = [
   { key: 'autonomy', label: 'Autonomía' },
   { key: 'timeManagement', label: 'Gestión del tiempo' },
@@ -202,21 +192,14 @@ function renderSoftSkills(ss) {
     return `
       <div class="skill-row">
         <div class="skill-row-head">
-          <span class="skill-row-label">
-            ${label}
-            ${isWeak ? '<span class="skill-weak-tag">Más débil</span>' : ''}
-          </span>
+          <span class="skill-row-label">${label}${isWeak ? '<span class="skill-weak-tag">Más débil</span>' : ''}</span>
           <span class="skill-score">${val}<span style="font-size:10px;color:var(--text-muted)">/5</span></span>
         </div>
         <div class="skill-track">
-          <div class="skill-fill ${isWeak ? 'weak' : ''}"
-               style="width:0"
-               data-target="${pct}">
-          </div>
+          <div class="skill-fill ${isWeak ? 'weak' : ''}" style="width:0" data-target="${pct}"></div>
         </div>
       </div>`;
   }).join('');
-  // Animate bars in after render
   requestAnimationFrame(() => {
     setTimeout(() => {
       el('skills-list')
@@ -226,24 +209,22 @@ function renderSoftSkills(ss) {
         });
     }, 150);
   });
-  // Note under bars
   el('skills-note').textContent =
     `Resultados del diagnóstico inicial · ${formatDate(ss.assessedAt)}`;
-  // Style block in ring card
   const style = ss.learningStyle || 'mixed';
   el('style-value').textContent = cap(style);
   const desc = STYLE_DESCRIPTIONS[style] || '';
   if (desc) {
     const p = document.createElement('p');
-    p.style.cssText = 'font-size:11px;color:var(--text-muted);margin:6px 0 0;line-height:1.5';
+    p.style.cssText =
+      'font-size:11px;color:var(--text-muted);margin:6px 0 0;line-height:1.5';
     p.textContent = desc;
     el('style-block').appendChild(p);
   }
 }
 
-/* ── Performance tests ── */
 function renderPerformanceTests(tests) {
-  if (!tests || tests.length === 0) return;
+  if (!tests?.length) return;
   el('perf-list').innerHTML = tests
     .map((t) => {
       const score = t.score != null ? Math.round(t.score) : '0';
@@ -267,10 +248,10 @@ function renderPerformanceTests(tests) {
     })
     .join('');
 }
-/* ── TL Feedback ── */
+
 function renderFeedback(notifications) {
   const items = notifications?.items || [];
-  if (items.length === 0) return;
+  if (!items.length) return;
   el('feedback-list').innerHTML = items
     .map((f) => {
       const typeLabel =
@@ -282,12 +263,11 @@ function renderFeedback(notifications) {
         }[f.type] ||
         f.type ||
         'Feedback';
-      const isReadCls = f.isRead ? 'read' : 'unread';
       return `
-      <div class="feedback-item ${isReadCls}" id="feedback-row-${f.id}">
+      <div class="feedback-item ${f.isRead ? 'read' : 'unread'}" id="feedback-row-${f.id}">
         <div class="feedback-meta">
           <span class="feedback-type-tag ${f.type || ''}">${typeLabel}</span>
-          <div style="display:flex; align-items:center; gap:10px;">
+          <div style="display:flex;align-items:center;gap:10px;">
             <span class="feedback-tl-name">De: ${f.tlName || 'Tu TL'}</span>
             ${!f.isRead ? `<button class="btn-mark-read" data-id="${f.id}" onclick="markAsRead('${f.id}')">Marcar leído</button>` : ''}
           </div>
@@ -298,7 +278,6 @@ function renderFeedback(notifications) {
     .join('');
 }
 
-/* ── Mark as read logic ── */
 window.markAsRead = async (id) => {
   try {
     const res = await fetch(`${API}/coder/feedback/${id}/read`, {
@@ -308,17 +287,15 @@ window.markAsRead = async (id) => {
     if (res.ok) {
       const row = el(`feedback-row-${id}`);
       if (row) {
-        row.classList.remove('unread');
-        row.classList.add('read');
-        const btn = row.querySelector('.btn-mark-read');
-        if (btn) btn.remove();
+        row.classList.replace('unread', 'read');
+        row.querySelector('.btn-mark-read')?.remove();
       }
     }
   } catch (err) {
     console.error('[markAsRead]', err);
   }
 };
-/* ── Struggling topics ── */
+
 function renderStrugglingTopics(progress) {
   const topics = progress?.strugglingTopics || [];
   if (!topics.length) return;
@@ -330,23 +307,22 @@ function renderStrugglingTopics(progress) {
     )
     .join('');
 }
-/* ── Notification dropdown ── */
+
 /* ══════════════════════════════════════
    INTERACTIONS
 ══════════════════════════════════════ */
 function wireLogout() {
   el('btn-logout').addEventListener('click', () => sessionManager.logout());
 }
-/* Language toggle — cycles es/en (UI label only for now) */
 const LANGS = ['ES', 'EN'];
 let langIdx = 0;
 function wireLang() {
   el('btn-lang').addEventListener('click', () => {
     langIdx = (langIdx + 1) % LANGS.length;
     el('btn-lang').title = `Idioma: ${LANGS[langIdx]}`;
-    // Full i18n implementation in i18n.js
   });
 }
+
 /* ══════════════════════════════════════
    UTILS
 ══════════════════════════════════════ */
@@ -373,16 +349,4 @@ function setDate() {
     month: 'long',
     day: 'numeric',
   });
-}
-function styleIcon(style) {
-  const icons = {
-    visual: 'fa-eye',
-    kinesthetic: 'fa-hand',
-    reading: 'fa-book-open',
-    auditory: 'fa-headphones',
-    mixed: 'fa-shuffle',
-  };
-  const icon = document.createElement('i');
-  icon.className = `fa-solid ${icons[(style || 'mixed').toLowerCase()] || 'fa-star'} fa-xs`;
-  return icon;
 }

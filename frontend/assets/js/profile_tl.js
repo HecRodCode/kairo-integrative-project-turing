@@ -10,9 +10,9 @@
  */
 import { guards } from '/frontend/src/core/auth/session.js';
 
-const API      = 'http://localhost:3000/api';
+const API = 'http://localhost:3000/api';
 let profileData = null;
-let isEditMode  = false;
+let isEditMode = false;
 
 const el = (id) => document.getElementById(id);
 
@@ -42,8 +42,8 @@ function toast(message, type = 'success') {
   }
   const colors = {
     success: { bg: '#16a34a', icon: '✓' },
-    error:   { bg: '#dc2626', icon: '✕' },
-    info:    { bg: '#7c3aed', icon: 'ℹ' },
+    error: { bg: '#dc2626', icon: '✕' },
+    info: { bg: '#7c3aed', icon: 'ℹ' },
   };
   const { bg, icon } = colors[type] || colors.info;
   const t = document.createElement('div');
@@ -108,7 +108,10 @@ function hidePageSpinner() {
   setDate();
 
   const session = await guards.requireAuth();
-  if (!session) { hidePageSpinner(); return; }
+  if (!session) {
+    hidePageSpinner();
+    return;
+  }
 
   if (session.user.role !== 'tl' && session.user.role !== 'admin') {
     window.location.href = '../coder/profile.html';
@@ -125,7 +128,7 @@ function hidePageSpinner() {
 ══════════════════════════════════════ */
 async function loadProfile() {
   try {
-    const res  = await fetch(`${API}/profile`, { credentials: 'include' });
+    const res = await fetch(`${API}/profile`, { credentials: 'include' });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
     profileData = data;
@@ -140,9 +143,10 @@ async function loadProfile() {
    RENDER
 ══════════════════════════════════════ */
 function renderProfile(d) {
-  el('fullName').textContent  = d.fullName || '--';
-  el('bioText').textContent   = d.personalInfo.bio || 'Liderando equipos de alto rendimiento.';
-  el('bioInput').value        = d.personalInfo.bio || '';
+  el('fullName').textContent = d.fullName || '--';
+  el('bioText').textContent =
+    d.personalInfo.bio || 'Liderando equipos de alto rendimiento.';
+  el('bioInput').value = d.personalInfo.bio || '';
 
   // Avatar — prioriza MongoDB, fallback a inicial
   const avatarUrl = d.metadata?.avatarUrl;
@@ -151,41 +155,50 @@ function renderProfile(d) {
     : `<span id="avatarFallback">${(d.fullName || 'T').charAt(0)}</span>`;
 
   // Info personal
-  el('emailText').textContent    = d.email || '--';
-  el('phoneText').textContent    = d.personalInfo.phone    || 'No especificado';
-  el('phoneInput').value         = d.personalInfo.phone    || '';
+  el('emailText').textContent = d.email || '--';
+  el('phoneText').textContent = d.personalInfo.phone || 'No especificado';
+  el('phoneInput').value = d.personalInfo.phone || '';
   el('locationText').textContent = d.personalInfo.location || 'Medellín, CO';
-  el('locationInput').value      = d.personalInfo.location || '';
+  el('locationInput').value = d.personalInfo.location || '';
 
   // Socials
-  el('linkedinText').textContent = d.socials.linkedin || 'linkedin.com/in/usuario';
-  el('linkedinInput').value      = d.socials.linkedin || '';
-  el('githubText').textContent   = d.socials.github   || 'github.com/usuario';
-  el('githubInput').value        = d.socials.github   || '';
+  el('linkedinText').textContent =
+    d.socials.linkedin || 'linkedin.com/in/usuario';
+  el('linkedinInput').value = d.socials.linkedin || '';
+  el('githubText').textContent = d.socials.github || 'github.com/usuario';
+  el('githubInput').value = d.socials.github || '';
 
   // Skills
   renderSkills(d.metadata?.skills || []);
 
   // Stats reales desde el controller (calculadas en profileControllers.js)
-  if (el('statClans'))  el('statClans').textContent  = d.stats?.clans  ?? '1';
+  if (el('statClans')) el('statClans').textContent = d.stats?.clans ?? '1';
   if (el('statCoders')) el('statCoders').textContent = d.stats?.coders ?? '0';
 }
 
 function renderSkills(skills) {
   const list = el('skillsList');
-  const items = skills.length ? skills : ['Liderazgo', 'Gestión Ágil', 'Feedback'];
+  const items = skills.length
+    ? skills
+    : ['Liderazgo', 'Gestión Ágil', 'Feedback'];
 
-  list.innerHTML = items.map((s, idx) => `
+  list.innerHTML = items
+    .map(
+      (s, idx) => `
     <span class="skill-pill">
       ${s}
-      ${isEditMode
-        ? `<button class="btn-remove-skill" data-idx="${idx}" title="Eliminar"><i class="fa-solid fa-xmark"></i></button>`
-        : ''}
+      ${
+        isEditMode
+          ? `<button class="btn-remove-skill" data-idx="${idx}" title="Eliminar"><i class="fa-solid fa-xmark"></i></button>`
+          : ''
+      }
     </span>
-  `).join('');
+  `
+    )
+    .join('');
 
   if (isEditMode) {
-    list.querySelectorAll('.btn-remove-skill').forEach(btn => {
+    list.querySelectorAll('.btn-remove-skill').forEach((btn) => {
       btn.addEventListener('click', () => {
         profileData.metadata.skills.splice(parseInt(btn.dataset.idx), 1);
         renderSkills(profileData.metadata.skills);
@@ -201,7 +214,9 @@ function wireEvents() {
   el('btnEditProfile').addEventListener('click', toggleEditMode);
   el('btnSaveProfile').addEventListener('click', saveProfile);
   el('btnAddSkill').addEventListener('click', addSkill);
-  el('newSkillInput')?.addEventListener('keydown', e => { if (e.key === 'Enter') addSkill(); });
+  el('newSkillInput')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') addSkill();
+  });
   el('avatarInput').addEventListener('change', handleAvatarChange);
 }
 
@@ -212,14 +227,19 @@ function toggleEditMode() {
   isEditMode = !isEditMode;
   document.body.classList.toggle('editing', isEditMode);
 
-  document.querySelectorAll('.display-val').forEach(d => d.classList.toggle('hidden', isEditMode));
+  document
+    .querySelectorAll('.display-val')
+    .forEach((d) => d.classList.toggle('hidden', isEditMode));
   el('bioText').classList.toggle('hidden', isEditMode);
-  document.querySelectorAll('.edit-input').forEach(i => i.classList.toggle('hidden', !isEditMode));
+  document
+    .querySelectorAll('.edit-input')
+    .forEach((i) => i.classList.toggle('hidden', !isEditMode));
   el('skillEditArea')?.classList.toggle('hidden', !isEditMode);
   el('btnSaveProfile').classList.toggle('hidden', !isEditMode);
 
-  el('btnEditProfile').querySelector('i').className =
-    isEditMode ? 'fa-solid fa-xmark' : 'fa-solid fa-user-pen';
+  el('btnEditProfile').querySelector('i').className = isEditMode
+    ? 'fa-solid fa-xmark'
+    : 'fa-solid fa-user-pen';
 
   renderSkills(profileData?.metadata?.skills || []);
 }
@@ -231,18 +251,19 @@ async function saveProfile() {
   if (!profileData) return;
 
   const btnSave = el('btnSaveProfile');
-  btnSave.disabled  = true;
-  btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+  btnSave.disabled = true;
+  btnSave.innerHTML =
+    '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
 
   const payload = {
     personalInfo: {
-      phone:    el('phoneInput').value.trim(),
-      location: el('locationInput').value.trim(),
-      bio:      el('bioInput').value.trim(),
+      phone: el('phoneInput').value.trim() || null,
+      location: el('locationInput').value.trim() || null,
+      bio: el('bioInput').value.trim() || null,
     },
     socials: {
-      linkedin: el('linkedinInput').value.trim(),
-      github:   el('githubInput').value.trim(),
+      linkedin: el('linkedinInput').value.trim() || null,
+      github: el('githubInput').value.trim() || null,
     },
     metadata: {
       skills: profileData.metadata.skills,
@@ -250,32 +271,37 @@ async function saveProfile() {
   };
 
   try {
-    const res  = await fetch(`${API}/profile/update`, {
-      method:      'POST',
-      headers:     { 'Content-Type': 'application/json' },
-      body:        JSON.stringify(payload),
+    const res = await fetch(`${API}/profile/update`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
       credentials: 'include',
     });
     const data = await res.json();
 
     if (!res.ok) {
-      const msg = typeof data.error === 'string' ? data.error : `Error del servidor (${res.status})`;
+      const msg =
+        typeof data.error === 'string'
+          ? data.error
+          : `Error del servidor (${res.status})`;
       throw new Error(msg);
     }
 
     // Actualiza estado local sin recargar
-    profileData.personalInfo = { ...profileData.personalInfo, ...payload.personalInfo };
-    profileData.socials      = { ...profileData.socials, ...payload.socials };
+    profileData.personalInfo = {
+      ...profileData.personalInfo,
+      ...payload.personalInfo,
+    };
+    profileData.socials = { ...profileData.socials, ...payload.socials };
 
     toggleEditMode();
     renderProfile(profileData);
     toast('Perfil actualizado correctamente', 'success');
-
   } catch (err) {
     console.error('[Profile TL] saveProfile:', err.message);
     toast(err.message || 'No se pudo guardar', 'error');
   } finally {
-    btnSave.disabled  = false;
+    btnSave.disabled = false;
     btnSave.innerHTML = '<i class="fa-solid fa-check"></i> Guardar Cambios';
   }
 }
@@ -285,7 +311,7 @@ async function saveProfile() {
 ══════════════════════════════════════ */
 function addSkill() {
   const input = el('newSkillInput');
-  const val   = input.value.trim();
+  const val = input.value.trim();
   if (!val) return;
   if (!profileData.metadata.skills.includes(val)) {
     profileData.metadata.skills.push(val);
@@ -304,16 +330,17 @@ function handleAvatarChange(e) {
   const reader = new FileReader();
   reader.onload = async (re) => {
     const base64 = re.target.result;
-    el('mainAvatar').innerHTML = `<img src="${base64}" alt="Avatar" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">`;
+    el('mainAvatar').innerHTML =
+      `<img src="${base64}" alt="Avatar" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">`;
 
     if (!profileData.metadata) profileData.metadata = {};
     profileData.metadata.avatarUrl = base64;
 
     try {
       await fetch(`${API}/profile/update`, {
-        method:      'POST',
-        headers:     { 'Content-Type': 'application/json' },
-        body:        JSON.stringify({ metadata: { avatarUrl: base64 } }),
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ metadata: { avatarUrl: base64 } }),
         credentials: 'include',
       });
       toast('Foto de perfil actualizada', 'success');
@@ -329,7 +356,10 @@ function handleAvatarChange(e) {
 ══════════════════════════════════════ */
 function setDate() {
   const d = el('currentDate');
-  if (d) d.textContent = new Date().toLocaleDateString('es-CO', {
-    day: 'numeric', month: 'long', year: 'numeric'
-  });
+  if (d)
+    d.textContent = new Date().toLocaleDateString('es-CO', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
 }
