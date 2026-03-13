@@ -252,11 +252,7 @@ input:focus,
   font-weight: 700;
   font-size: 15px;
   color: #fff;
-  background: linear-gradient(
-    135deg,
-    var(--purple-mid) 0%,
-    var(--purple-deep) 100%
-  );
+  background: linear-gradient(135deg, var(--purple-mid) 0%, var(--purple-deep) 100%);
   cursor: pointer;
   transition: 0.3s;
   display: flex;

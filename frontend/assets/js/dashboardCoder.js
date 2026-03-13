@@ -55,8 +55,7 @@ async function loadDashboard() {
   } catch (err) {
     console.error('[Dashboard Coder]', err);
     el('error-banner').classList.remove('hidden');
-    el('error-msg').textContent =
-      err.message || 'No se pudo conectar con el servidor.';
+    el('error-msg').textContent = err.message || 'No se pudo conectar con el servidor.';
   } finally {
   }
 }
@@ -87,14 +86,11 @@ function renderUser(user, plan, riskFlags) {
     el('plan-badge').classList.remove('hidden');
   }
   // Risk alert
-  const activeRisks = (riskFlags || []).filter(
-    (r) => r.level === 'high' || r.level === 'critical'
-  );
+  const activeRisks = (riskFlags || []).filter((r) => r.level === 'high' || r.level === 'critical');
   if (activeRisks.length > 0) {
     el('risk-alert').classList.remove('hidden');
     el('risk-msg').textContent =
-      activeRisks[0].reason ||
-      `Flag de riesgo activo (${activeRisks[0].level})`;
+      activeRisks[0].reason || `Flag de riesgo activo (${activeRisks[0].level})`;
   }
 }
 
@@ -120,9 +116,7 @@ function renderStats(user, progress) {
       ? `${parseFloat(progress.averageScore).toFixed(1)}`
       : '0.0';
   el('st-weeks-done').textContent =
-    progress?.weeksCompletedCount != null
-      ? `${progress.weeksCompletedCount}`
-      : '0';
+    progress?.weeksCompletedCount != null ? `${progress.weeksCompletedCount}` : '0';
 }
 
 /* ── Module progress dots ── */
@@ -241,8 +235,7 @@ function renderSoftSkills(ss) {
   const desc = STYLE_DESCRIPTIONS[style] || '';
   if (desc) {
     const p = document.createElement('p');
-    p.style.cssText =
-      'font-size:11px;color:var(--text-muted);margin:6px 0 0;line-height:1.5';
+    p.style.cssText = 'font-size:11px;color:var(--text-muted);margin:6px 0 0;line-height:1.5';
     p.textContent = desc;
     el('style-block').appendChild(p);
   }

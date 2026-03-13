@@ -33,9 +33,7 @@ export async function isAuthenticated(req, res, next) {
     next();
   } catch (error) {
     console.error('[isAuthenticated]', error);
-    res
-      .status(500)
-      .json({ error: 'Internal Server Error during authentication' });
+    res.status(500).json({ error: 'Internal Server Error during authentication' });
   }
 }
 
@@ -59,9 +57,7 @@ export function hasRole(...allowedRoles) {
     }
 
     const normalized = userRole.toLowerCase().trim();
-    const isAuthorized = allowedRoles.some(
-      (r) => r.toLowerCase() === normalized
-    );
+    const isAuthorized = allowedRoles.some((r) => r.toLowerCase() === normalized);
 
     if (!isAuthorized) {
       console.warn(
