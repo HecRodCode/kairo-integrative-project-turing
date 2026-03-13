@@ -29,6 +29,15 @@ const el = (id) => document.getElementById(id);
   }
   
   await loadDashboard();
+
+  // Real-time Sync: refresh if TL sends feedback or activity
+  window.addEventListener('kairo-notification', (e) => {
+    const n = e.detail;
+    if (n.type === 'feedback' || n.type === 'assignment') {
+      console.log('[SSE-Sync] New TL update, refreshing dashboard...');
+      loadDashboard();
+    }
+  });
 })();
 
 /* ══════════════════════════════════════
@@ -46,8 +55,7 @@ async function loadDashboard() {
   } catch (err) {
     console.error('[Dashboard Coder]', err);
     el('error-banner').classList.remove('hidden');
-    el('error-msg').textContent =
-      err.message || 'No se pudo conectar con el servidor.';
+    el('error-msg').textContent = err.message || 'No se pudo conectar con el servidor.';
   } finally {
   }
 }
@@ -70,23 +78,19 @@ function renderAll(d) {
 /* ── User / welcome ── */
 function renderUser(user, plan, riskFlags) {
   if (!user) return;
-  const firstName = user.fullName?.split(' ')[0] || user.fullName || '—';
   el('welcome-name').textContent = user.fullName;
-  el('topbar-name').textContent = firstName;
+  el('topbar-name').textContent = user.fullName || '—';
   el('clan-badge').textContent = cap(user.clanId || '—');
   // Plan badge
   if (plan) {
     el('plan-badge').classList.remove('hidden');
   }
   // Risk alert
-  const activeRisks = (riskFlags || []).filter(
-    (r) => r.level === 'high' || r.level === 'critical'
-  );
+  const activeRisks = (riskFlags || []).filter((r) => r.level === 'high' || r.level === 'critical');
   if (activeRisks.length > 0) {
     el('risk-alert').classList.remove('hidden');
     el('risk-msg').textContent =
-      activeRisks[0].reason ||
-      `Flag de riesgo activo (${activeRisks[0].level})`;
+      activeRisks[0].reason || `Flag de riesgo activo (${activeRisks[0].level})`;
   }
 }
 
@@ -110,11 +114,9 @@ function renderStats(user, progress) {
   el('st-score').textContent =
     progress?.averageScore != null
       ? `${parseFloat(progress.averageScore).toFixed(1)}`
-      : 'Sin datos';
+      : '0.0';
   el('st-weeks-done').textContent =
-    progress?.weeksCompletedCount != null
-      ? `${progress.weeksCompletedCount}`
-      : '0';
+    progress?.weeksCompletedCount != null ? `${progress.weeksCompletedCount}` : '0';
 }
 
 /* ── Module progress dots ── */
@@ -233,8 +235,7 @@ function renderSoftSkills(ss) {
   const desc = STYLE_DESCRIPTIONS[style] || '';
   if (desc) {
     const p = document.createElement('p');
-    p.style.cssText =
-      'font-size:11px;color:var(--text-muted);margin:6px 0 0;line-height:1.5';
+    p.style.cssText = 'font-size:11px;color:var(--text-muted);margin:6px 0 0;line-height:1.5';
     p.textContent = desc;
     el('style-block').appendChild(p);
   }
@@ -245,7 +246,7 @@ function renderPerformanceTests(tests) {
   if (!tests || tests.length === 0) return;
   el('perf-list').innerHTML = tests
     .map((t) => {
-      const score = t.score != null ? Math.round(t.score) : '—';
+      const score = t.score != null ? Math.round(t.score) : '0';
       const status = (t.status || 'pending').toLowerCase();
       const label =
         {

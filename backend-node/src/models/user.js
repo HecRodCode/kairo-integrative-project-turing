@@ -108,9 +108,7 @@ export async function updateUserInDb(userId, updates) {
 
   const keys = Object.keys(finalUpdates);
   if (keys.length === 0) return null;
-  const setClause = keys
-    .map((field, index) => `${field} = $${index + 1}`)
-    .join(', ');
+  const setClause = keys.map((field, index) => `${field} = $${index + 1}`).join(', ');
 
   const values = [...Object.values(finalUpdates), userId];
 

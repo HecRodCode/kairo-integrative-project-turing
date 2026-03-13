@@ -61,10 +61,7 @@ export async function create({
  * Returns the assessment for a single coder.
  */
 export async function findByCoderId(coderId) {
-  const result = await query(
-    'SELECT * FROM soft_skills_assessment WHERE coder_id = $1',
-    [coderId]
-  );
+  const result = await query('SELECT * FROM soft_skills_assessment WHERE coder_id = $1', [coderId]);
   return result.rows[0];
 }
 
@@ -115,9 +112,8 @@ export async function getAll() {
  * Hard delete — use with caution.
  */
 export async function deleteByCoderId(coderId) {
-  const result = await query(
-    'DELETE FROM soft_skills_assessment WHERE coder_id = $1 RETURNING *',
-    [coderId]
-  );
+  const result = await query('DELETE FROM soft_skills_assessment WHERE coder_id = $1 RETURNING *', [
+    coderId,
+  ]);
   return result.rows[0];
 }

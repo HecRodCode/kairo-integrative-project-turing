@@ -51,8 +51,7 @@ export const generatePlan = async (req, res) => {
     }
 
     // Dynamic topic label from request body (optional)
-    const topic =
-      req.body.topic ?? `Módulo ${moduleId} — Semana ${currentWeek}`;
+    const topic = req.body.topic ?? `Módulo ${moduleId} — Semana ${currentWeek}`;
     const additionalTopics = req.body.additionalTopics ?? [];
 
     // ── Slim payload ─────────────────────────────────────────
@@ -87,9 +86,7 @@ export const generatePlan = async (req, res) => {
   } catch (error) {
     console.error('[iaController] generatePlan:', error.message);
     if (error.isApiError) {
-      return res
-        .status(502)
-        .json({ error: 'AI service unavailable', message: error.message });
+      return res.status(502).json({ error: 'AI service unavailable', message: error.message });
     }
     return res.status(500).json({ error: 'Internal server error' });
   }
@@ -134,9 +131,7 @@ export const generateFocusCards = async (req, res) => {
     return res.status(200).json({ success: true, data: aiResponse.data });
   } catch (error) {
     console.error('[iaController] generateFocusCards:', error.message);
-    return res
-      .status(error.isApiError ? 502 : 500)
-      .json({ error: error.message });
+    return res.status(error.isApiError ? 502 : 500).json({ error: error.message });
   }
 };
 
@@ -149,11 +144,7 @@ export const generateReport = async (req, res) => {
   const user = req.user;
 
   try {
-    const { data: tlUser } = await supabase
-      .from('users')
-      .select('clan')
-      .eq('id', user.id)
-      .single();
+    const { data: tlUser } = await supabase.from('users').select('clan').eq('id', user.id).single();
 
     if (!tlUser?.clan) {
       return res.status(400).json({ error: 'TL has no clan assigned' });
@@ -173,9 +164,7 @@ export const generateReport = async (req, res) => {
       .select('average_score')
       .in('coder_id', coderIds);
     const scores = moodleData?.map((m) => m.average_score) ?? [];
-    const avgScore = scores.length
-      ? scores.reduce((a, b) => a + b, 0) / scores.length
-      : 0;
+    const avgScore = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
 
     const { data: risks } = await supabase
       .from('risk_flags')
@@ -208,14 +197,10 @@ export const generateReport = async (req, res) => {
 
 export const checkAiHealth = async (req, res) => {
   try {
-    const response = await fetch(
-      `${process.env.PYTHON_API_URL || 'http://localhost:8000'}/health`
-    );
+    const response = await fetch(`${process.env.PYTHON_API_URL || 'http://localhost:8000'}/health`);
     const data = await response.json();
     return res.status(200).json({ node: 'ok', python: data });
   } catch (error) {
-    return res
-      .status(503)
-      .json({ node: 'ok', python: 'unreachable', error: error.message });
+    return res.status(503).json({ node: 'ok', python: 'unreachable', error: error.message });
   }
 };

@@ -24,11 +24,7 @@
       <!-- ══════════════════ SIDEBAR ══════════════════ -->
       <aside class="sidebar">
         <div class="sidebar-brand">
-          <img
-            src="../../../assets/img/logo.png"
-            alt="Kairo"
-            class="sidebar-logo"
-          />
+          <img src="../../../assets/img/logo.png" alt="Kairo" class="sidebar-logo" />
         </div>
         <nav class="sidebar-nav">
           <a class="nav-link active" href="#">
@@ -42,18 +38,6 @@
               ><i class="fa-solid fa-clipboard-list"></i
             ></span>
             Actividades
-          </a>
-          <a class="nav-link" href="./messages.html">
-            <span class="nav-icon"
-              ><i class="fa-solid fa-comment-dots"></i
-            ></span>
-            Mensajes
-          </a>
-          <a class="nav-link" href="./AssignmentTimeline.html">
-            <span class="nav-icon"
-              ><i class="fa-solid fa-calendar-lines"></i
-            ></span>
-            Timeline
           </a>
         </nav>
         <!-- TL Profile card at bottom -->
@@ -74,11 +58,7 @@
             <p class="topbar-sub" id="topbar-date">—</p>
           </div>
           <div class="topbar-right">
-            <div
-              class="topbar-badge"
-              id="topbar-risk-badge"
-              style="display: none"
-            >
+            <div class="topbar-badge" id="topbar-risk-badge" style="display: none">
               <i class="fa-solid fa-triangle-exclamation"></i>
               <span id="badge-risk-count">0</span> en riesgo
             </div>
@@ -136,9 +116,7 @@
           <i class="fa-solid fa-plug-circle-xmark"></i>
           <div>
             <strong>No se pudo conectar con el servidor</strong>
-            <p id="error-msg">
-              Verifica que el backend esté corriendo en localhost:3000
-            </p>
+            <p id="error-msg">Verifica que el backend esté corriendo en localhost:3000</p>
           </div>
           <button class="btn-retry" onclick="loadDashboard()">
             <i class="fa-solid fa-rotate-right"></i> Reintentar
@@ -148,45 +126,35 @@
         <section class="stats-row" id="stats-row">
           <div class="stat-card">
             <div class="stat-top">
-              <span class="stat-icon purple"
-                ><i class="fa-solid fa-users"></i
-              ></span>
+              <span class="stat-icon purple"><i class="fa-solid fa-users"></i></span>
               <span class="stat-value" id="st-total">—</span>
             </div>
             <span class="stat-label">Coders en el clan</span>
           </div>
           <div class="stat-card">
             <div class="stat-top">
-              <span class="stat-icon green"
-                ><i class="fa-solid fa-circle-check"></i
-              ></span>
+              <span class="stat-icon green"><i class="fa-solid fa-circle-check"></i></span>
               <span class="stat-value" id="st-done">—</span>
             </div>
             <span class="stat-label">Onboarding completo</span>
           </div>
           <div class="stat-card">
             <div class="stat-top">
-              <span class="stat-icon amber"
-                ><i class="fa-solid fa-hourglass-half"></i
-              ></span>
+              <span class="stat-icon amber"><i class="fa-solid fa-hourglass-half"></i></span>
               <span class="stat-value" id="st-pending">—</span>
             </div>
             <span class="stat-label">Pendientes</span>
           </div>
           <div class="stat-card">
             <div class="stat-top">
-              <span class="stat-icon red"
-                ><i class="fa-solid fa-triangle-exclamation"></i
-              ></span>
+              <span class="stat-icon red"><i class="fa-solid fa-triangle-exclamation"></i></span>
               <span class="stat-value" id="st-risk">—</span>
             </div>
             <span class="stat-label">En riesgo</span>
           </div>
           <div class="stat-card">
             <div class="stat-top">
-              <span class="stat-icon blue"
-                ><i class="fa-solid fa-chart-line"></i
-              ></span>
+              <span class="stat-icon blue"><i class="fa-solid fa-chart-line"></i></span>
               <span class="stat-value" id="st-score">—</span>
             </div>
             <span class="stat-label">Score promedio</span>
@@ -196,10 +164,40 @@
         <section class="content-grid">
           <!-- Columna izquierda -->
           <div class="col-main">
+            <!-- Charts Row -->
+            <div class="charts-row">
+              <!-- Soft skills del clan -->
+              <div class="glass-card">
+                <div class="card-head">
+                  <h2 class="card-title">Habilidades blandas del clan</h2>
+                  <span class="card-meta">Promedio 1–5</span>
+                </div>
+                <div class="skills-overview" id="skills-overview">
+                  <!-- populated by JS -->
+                </div>
+              </div>
+
+              <!-- Estilos de aprendizaje -->
+              <div class="glass-card">
+                <div class="card-head">
+                  <h2 class="card-title">Estilos de aprendizaje</h2>
+                  <span class="card-meta">Distribución del clan</span>
+                </div>
+                <div class="learning-styles-box">
+                  <div class="pie-chart-wrapper">
+                    <div class="pie-chart" id="learning-pie"></div>
+                  </div>
+                  <div class="chart-legend" id="learning-legend">
+                    <!-- populated by JS -->
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- Tabla de coders -->
             <div class="glass-card">
               <div class="card-head">
-                <h2 class="card-title">Coders</h2>
+                <h2 class="card-title">Coders del Clan</h2>
                 <div class="filter-row" id="filter-row">
                   <button class="chip active" data-filter="all">Todos</button>
                   <button class="chip" data-filter="risk">En riesgo</button>
@@ -233,16 +231,6 @@
                 </table>
               </div>
             </div>
-            <!-- Soft skills del clan -->
-            <div class="glass-card">
-              <div class="card-head">
-                <h2 class="card-title">Habilidades blandas del clan</h2>
-                <span class="card-meta">Promedio 1–5</span>
-              </div>
-              <div class="skills-overview" id="skills-overview">
-                <!-- populated by JS -->
-              </div>
-            </div>
           </div>
           <!-- Columna derecha: Panel del coder -->
           <aside class="col-aside">
@@ -263,34 +251,24 @@
                   <div>
                     <h3 id="d-name">—</h3>
                     <span id="d-clan" class="detail-clan-tag">—</span>
-                    <span class="risk-badge hidden" id="d-risk"
-                      >⚠ En riesgo</span
-                    >
+                    <span class="risk-badge hidden" id="d-risk">⚠ En riesgo</span>
                   </div>
                 </div>
                 <div class="detail-meta">
                   <div class="meta-row">
-                    <span class="meta-key"
-                      ><i class="fa-solid fa-envelope"></i> Email</span
-                    >
+                    <span class="meta-key"><i class="fa-solid fa-envelope"></i> Email</span>
                     <span class="meta-val" id="d-email">—</span>
                   </div>
                   <div class="meta-row">
-                    <span class="meta-key"
-                      ><i class="fa-solid fa-layer-group"></i> Semana</span
-                    >
+                    <span class="meta-key"><i class="fa-solid fa-layer-group"></i> Semana</span>
                     <span class="meta-val" id="d-week">—</span>
                   </div>
                   <div class="meta-row">
-                    <span class="meta-key"
-                      ><i class="fa-solid fa-star"></i> Score</span
-                    >
+                    <span class="meta-key"><i class="fa-solid fa-star"></i> Score</span>
                     <span class="meta-val" id="d-score">—</span>
                   </div>
                   <div class="meta-row">
-                    <span class="meta-key"
-                      ><i class="fa-solid fa-brain"></i> Estilo</span
-                    >
+                    <span class="meta-key"><i class="fa-solid fa-brain"></i> Estilo</span>
                     <span class="meta-val" id="d-style">—</span>
                   </div>
                 </div>

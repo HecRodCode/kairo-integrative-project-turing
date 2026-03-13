@@ -1,0 +1,512 @@
+{
+  "meta": {
+    "titulo": "Test de Estilos de Aprendizaje",
+    "version": "2.0",
+    "modelos": ["VARK", "ILS", "KOLB"],
+    "total_preguntas": 30,
+    "instrucciones": "Para cada pregunta, elige la opción (1, 2, 3 o 4) que mejor te represente. Si varias opciones encajan, elige la que más se aproxime a tu comportamiento habitual.",
+    "nota": "Cada opción contribuye a UN solo modelo/dimensión (tag único). Los bloques 1-2 alimentan VARK, los bloques 3-5 alimentan ILS, y los bloques 6-7 alimentan Kolb.",
+    "bloques": [
+      { "id": 1, "nombre": "Canales Sensoriales", "modelo": "VARK", "preguntas": [1, 2, 3, 4] },
+      { "id": 2, "nombre": "Preferencias de Información", "modelo": "VARK", "preguntas": [5, 6] },
+      { "id": 3, "nombre": "Procesamiento y Percepción", "modelo": "ILS", "preguntas": [7, 8, 9, 10] },
+      { "id": 4, "nombre": "Hábitos de Estudio", "modelo": "ILS", "preguntas": [11, 12, 13, 14] },
+      { "id": 5, "nombre": "Entorno de Aprendizaje", "modelo": "ILS", "preguntas": [15, 16, 17, 18, 19, 20] },
+      { "id": 6, "nombre": "Ciclo Experiencial", "modelo": "KOLB", "preguntas": [21, 22, 23, 24, 25] },
+      { "id": 7, "nombre": "Actitud ante el Aprendizaje", "modelo": "KOLB", "preguntas": [26, 27, 28, 29, 30] }
+    ]
+  },
+  "preguntas": [
+    {
+      "id": 1,
+      "bloque": 1,
+      "texto": "¿Cuando aprendes algo nuevo, qué te resulta más útil?",
+      "opciones": [
+        "Ver diagramas, esquemas o mapas conceptuales",
+        "Escuchar una explicación oral o podcast",
+        "Leer un manual, artículo o resumen escrito",
+        "Practicarlo directamente con ejercicios reales"
+      ],
+      "clave": ["V", "A", "R", "K"]
+    },
+    {
+      "id": 2,
+      "bloque": 1,
+      "texto": "¿Si tuvieras que enseñarle algo a un amigo, cómo lo harías?",
+      "opciones": [
+        "Dibujando un esquema o usando imágenes",
+        "Explicándolo con palabras y ejemplos orales",
+        "Escribiéndole un texto con los puntos clave",
+        "Mostrándoselo en la práctica, paso a paso"
+      ],
+      "clave": ["V", "A", "R", "K"]
+    },
+    {
+      "id": 3,
+      "bloque": 1,
+      "texto": "Al estudiar para un examen, ¿qué técnica prefieres?",
+      "opciones": [
+        "Hacer mapas mentales o subrayar en colores",
+        "Repetir en voz alta o grabarte y escucharte",
+        "Escribir resúmenes y repasar apuntes",
+        "Resolver ejercicios prácticos y casos reales"
+      ],
+      "clave": ["V", "A", "R", "K"]
+    },
+    {
+      "id": 4,
+      "bloque": 1,
+      "texto": "Cuando lees las instrucciones de algo nuevo, ¿qué te ayuda más?",
+      "opciones": [
+        "Que vengan con fotos, gráficos o diagramas",
+        "Que te lo expliquen de viva voz",
+        "Que el texto sea claro, detallado y organizado",
+        "Que puedas probarlo tú mismo inmediatamente"
+      ],
+      "clave": ["V", "A", "R", "K"]
+    },
+    {
+      "id": 5,
+      "bloque": 2,
+      "texto": "Si vas a comprar un dispositivo nuevo, ¿qué influye más?",
+      "opciones": [
+        "El diseño, las fotos y cómo se ve",
+        "Lo que te cuente el vendedor o amigos",
+        "Leer las especificaciones y reseñas",
+        "Probarlo y usarlo en la tienda"
+      ],
+      "clave": ["V", "A", "R", "K"]
+    },
+    {
+      "id": 6,
+      "bloque": 2,
+      "texto": "Prefieres los sitios web que tienen:",
+      "opciones": [
+        "Diseño visual atractivo y videos",
+        "Canales de audio, música o podcasts",
+        "Descripciones detalladas y artículos",
+        "Cosas interactivas para cliquear y probar"
+      ],
+      "clave": ["V", "A", "R", "K"]
+    },
+    {
+      "id": 7,
+      "bloque": 3,
+      "texto": "Para entender un tema nuevo, prefieres:",
+      "opciones": [
+        "Pensar en ello antes de actuar",
+        "Ensayar y trabajar con otros",
+        "Leer sobre ello primero",
+        "Saltar directo a la práctica"
+      ],
+      "clave": ["REF", "ACT", "REF", "ACT"]
+    },
+    {
+      "id": 8,
+      "bloque": 3,
+      "texto": "Te consideras una persona más:",
+      "opciones": [
+        "Realista y práctica",
+        "Innovadora e imaginativa",
+        "Metódica y detallista",
+        "Creativa e intuitiva"
+      ],
+      "clave": ["SNS", "INT", "SNS", "INT"]
+    },
+    {
+      "id": 9,
+      "bloque": 3,
+      "texto": "Cuando recibes información, la retienes mejor si es:",
+      "opciones": [
+        "En imágenes, diagramas o mapas",
+        "En palabras, textos o explicaciones",
+        "En esquemas visuales y colores",
+        "En resúmenes escritos y listas"
+      ],
+      "clave": ["VIS", "VRB", "VIS", "VRB"]
+    },
+    {
+      "id": 10,
+      "bloque": 3,
+      "texto": "En tus estudios, prefieres avanzar:",
+      "opciones": [
+        "Paso a paso, de forma lógica",
+        "Entendiendo el todo primero",
+        "Siguiendo un orden claro",
+        "Conectando ideas entre secciones"
+      ],
+      "clave": ["SEQ", "GLO", "SEQ", "GLO"]
+    },
+    {
+      "id": 11,
+      "bloque": 4,
+      "texto": "En un grupo de trabajo, es más probable que:",
+      "opciones": [
+        "Participes activamente aportando ideas",
+        "Escuches y reflexiones antes de hablar",
+        "Propongas actividades y ejercicios",
+        "Analices en silencio antes de opinar"
+      ],
+      "clave": ["ACT", "REF", "ACT", "REF"]
+    },
+    {
+      "id": 12,
+      "bloque": 4,
+      "texto": "Te resulta más fácil aprender:",
+      "opciones": [
+        "Hechos y datos concretos",
+        "Conceptos y teorías abstractas",
+        "Ejemplos basados en situaciones reales",
+        "Principios que puedes generalizar"
+      ],
+      "clave": ["SNS", "INT", "SNS", "INT"]
+    },
+    {
+      "id": 13,
+      "bloque": 4,
+      "texto": "Al recordar una clase, piensas más en:",
+      "opciones": [
+        "Las diapositivas, pizarras o videos",
+        "Lo que el profesor dijo o escribió",
+        "Los gráficos o esquemas mostrados",
+        "Los ejemplos y explicaciones verbales"
+      ],
+      "clave": ["VIS", "VRB", "VIS", "VRB"]
+    },
+    {
+      "id": 14,
+      "bloque": 4,
+      "texto": "Cuando resuelves problemas complejos, tiendes a:",
+      "opciones": [
+        "Entender los pasos uno por uno",
+        "Tener intuiciones sobre la solución",
+        "Seguir un proceso estructurado",
+        "Ver el panorama completo primero"
+      ],
+      "clave": ["SEQ", "GLO", "SEQ", "GLO"]
+    },
+    {
+      "id": 15,
+      "bloque": 5,
+      "texto": "Prefieres que los cursos se enfoquen en:",
+      "opciones": [
+        "Material práctico y aplicable",
+        "Principios y teorías generales",
+        "Casos de uso del mundo real",
+        "Fundamentos conceptuales profundos"
+      ],
+      "clave": ["SNS", "INT", "SNS", "INT"]
+    },
+    {
+      "id": 16,
+      "bloque": 5,
+      "texto": "Para ti es más importante:",
+      "opciones": [
+        "El qué: los hechos concretos",
+        "El por qué: la razón de ser",
+        "El cómo: el procedimiento exacto",
+        "El para qué: el propósito del concepto"
+      ],
+      "clave": ["SNS", "INT", "SNS", "INT"]
+    },
+    {
+      "id": 17,
+      "bloque": 5,
+      "texto": "Cuando escribes, prefieres usar:",
+      "opciones": [
+        "Gráficos, flechas y esquemas",
+        "Párrafos, listas y explicaciones",
+        "Tablas y comparaciones visuales",
+        "Texto narrativo con detalles claros"
+      ],
+      "clave": ["VIS", "VRB", "VIS", "VRB"]
+    },
+    {
+      "id": 18,
+      "bloque": 5,
+      "texto": "Al leer un libro de texto, tiendes a:",
+      "opciones": [
+        "Leer secuencialmente de inicio a fin",
+        "Saltar de una parte a otra buscando el sentido",
+        "Seguir el índice capítulo por capítulo",
+        "Buscar el hilo global antes de leer en detalle"
+      ],
+      "clave": ["SEQ", "GLO", "SEQ", "GLO"]
+    },
+    {
+      "id": 19,
+      "bloque": 5,
+      "texto": "Te sientes más cómodo con:",
+      "opciones": [
+        "Trabajo en equipo y discusiones",
+        "Estudio individual y reflexión",
+        "Proyectos colaborativos y dinámicos",
+        "Análisis profundo en solitario"
+      ],
+      "clave": ["ACT", "REF", "ACT", "REF"]
+    },
+    {
+      "id": 20,
+      "bloque": 5,
+      "texto": "Ante un reto nuevo, tiendes a:",
+      "opciones": [
+        "Lanzarte a la acción y aprender en el camino",
+        "Tomarte tu tiempo para analizar antes de actuar",
+        "Buscar compañeros para discutir y resolver juntos",
+        "Reflexionar en privado hasta tener claridad"
+      ],
+      "clave": ["ACT", "REF", "ACT", "REF"]
+    },
+    {
+      "id": 21,
+      "bloque": 6,
+      "texto": "Cuando aprendo algo nuevo, suelo:",
+      "opciones": [
+        "Escuchar y observar cuidadosamente",
+        "Involucrarme y probar cosas",
+        "Analizar la lógica detrás",
+        "Trabajar duro para terminar"
+      ],
+      "clave": ["RO", "CE", "AC", "AE"]
+    },
+    {
+      "id": 22,
+      "bloque": 6,
+      "texto": "Aprendo mejor cuando:",
+      "opciones": [
+        "Confío en mis presentimientos",
+        "Escucho y observo atentamente",
+        "Pienso racionalmente en el tema",
+        "Puedo probarlo yo mismo"
+      ],
+      "clave": ["CE", "RO", "AC", "AE"]
+    },
+    {
+      "id": 23,
+      "bloque": 6,
+      "texto": "Al aprender, prefiero:",
+      "opciones": [
+        "Sentir y tener intuiciones",
+        "Ser reservado y tranquilo",
+        "Usar lógica y razonamiento",
+        "Ser responsable de las cosas"
+      ],
+      "clave": ["CE", "RO", "AC", "AE"]
+    },
+    {
+      "id": 24,
+      "bloque": 6,
+      "texto": "Aprendo más a través de:",
+      "opciones": [
+        "Los sentimientos",
+        "La observación",
+        "El pensamiento",
+        "La acción"
+      ],
+      "clave": ["CE", "RO", "AC", "AE"]
+    },
+    {
+      "id": 25,
+      "bloque": 6,
+      "texto": "Al aprender, soy una persona:",
+      "opciones": [
+        "Abierta a nuevas experiencias",
+        "Cuidadosa al emitir juicios",
+        "Analítica",
+        "Orientada a la práctica"
+      ],
+      "clave": ["CE", "RO", "AC", "AE"]
+    },
+    {
+      "id": 26,
+      "bloque": 7,
+      "texto": "Si algo no funciona como esperabas:",
+      "opciones": [
+        "Experimentas hasta que funcione",
+        "Piensas qué salió mal antes de seguir",
+        "Buscas una explicación teórica",
+        "Pides ayuda a alguien experto"
+      ],
+      "clave": ["AE", "RO", "AC", "CE"]
+    },
+    {
+      "id": 27,
+      "bloque": 7,
+      "texto": "¿Cómo te describes como aprendiz?",
+      "opciones": [
+        "Vivencial: aprendo desde la experiencia directa",
+        "Observador: aprendo viendo y reflexionando",
+        "Conceptual: aprendo con ideas y teorías",
+        "Experimentador: aprendo probando"
+      ],
+      "clave": ["CE", "RO", "AC", "AE"]
+    },
+    {
+      "id": 28,
+      "bloque": 7,
+      "texto": "¿Qué te motiva más a aprender?",
+      "opciones": [
+        "Saber que lo aplicarás pronto",
+        "La posibilidad de reflexionar a fondo",
+        "Entender la lógica del sistema",
+        "La posibilidad de innovar"
+      ],
+      "clave": ["CE", "RO", "AC", "AE"]
+    },
+    {
+      "id": 29,
+      "bloque": 7,
+      "texto": "En un ambiente ideal, qué es esencial:",
+      "opciones": [
+        "Actividades prácticas y equipo",
+        "Tiempo para reflexionar en silencio",
+        "Material bien estructurado y lógico",
+        "Libertad para explorar y crear"
+      ],
+      "clave": ["AE", "RO", "AC", "CE"]
+    },
+    {
+      "id": 30,
+      "bloque": 7,
+      "texto": "¿Cuál de estas frases te representa mejor?",
+      "opciones": [
+        "Aprendo mejor cuando lo vivo",
+        "Necesito tiempo para observar antes de actuar",
+        "Me gustan los modelos claros y lógicos",
+        "Aprendo ensayando y ajustando"
+      ],
+      "clave": ["CE", "RO", "AC", "AE"]
+    }
+  ],
+  "interpretacion": {
+    "vark": {
+      "V": {
+        "nombre": "Visual",
+        "descripcion": "Aprende mejor con imágenes, diagramas y representaciones gráficas.",
+        "estrategias": [
+          "Usa mapas mentales",
+          "Dibuja diagramas",
+          "Usa colores para categorizar",
+          "Busca infografías"
+        ]
+      },
+      "A": {
+        "nombre": "Auditivo",
+        "descripcion": "Aprende mejor escuchando debates, podcasts y explicaciones orales.",
+        "estrategias": [
+          "Graba y escucha tus apuntes",
+          "Participa en debates",
+          "Estudia en grupos de discusión",
+          "Usa mnemotecnia oral"
+        ]
+      },
+      "R": {
+        "nombre": "Lecto-escritura",
+        "descripcion": "Aprende mejor con textos escritos, listas, manuales y apuntes.",
+        "estrategias": [
+          "Escribe resúmenes",
+          "Toma notas detalladas",
+          "Reescribe en tus propias palabras",
+          "Usa listas y tablas"
+        ]
+      },
+      "K": {
+        "nombre": "Kinestésico",
+        "descripcion": "Aprende mejor con experiencias prácticas, ejemplos reales y actividades hands-on.",
+        "estrategias": [
+          "Practica con ejemplos reales",
+          "Aprende haciendo",
+          "Usa simulaciones",
+          "Relaciona con experiencias vividas"
+        ]
+      }
+    },
+    "ils": {
+      "ACT": {
+        "nombre": "Activo",
+        "opuesto": "REF",
+        "descripcion": "Aprende haciendo, en grupo, con actividades y discusión."
+      },
+      "REF": {
+        "nombre": "Reflexivo",
+        "opuesto": "ACT",
+        "descripcion": "Aprende pensando primero, analizando en silencio, trabajando solo."
+      },
+      "SNS": {
+        "nombre": "Sensorial",
+        "opuesto": "INT",
+        "descripcion": "Prefiere hechos concretos, métodos probados y aplicaciones reales."
+      },
+      "INT": {
+        "nombre": "Intuitivo",
+        "opuesto": "SNS",
+        "descripcion": "Prefiere conceptos nuevos, teorías abstractas e innovación."
+      },
+      "VIS": {
+        "nombre": "Visual-ILS",
+        "opuesto": "VRB",
+        "descripcion": "Prefiere diagramas, gráficos y representaciones visuales."
+      },
+      "VRB": {
+        "nombre": "Verbal-ILS",
+        "opuesto": "VIS",
+        "descripcion": "Prefiere explicaciones escritas u orales, texto estructurado."
+      },
+      "SEQ": {
+        "nombre": "Secuencial",
+        "opuesto": "GLO",
+        "descripcion": "Aprende en pasos ordenados y lógicos, de lo simple a lo complejo."
+      },
+      "GLO": {
+        "nombre": "Global",
+        "opuesto": "SEQ",
+        "descripcion": "Capta el panorama general antes que los detalles. Aprende en saltos."
+      }
+    },
+    "kolb": {
+      "CE": {
+        "nombre": "Experiencia Concreta",
+        "descripcion": "Aprende siendo parte de la experiencia. Orientado a las personas y relaciones.",
+        "estilo_dominante": "Divergente (CE+RO)"
+      },
+      "RO": {
+        "nombre": "Observación Reflexiva",
+        "descripcion": "Aprende observando y reflexionando. Imparcial, cuidadoso y analítico.",
+        "estilo_dominante": "Asimilador (RO+AC)"
+      },
+      "AC": {
+        "nombre": "Conceptualización Abstracta",
+        "descripcion": "Aprende analizando y conceptualizando. Preciso, lógico y orientado a ideas.",
+        "estilo_dominante": "Convergente (AC+AE)"
+      },
+      "AE": {
+        "nombre": "Experimentación Activa",
+        "descripcion": "Aprende haciendo y experimentando. Práctico, decidido y orientado a resultados.",
+        "estilo_dominante": "Acomodador (AE+CE)"
+      }
+    },
+    "kolb_estilos_combinados": {
+      "Divergente": {
+        "dominantes": ["CE", "RO"],
+        "descripcion": "Imaginativo, sensible, empático. Bueno generando ideas y viendo múltiples perspectivas."
+      },
+      "Asimilador": {
+        "dominantes": ["RO", "AC"],
+        "descripcion": "Lógico, teórico, planificador. Bueno creando modelos conceptuales y organizando ideas."
+      },
+      "Convergente": {
+        "dominantes": ["AC", "AE"],
+        "descripcion": "Técnico, práctico, resolutivo. Bueno aplicando ideas y resolviendo problemas concretos."
+      },
+      "Acomodador": {
+        "dominantes": ["AE", "CE"],
+        "descripcion": "Adaptable, activo, orientado a resultados. Bueno ejecutando planes y asumiendo riesgos."
+      }
+    },
+    "niveles": {
+      "vark": { "muy_predominante": 4, "moderado": 3, "presente": 2 },
+      "ils": { "muy_predominante": 6, "moderado": 4, "presente": 2 },
+      "kolb": { "muy_predominante": 6, "moderado": 4, "presente": 2 }
+    }
+  }
+}

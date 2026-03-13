@@ -17,9 +17,7 @@ export async function callPythonApi(endpoint, data) {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      const error = new Error(
-        errorData.detail || `Python API error: ${response.status}`
-      );
+      const error = new Error(errorData.detail || `Python API error: ${response.status}`);
       error.isApiError = true;
       error.statusCode = response.status;
       throw error;

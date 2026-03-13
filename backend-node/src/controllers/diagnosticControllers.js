@@ -55,10 +55,7 @@ async function _triggerInterpretivePlan(coderId, moduleId, currentWeek = 1) {
     }
   } catch (err) {
     // Never crash the main flow — plan generation is async / best-effort
-    console.error(
-      '[Plan Gen] Could not reach Python microservice:',
-      err.message
-    );
+    console.error('[Plan Gen] Could not reach Python microservice:', err.message);
   }
 }
 
@@ -122,30 +119,14 @@ function deriveLearningStyle(tally) {
  *   teamwork        <- ACT + CE + SNS (active, concrete, sensing)
  */
 function deriveSoftSkillScores(tally) {
-  const scale = (count, max) =>
-    Math.min(5, Math.max(1, Math.round((count / max) * 4) + 1));
+  const scale = (count, max) => Math.min(5, Math.max(1, Math.round((count / max) * 4) + 1));
 
   return {
-    autonomy: scale(
-      (tally['REF'] || 0) + (tally['AC'] || 0) + (tally['RO'] || 0),
-      12
-    ),
-    time_management: scale(
-      (tally['SEQ'] || 0) + (tally['AE'] || 0) + (tally['SNS'] || 0),
-      14
-    ),
-    problem_solving: scale(
-      (tally['GLO'] || 0) + (tally['AC'] || 0) + (tally['INT'] || 0),
-      14
-    ),
-    communication: scale(
-      (tally['ACT'] || 0) + (tally['CE'] || 0) + (tally['VRB'] || 0),
-      14
-    ),
-    teamwork: scale(
-      (tally['ACT'] || 0) + (tally['CE'] || 0) + (tally['SNS'] || 0),
-      14
-    ),
+    autonomy: scale((tally['REF'] || 0) + (tally['AC'] || 0) + (tally['RO'] || 0), 12),
+    time_management: scale((tally['SEQ'] || 0) + (tally['AE'] || 0) + (tally['SNS'] || 0), 14),
+    problem_solving: scale((tally['GLO'] || 0) + (tally['AC'] || 0) + (tally['INT'] || 0), 14),
+    communication: scale((tally['ACT'] || 0) + (tally['CE'] || 0) + (tally['VRB'] || 0), 14),
+    teamwork: scale((tally['ACT'] || 0) + (tally['CE'] || 0) + (tally['SNS'] || 0), 14),
   };
 }
 

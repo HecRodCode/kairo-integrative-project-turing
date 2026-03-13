@@ -53,8 +53,7 @@ const resources = {
         card2_p:
           'Your curriculum changes in real-time based on your progress in Moodle and AI evaluations.',
         card3_h: 'Thinking Big',
-        card3_p:
-          "Total focus on the skills that Riwi's partner companies are looking for today.",
+        card3_p: "Total focus on the skills that Riwi's partner companies are looking for today.",
       },
 
       /* ── Features ── */
@@ -172,8 +171,7 @@ const resources = {
       /* ── Methodology ── */
       meth: {
         title: 'Nuestra Metodología',
-        subtitle:
-          'Construimos tu camino basado en datos reales, no en suposiciones.',
+        subtitle: 'Construimos tu camino basado en datos reales, no en suposiciones.',
         card1_h: 'Fase de diagnóstico',
         card1_p:
           'Evaluamos tus bases técnicas y rasgos de personalidad para entender cómo aprendes mejor.',

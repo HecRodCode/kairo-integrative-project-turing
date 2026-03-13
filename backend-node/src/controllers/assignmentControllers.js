@@ -127,7 +127,7 @@ export async function listAssignmentsTL(req, res) {
   try {
     const tl = req.user;
     const result = await query(
-      `SELECT a.*, m.name AS module_name
+      `SELECT a.*, a.clan_id AS clan, m.name AS module_name
        FROM assignments a
        LEFT JOIN modules m ON a.module_id = m.id
        WHERE a.tl_id = $1 AND a.is_active = true
@@ -173,7 +173,7 @@ export async function listAssignmentsCoder(req, res) {
     const clan = coderResult.rows[0]?.clan;
 
     const result = await query(
-      `SELECT a.*, m.name AS module_name, u.full_name AS tl_name
+      `SELECT a.*, a.clan_id AS clan, m.name AS module_name, u.full_name AS tl_name
        FROM assignments a
        LEFT JOIN modules m ON a.module_id = m.id
        LEFT JOIN users u ON a.tl_id = u.id
