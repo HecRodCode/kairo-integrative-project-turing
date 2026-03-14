@@ -1,104 +1,96 @@
 import bcrypt from 'bcrypt';
 import { supabase } from '../config/supabase.js';
-import { generateOtpCode, sendOtpEmail } from '../services/emailService.js';
+import { generateOtpCode, sendOtpEmail } from '../services/email.service.js';
 
 const OTP_EXPIRY = 15 * 60 * 1000;
 const MAX_ATTEMPTS = 5;
 
-/* OTP CORE - FIXED TRANSACTION */
+/* OTP CORE LOGIC */
 async function createOtpRecord(email, code) {
   const expiresAt = new Date(Date.now() + OTP_EXPIRY).toISOString();
-  
-  // Cleanup previos
-  await supabase
-    .from('otp_verifications')
-    .update({ is_used: true })
-    .eq('user_email', email)
-    .eq('is_used', false);
-  
-  // Insert nuevo OTP
-  const { error } = await supabase.from('otp_verifications').insert({
-    user_email: email,
-    otp_code: code,
-    expires_at: expiresAt,
-    attempts: 0,
-  });
-  
-  if (error) throw error;
+
+  try {
+    await supabase
+      .from('otp_verifications')
+      .update({ is_used: true })
+      .eq('user_email', email)
+      .eq('is_used', false);
+
+    const { error } = await supabase.from('otp_verifications').insert({
+      user_email: email,
+      otp_code: code,
+      expires_at: expiresAt,
+      attempts: 0,
+      is_used: false,
+    });
+
+    if (error) throw error;
+  } catch (err) {
+    console.error('[OTP Internal Error]:', err.message);
+    throw err;
+  }
 }
 
-/* REGISTER - TRANSACCIÓN ATÓMICA */
+/* AUTH FLOWS (Register, Login, Verify) */
 export const register = async (req, res) => {
   const { email, password, fullName, role, clanId } = req.body;
-  
-  // VALIDAR EMAIL TUYO NO SE REGISTRE
+
   if (email === 'riosrodriguezhectorhernan59@gmail.com') {
-    return res.status(403).json({ error: 'Email reservado' });
+    return res
+      .status(403)
+      .json({ error: 'Email reservado para administración.' });
   }
-  
+
   try {
-    // 1. Check existing
     const { data: existingUser } = await supabase
-      .from('users').select('id').eq('email', email).single();
-    
+      .from('users')
+      .select('id')
+      .eq('email', email)
+      .single();
+
     if (existingUser) {
-      return res.status(409).json({ error: 'Correo ya registrado' });
+      return res.status(409).json({ error: 'El correo ya está registrado.' });
     }
 
-    // 2. TRANSACCIÓN: User + OTP
     const hashedPassword = await bcrypt.hash(password, 12);
     const code = generateOtpCode();
-    
+
     const { data: newUser, error: userError } = await supabase
       .from('users')
-      .insert({ 
-        email, 
-        password: hashedPassword, 
-        full_name: fullName, 
-        role: role || 'coder', 
-        clan: clanId,
+      .insert({
+        email,
+        password: hashedPassword,
+        full_name: fullName,
+        role: role || 'coder',
+        clan: clanId || null,
         otp_verified: false,
-        first_login: true 
+        first_login: true,
       })
       .select()
       .single();
-    
-    if (userError) {
-      console.error('[register] User insert error:', userError);
-      return res.status(500).json({ error: 'Error creando usuario' });
-    }
 
-    // 3. OTP DESPUÉS (FK válido)
+    if (userError) throw userError;
+
     await createOtpRecord(email, code);
-    
-    // 4. Session + Email
-    req.session.pendingRegistration = {
-      email, password: hashedPassword, fullName,
-      role: role || 'coder', clan: clanId,
-      otp: { code, expiresAt: Date.now() + OTP_EXPIRY, attempts: 0 },
-      userId: newUser.id
-    };
 
     await sendOtpEmail(email, code, fullName);
-    
-    res.status(201).json({ 
-      message: 'Código enviado ✓', 
+
+    res.status(201).json({
+      message: 'Código enviado ✓',
       email,
-      ttl: OTP_EXPIRY / 1000 
+      ttl: OTP_EXPIRY / 1000,
     });
   } catch (error) {
-    console.error('[register]', error);
-    res.status(500).json({ error: 'Error en registro' });
+    console.error('[Register Error]:', error);
+    res.status(500).json({ error: 'Error en el proceso de registro.' });
   }
 };
 
-/* VERIFY OTP - FIXED LÓGICA */
 export const verifyOtp = async (req, res) => {
   const { email, code } = req.body;
 
   try {
-    // 1. DB OTP validation
-    const { data: record } = await supabase
+    const { data: record, error: otpErr } = await supabase
       .from('otp_verifications')
       .select('*')
       .eq('user_email', email)
@@ -107,80 +99,60 @@ export const verifyOtp = async (req, res) => {
       .gte('expires_at', new Date().toISOString())
       .single();
 
-    if (!record) {
-      return res.status(400).json({ error: 'Código incorrecto/expirado' });
+    if (otpErr || !record) {
+      return res.status(400).json({ error: 'Código incorrecto o expirado.' });
     }
 
-    // 2. Marcar OTP usado
     await supabase
       .from('otp_verifications')
       .update({ is_used: true })
       .eq('id', record.id);
 
-    // 3. Verificar usuario existe
-    const { data: user } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', email)
-      .single();
-
-    if (!user) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
-    }
-
-    // 4. Activar usuario
-    await supabase
+    const { data: user, error: userUpdErr } = await supabase
       .from('users')
       .update({ otp_verified: true })
-      .eq('email', email);
+      .eq('email', email)
+      .select()
+      .single();
 
-    // 5. Login
+    if (userUpdErr) throw userUpdErr;
+
     req.login(user, (err) => {
-      if (err) return res.status(500).json({ error: 'Error sesión' });
-      delete req.session.pendingRegistration;
+      if (err) return res.status(500).json({ error: 'Error de sesión.' });
       req.session.userId = user.id;
       res.json({ success: true, user });
     });
   } catch (error) {
-    console.error('[verifyOtp]', error);
-    res.status(500).json({ error: 'Error verificación' });
+    console.error('[VerifyOtp Error]:', error);
+    res.status(500).json({ error: 'Error de verificación.' });
   }
 };
 
-// Resto funciones SIN cambios...
 export const resendOtp = async (req, res) => {
   const { email } = req.body;
   try {
     const code = generateOtpCode();
     await createOtpRecord(email, code);
-    
-    const pending = req.session.pendingRegistration;
-    if (pending && pending.email === email) {
-      pending.otp.code = code;
-      pending.otp.expiresAt = Date.now() + OTP_EXPIRY;
-      pending.otp.attempts = 0;
-    }
-
     await sendOtpEmail(email, code, '');
     res.json({ success: true, message: 'Código reenviado ✓' });
   } catch (error) {
-    console.error('[resendOtp]', error);
-    res.status(500).json({ error: 'Error reenvío' });
+    console.error('[ResendOtp Error]:', error);
+    res.status(500).json({ error: 'Error al reenviar código.' });
   }
 };
-/*  LOGIN - Limpiado */
+
 export const login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const { data: user } = await supabase
+    const { data: user, error: userErr } = await supabase
       .from('users')
       .select('*, otp_verified, first_login')
       .eq('email', email)
       .single();
 
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      return res.status(401).json({ error: 'Credenciales inválidas' });
+    if (userErr || !user || !(await bcrypt.compare(password, user.password))) {
+      return res.status(401).json({ error: 'Credenciales inválidas.' });
     }
 
     if (!user.otp_verified) {
@@ -190,22 +162,23 @@ export const login = async (req, res) => {
 
       return res.status(403).json({
         requiresOtp: true,
-        error: 'Verifica tu correo primero',
+        error: 'Verifica tu correo primero.',
+        email: user.email,
       });
     }
 
     req.login(user, (err) => {
-      if (err) return res.status(500).json({ error: 'Error login' });
+      if (err) return res.status(500).json({ error: 'Error login.' });
       req.session.userId = user.id;
       res.json({ success: true, user });
     });
   } catch (error) {
-    console.error('[login]', error);
-    res.status(500).json({ error: 'Error login' });
+    console.error('[Login Error]:', error);
+    res.status(500).json({ error: 'Error en el servidor.' });
   }
 };
 
-/* SESSION & USER */
+/* SESSION & AUTH STATUS */
 export const checkAuth = async (req, res) => {
   if (!req.session.userId) {
     return res.status(401).json({ authenticated: false });
@@ -246,9 +219,12 @@ export const logout = (req, res) => {
   });
 };
 
-/* ONBOARDING & PROFILE  */
+/* PROFILE & ONBOARDING */
 export const updateFirstLoginStatus = async (req, res) => {
   const { clanId } = req.body;
+  if (!req.session.userId)
+    return res.status(401).json({ error: 'No autorizado' });
+
   try {
     const updateData = { first_login: false };
     if (clanId) updateData.clan = clanId;
@@ -263,13 +239,16 @@ export const updateFirstLoginStatus = async (req, res) => {
       .status(200)
       .json({ success: true, message: 'Onboarding completado.' });
   } catch (error) {
-    console.error('[updateFirstLoginStatus] Error:', error.message);
+    console.error('[UpdateStatus Error]:', error.message);
     return res.status(500).json({ error: 'Error al actualizar estado.' });
   }
 };
 
 export const updateUserProfile = async (req, res) => {
   const { fullName, clanId } = req.body;
+  if (!req.session.userId)
+    return res.status(401).json({ error: 'No autorizado' });
+
   try {
     const { data, error } = await supabase
       .from('users')
@@ -277,6 +256,7 @@ export const updateUserProfile = async (req, res) => {
       .eq('id', req.session.userId)
       .select()
       .single();
+
     if (error) throw error;
     return res.status(200).json({ success: true, user: data });
   } catch (error) {
@@ -284,31 +264,35 @@ export const updateUserProfile = async (req, res) => {
   }
 };
 
-/* SOCIAL AUTH  */
+/* SOCIAL AUTH (Google / GitHub)*/
+
 export const socialAuthSuccess = (req, res) => {
-  if (!req.user)
+  if (!req.user) {
     return res.redirect(
       `${process.env.FRONTEND_URL}/src/views/auth/login.html?error=auth_failed`
     );
+  }
 
   req.session.userId = req.user.id;
+
   req.session.save((err) => {
-    if (err)
+    if (err) {
       return res.redirect(
         `${process.env.FRONTEND_URL}/src/views/auth/login.html?error=session_error`
       );
+    }
 
     supabase
       .from('users')
       .update({ otp_verified: true })
       .eq('id', req.user.id)
-      .then(() => {});
+      .then(() => {
+        const base = process.env.FRONTEND_URL;
+        const dest = req.user.first_login
+          ? `${base}/src/views/coder/onboarding.html`
+          : `${base}/src/views/coder/dashboard.html`;
 
-    const base = process.env.FRONTEND_URL;
-    const dest = req.user.first_login
-      ? `${base}/src/views/coder/onboarding.html`
-      : `${base}/src/views/coder/dashboard.html`;
-
-    return res.redirect(dest);
+        return res.redirect(dest);
+      });
   });
 };
