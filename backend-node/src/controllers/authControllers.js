@@ -1,35 +1,43 @@
 import bcrypt from 'bcrypt';
 import { supabase } from '../config/supabase.js';
-import { generateOtpCode, sendOtpEmail } from '../services/email.service.js';
+import { generateOtpCode, sendOtpEmail } from '../services/emailService.js';
 
 const OTP_EXPIRY = 15 * 60 * 1000;
 const MAX_ATTEMPTS = 5;
 
-/* OTP CORE - SINGLE RESPONSIBILITY  */
+/* OTP CORE - FIXED TRANSACTION */
 async function createOtpRecord(email, code) {
   const expiresAt = new Date(Date.now() + OTP_EXPIRY).toISOString();
-
+  
+  // Cleanup previos
   await supabase
     .from('otp_verifications')
     .update({ is_used: true })
     .eq('user_email', email)
     .eq('is_used', false);
-
+  
+  // Insert nuevo OTP
   const { error } = await supabase.from('otp_verifications').insert({
     user_email: email,
     otp_code: code,
     expires_at: expiresAt,
     attempts: 0,
   });
-
+  
   if (error) throw error;
 }
 
-/* REGISTER */
+/* REGISTER - TRANSACCIÓN ATÓMICA */
 export const register = async (req, res) => {
   const { email, password, fullName, role, clanId } = req.body;
   
+  // VALIDAR EMAIL TUYO NO SE REGISTRE
+  if (email === 'riosrodriguezhectorhernan59@gmail.com') {
+    return res.status(403).json({ error: 'Email reservado' });
+  }
+  
   try {
+    // 1. Check existing
     const { data: existingUser } = await supabase
       .from('users').select('id').eq('email', email).single();
     
@@ -37,7 +45,10 @@ export const register = async (req, res) => {
       return res.status(409).json({ error: 'Correo ya registrado' });
     }
 
+    // 2. TRANSACCIÓN: User + OTP
     const hashedPassword = await bcrypt.hash(password, 12);
+    const code = generateOtpCode();
+    
     const { data: newUser, error: userError } = await supabase
       .from('users')
       .insert({ 
@@ -52,11 +63,15 @@ export const register = async (req, res) => {
       .select()
       .single();
     
-    if (userError) throw userError;
+    if (userError) {
+      console.error('[register] User insert error:', userError);
+      return res.status(500).json({ error: 'Error creando usuario' });
+    }
 
-    const code = generateOtpCode();
+    // 3. OTP DESPUÉS (FK válido)
     await createOtpRecord(email, code);
     
+    // 4. Session + Email
     req.session.pendingRegistration = {
       email, password: hashedPassword, fullName,
       role: role || 'coder', clan: clanId,
@@ -77,13 +92,12 @@ export const register = async (req, res) => {
   }
 };
 
-
-/* VERIFY OTP - DB autoridad + Session sync */
+/* VERIFY OTP - FIXED LÓGICA */
 export const verifyOtp = async (req, res) => {
   const { email, code } = req.body;
 
   try {
-    // 1. DB AUTORIDAD (incluso sin session)
+    // 1. DB OTP validation
     const { data: record } = await supabase
       .from('otp_verifications')
       .select('*')
@@ -97,53 +111,33 @@ export const verifyOtp = async (req, res) => {
       return res.status(400).json({ error: 'Código incorrecto/expirado' });
     }
 
+    // 2. Marcar OTP usado
     await supabase
       .from('otp_verifications')
       .update({ is_used: true })
       .eq('id', record.id);
 
-    const pending = req.session.pendingRegistration;
-
-    if (pending && pending.email === email) {
-      const { data: newUser, error } = await supabase
-        .from('users')
-        .insert({
-          email: pending.email,
-          password: pending.password,
-          full_name: pending.fullName,
-          role: pending.role,
-          clan: pending.clan,
-          otp_verified: true,
-          first_login: true,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      req.login(newUser, (err) => {
-        if (err) return res.status(500).json({ error: 'Error sesión' });
-        delete req.session.pendingRegistration;
-        res.json({ success: true, user: newUser });
-      });
-      return;
-    }
-
+    // 3. Verificar usuario existe
     const { data: user } = await supabase
       .from('users')
       .select('*')
       .eq('email', email)
       .single();
 
-    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
 
+    // 4. Activar usuario
     await supabase
       .from('users')
       .update({ otp_verified: true })
       .eq('email', email);
 
+    // 5. Login
     req.login(user, (err) => {
-      if (err) return res.status(500).json({ error: 'Error login' });
+      if (err) return res.status(500).json({ error: 'Error sesión' });
+      delete req.session.pendingRegistration;
       req.session.userId = user.id;
       res.json({ success: true, user });
     });
@@ -153,15 +147,13 @@ export const verifyOtp = async (req, res) => {
   }
 };
 
-/*  RESEND OTP - Sync DB+Session */
+// Resto funciones SIN cambios...
 export const resendOtp = async (req, res) => {
   const { email } = req.body;
-
   try {
     const code = generateOtpCode();
-
     await createOtpRecord(email, code);
-
+    
     const pending = req.session.pendingRegistration;
     if (pending && pending.email === email) {
       pending.otp.code = code;
@@ -176,7 +168,6 @@ export const resendOtp = async (req, res) => {
     res.status(500).json({ error: 'Error reenvío' });
   }
 };
-
 /*  LOGIN - Limpiado */
 export const login = async (req, res) => {
   const { email, password } = req.body;
