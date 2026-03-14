@@ -8,7 +8,7 @@
  * - onopen movido antes de onmessage para que _everConnected se setee correctamente
  */
 
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = 'https://kairo-integrative-project-turing-production.up.railway.app/api';
 
 class NotificationService {
   constructor() {
