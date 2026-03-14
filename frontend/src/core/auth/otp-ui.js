@@ -5,7 +5,7 @@
 
 import { sessionManager } from './session.js';
 
-const API = 'https://tu-backend-node.up.railway.app';
+const API = 'https://kairo-integrative-project-turing-production.up.railway.app';
 
 /* ── DOM ────────────────────────────────────────────────────── */
 const inputs = document.querySelectorAll('#otp-inputs .otp-digit');
