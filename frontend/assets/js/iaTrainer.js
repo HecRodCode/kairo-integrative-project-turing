@@ -4,8 +4,7 @@
  */
 
 import { guards, sessionManager } from '../../src/core/auth/session.js';
-
-const API = 'https://kairo-integrative-project-turing-production.up.railway.app/api';
+import { API_BASE } from '../../src/core/config.js';
 const POLL_INTERVAL = 4000; // ms entre cada polling
 const POLL_MESSAGES = [
   'Analizando tu diagnóstico...',
@@ -70,7 +69,7 @@ const el = (id) => document.getElementById(id);
 ══════════════════════════════════════ */
 async function checkPlan() {
   try {
-    const res = await fetch(`${API}/coder/plan`, { credentials: 'include' });
+    const res = await fetch(`${API_BASE}/coder/plan`, { credentials: 'include' });
     const data = await res.json();
 
     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
@@ -119,7 +118,7 @@ function startPolling() {
     }
 
     try {
-      const res = await fetch(`${API}/coder/plan`, { credentials: 'include' });
+      const res = await fetch(`${API_BASE}/coder/plan`, { credentials: 'include' });
       const data = await res.json();
 
       if (!data.hasPlan) return;
@@ -156,7 +155,7 @@ function wireRequestPlan() {
       '<i class="fa-solid fa-spinner fa-spin"></i> Solicitando...';
 
     try {
-      await fetch(`${API}/coder/plan/request`, {
+      await fetch(`${API_BASE}/coder/plan/request`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -352,7 +351,7 @@ async function markDayComplete(day) {
 
   try {
     const res = await fetch(
-      `${API}/coder/plan/${planData.id}/day/${day}/complete`,
+      `${API_BASE}/coder/plan/${planData.id}/day/${day}/complete`,
       { method: 'POST', credentials: 'include' }
     );
     const data = await res.json();
@@ -545,7 +544,7 @@ async function openExerciseModal(day) {
     const tech = dayObj?.technical_activity || {};
 
     // Fetch exercise
-    const res = await fetch(`${API}/coder/exercise/generate`, {
+    const res = await fetch(`${API_BASE}/coder/exercise/generate`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -698,7 +697,7 @@ async function submitSolution(exerciseId) {
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
 
   try {
-    const res = await fetch(`${API}/coder/exercise/${exerciseId}/submit`, {
+    const res = await fetch(`${API_BASE}/coder/exercise/${exerciseId}/submit`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -752,7 +751,7 @@ async function searchAndRenderResources(topic, moduleId) {
   loadingEl.classList.remove('hidden');
 
   try {
-    const res = await fetch(`${API}/coder/resources/search`, {
+    const res = await fetch(`${API_BASE}/coder/resources/search`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },

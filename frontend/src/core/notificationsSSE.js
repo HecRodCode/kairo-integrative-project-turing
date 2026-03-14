@@ -2,7 +2,7 @@
  * src/core/notificationsSSE.js
  */
 
-const API_BASE = 'https://kairo-integrative-project-turing-production.up.railway.app/api';
+import { API_BASE } from './config.js';
 
 class NotificationService {
   constructor() {

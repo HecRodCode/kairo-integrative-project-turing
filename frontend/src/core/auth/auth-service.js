@@ -3,13 +3,20 @@
  */
 
 import { cachedFetch } from '../utils/fetchCache.js';
+import { API_BASE } from '../config.js';
 
-const API_BASE =
-  'https://kairo-integrative-project-turing-production.up.railway.app/api';
-
+const DEFAULT_FETCH_TIMEOUT = 20_000; // ms
 const AUTH_CHECK_CACHE_TTL = 5_000; // ms
 let _cachedCheckAuth = null;
 let _cachedCheckAuthExpires = 0;
+
+function fetchWithTimeout(url, options = {}, timeout = DEFAULT_FETCH_TIMEOUT) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  const signal = controller.signal;
+  const merged = { ...options, signal };
+  return fetch(url, merged).finally(() => clearTimeout(id));
+}
 
 function invalidateAuthCheckCache() {
   _cachedCheckAuth = null;
@@ -19,7 +26,7 @@ function invalidateAuthCheckCache() {
 export const authService = {
   async login(credentials) {
     invalidateAuthCheckCache();
-    return fetch(`${API_BASE}/auth/login`, {
+    return fetchWithTimeout(`${API_BASE}/auth/login`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -28,7 +35,7 @@ export const authService = {
   },
 
   async register(userData) {
-    return fetch(`${API_BASE}/auth/register`, {
+    return fetchWithTimeout(`${API_BASE}/auth/register`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -38,7 +45,7 @@ export const authService = {
 
   async logout() {
     invalidateAuthCheckCache();
-    return fetch(`${API_BASE}/auth/logout`, {
+    return fetchWithTimeout(`${API_BASE}/auth/logout`, {
       method: 'POST',
       credentials: 'include',
     });
@@ -51,7 +58,7 @@ export const authService = {
     }
 
     _cachedCheckAuthExpires = now + AUTH_CHECK_CACHE_TTL;
-    _cachedCheckAuth = fetch(`${API_BASE}/auth/check`, {
+    _cachedCheckAuth = fetchWithTimeout(`${API_BASE}/auth/check`, {
       credentials: 'include',
     })
       .then((res) => {
@@ -72,7 +79,7 @@ export const authService = {
   },
 
   async completeOnboarding(payload) {
-    return fetch(`${API_BASE}/auth/complete-onboarding`, {
+    return fetchWithTimeout(`${API_BASE}/auth/complete-onboarding`, {
       method: 'PATCH',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -81,7 +88,7 @@ export const authService = {
   },
 
   async saveDiagnostic(payload) {
-    return fetch(`${API_BASE}/diagnostics`, {
+    return fetchWithTimeout(`${API_BASE}/diagnostics`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },

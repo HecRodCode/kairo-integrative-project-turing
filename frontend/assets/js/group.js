@@ -1,6 +1,6 @@
 import { guards, sessionManager } from '../../src/core/auth/session.js';
+import { API_BASE } from '../../src/core/config.js';
 
-const API = 'https://kairo-integrative-project-turing-production.up.railway.app/api';
 const GROUP_SIZE = 4;
 
 let coders = [];
@@ -42,7 +42,7 @@ document.querySelectorAll('.btn-logout').forEach(btn => {
 
 async function loadCoders() {
   try {
-    const res = await fetch(API + '/tl/dashboard', { credentials: 'include' });
+    const res = await fetch(`${API_BASE}/tl/dashboard`, { credentials: 'include' });
     const data = await res.json();
 
     if (!res.ok) {

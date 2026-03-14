@@ -1,4 +1,4 @@
-const API = 'https://kairo-integrative-project-turing-production.up.railway.app/api';
+import { API_BASE } from '../src/core/config.js';
 
 /* ── File selection ─────────────────────────────────────────── */
 const fileInput = document.getElementById('upload-file-input');

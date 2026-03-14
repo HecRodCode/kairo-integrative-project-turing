@@ -3,7 +3,7 @@
  * Servicio compartido de avatares — Kairo
  */
 
-const API = 'https://kairo-integrative-project-turing-production.up.railway.app/api';
+import { API_BASE } from '../config.js';
 
 /* ── Cache en memoria para no re-fetchear en la misma sesión ── */
 const _cache = new Map(); // userId → avatarUrl | null
@@ -38,7 +38,7 @@ export async function loadMyAvatar() {
       return;
     }
 
-    const res = await fetch(`${API}/profile`, { credentials: 'include' });
+    const res = await fetch(`${API_BASE}/profile`, { credentials: 'include' });
     if (!res.ok) return;
     const data = await res.json();
 
@@ -74,7 +74,7 @@ export async function loadCoderAvatar(userId, container, fallbackName = '') {
       return;
     }
 
-    const res = await fetch(`${API}/profile/${userId}`, {
+    const res = await fetch(`${API_BASE}/profile/${userId}`, {
       credentials: 'include',
     });
     if (!res.ok) return;

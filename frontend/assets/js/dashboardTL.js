@@ -7,9 +7,8 @@ import {
   loadMyAvatar,
   loadCoderAvatar,
 } from '../../src/core/utils/avatarService.js';
+import { API_BASE } from '../../src/core/config.js';
 
-const API =
-  'https://kairo-integrative-project-turing-production.up.railway.app/api';
 let dashboardData = null;
 let selectedCoder = null;
 let activeFilter = 'all';
@@ -50,7 +49,7 @@ const el = (id) => document.getElementById(id);
 async function loadDashboard() {
   hideBanner();
   try {
-    const res = await fetch(`${API}/tl/dashboard`, { credentials: 'include' });
+    const res = await fetch(`${API_BASE}/tl/dashboard`, { credentials: 'include' });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
     dashboardData = data;
@@ -335,7 +334,7 @@ function wireFeedback() {
     }
     el('btn-feedback').disabled = true;
     try {
-      const res = await fetch(`${API}/tl/feedback`, {
+      const res = await fetch(`${API_BASE}/tl/feedback`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

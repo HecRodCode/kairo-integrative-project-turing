@@ -5,8 +5,8 @@
  */
 
 import { guards, sessionManager } from '../../src/core/auth/session.js';
+import { API_BASE } from '../../src/core/config.js';
 
-const API = 'https://kairo-integrative-project-turing-production.up.railway.app/api';
 const el = (id) => document.getElementById(id);
 
 /* ── State ── */
@@ -60,7 +60,7 @@ async function loadAll() {
 
   // Non-fatal: enrich clan label
   try {
-    const tlRes = await fetch(`${API}/tl/dashboard`, {
+    const tlRes = await fetch(`${API_BASE}/tl/dashboard`, {
       credentials: 'include',
     });
     if (tlRes.ok) {
@@ -77,7 +77,7 @@ async function loadAll() {
 
   // Fetch assignments
   try {
-    const res = await fetch(`${API}/tl/assignments`, {
+    const res = await fetch(`${API_BASE}/tl/assignments`, {
       credentials: 'include',
     });
     const data = await res.json();
@@ -94,7 +94,7 @@ async function loadAll() {
 
   // Fetch resources (non-fatal — show assignments even if resources fail)
   try {
-    const res = await fetch(`${API}/tl/resource/list`, {
+    const res = await fetch(`${API_BASE}/tl/resource/list`, {
       credentials: 'include',
     });
     const data = await res.json();
@@ -275,7 +275,7 @@ async function deleteAssignment(id) {
   if (!confirmed) return;
 
   try {
-    const res = await fetch(`${API}/tl/assignment/${id}`, {
+    const res = await fetch(`${API_BASE}/tl/assignment/${id}`, {
       method: 'DELETE',
       credentials: 'include',
     });
@@ -298,7 +298,7 @@ async function deleteResource(id) {
   if (!confirmed) return;
 
   try {
-    const res = await fetch(`${API}/tl/resource/${id}`, {
+    const res = await fetch(`${API_BASE}/tl/resource/${id}`, {
       method: 'DELETE',
       credentials: 'include',
     });
@@ -442,7 +442,7 @@ async function submitAssignment() {
     if (currentType === 'repo')
       form.append('repoUrl', el('a-repo-url').value.trim());
 
-    const res = await fetch(`${API}/tl/assignment`, {
+    const res = await fetch(`${API_BASE}/tl/assignment`, {
       method: 'POST',
       credentials: 'include',
       body: form,
@@ -559,7 +559,7 @@ async function doUpload() {
     form.append('title', title);
     form.append('moduleId', el('upload-module').value);
 
-    const res = await fetch(`${API}/tl/resource/upload`, {
+    const res = await fetch(`${API_BASE}/tl/resource/upload`, {
       method: 'POST',
       credentials: 'include',
       body: form,

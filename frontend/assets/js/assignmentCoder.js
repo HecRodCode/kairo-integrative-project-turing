@@ -4,9 +4,9 @@
  * Lista actividades del TL (PDF/repo), descarga, notificaciones.
  */
 
-import { guards, sessionManager } from '/frontend/src/core/auth/session.js';
+import { guards, sessionManager } from '../../src/core/auth/session.js';
+import { API_BASE } from '../../src/core/config.js';
 
-const API = 'https://kairo-integrative-project-turing-production.up.railway.app/api';
 const el = (id) => document.getElementById(id);
 
 /* ── State ── */
@@ -58,8 +58,8 @@ async function loadActivities() {
 
   try {
     const [aRes, rRes] = await Promise.all([
-      fetch(`${API}/coder/assignments`, { credentials: 'include' }),
-      fetch(`${API}/coder/resources`, { credentials: 'include' }),
+      fetch(`${API_BASE}/coder/assignments`, { credentials: 'include' }),
+      fetch(`${API_BASE}/coder/resources`, { credentials: 'include' }),
     ]);
 
     const aData = await aRes.json();
@@ -91,7 +91,11 @@ function renderActivities() {
       created_at: r.uploaded_at,
       scope: 'clan',
     })),
-  ].sort((a, b) => new Date(b.created_at || b.uploaded_at) - new Date(a.created_at || a.uploaded_at));
+  ].sort(
+    (a, b) =>
+      new Date(b.created_at || b.uploaded_at) -
+      new Date(a.created_at || a.uploaded_at)
+  );
 
   const filtered = applyFilter(items);
 
@@ -118,12 +122,17 @@ function renderActivities() {
 
 function renderCard(a) {
   if (a._kind === 'resource') {
-    const modName = a.module_name || (a.module_id ? `Módulo ${a.module_id}` : '');
+    const modName =
+      a.module_name || (a.module_id ? `Módulo ${a.module_id}` : '');
     const tlName = a.tl_name || 'Tu Leader';
-    const uploadDate = new Date(a.uploaded_at || a.created_at).toLocaleDateString('es-CO', { 
-      day: '2-digit', month: 'short', year: 'numeric' 
+    const uploadDate = new Date(
+      a.uploaded_at || a.created_at
+    ).toLocaleDateString('es-CO', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
     });
-    
+
     return `
       <div class="act-card type-resource">
         <div class="act-card-stripe"></div>
@@ -398,8 +407,11 @@ function setDate() {
 }
 
 function wireLogout() {
-  document.querySelectorAll('.btn-logout')
-    .forEach(btn => btn.addEventListener('click', () => sessionManager.logout()));
+  document
+    .querySelectorAll('.btn-logout')
+    .forEach((btn) =>
+      btn.addEventListener('click', () => sessionManager.logout())
+    );
 }
 
 function applyTheme() {

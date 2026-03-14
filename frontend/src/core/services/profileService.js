@@ -7,9 +7,8 @@
  */
 
 import { cachedFetch, invalidateFetchCache } from '../utils/fetchCache.js';
+import { API_BASE } from '../config.js';
 
-const API_BASE =
-  'https://kairo-integrative-project-turing-production.up.railway.app/api';
 const PROFILE_TTL = 10_000; // 10s
 
 const ProfileCacheKeys = {

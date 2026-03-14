@@ -6,6 +6,7 @@
 import { authService } from './auth-service.js';
 import { sessionManager, guards } from './session.js';
 import { validator } from './validation.js';
+import { API_BASE } from '../config.js';
 
 /* ── UI HELPERS ────────────────────────────────────────────────── */
 const ui = {
@@ -224,6 +225,14 @@ async function handleRegister(e) {
 /* ── INIT ───────────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', async () => {
   await guards.requireGuest();
+
+  // Ensure social auth links point to the correct API base (local vs prod)
+  document.querySelectorAll('.btn-social.google').forEach((a) => {
+    a.href = `${API_BASE}/auth/google`;
+  });
+  document.querySelectorAll('.btn-social.github').forEach((a) => {
+    a.href = `${API_BASE}/auth/github`;
+  });
 
   ui.setupPasswordToggles();
 
