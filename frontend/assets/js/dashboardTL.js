@@ -8,7 +8,7 @@ import {
   loadCoderAvatar,
 } from '../../src/core/utils/avatarService.js';
 
-const API = 'http://localhost:3000/api';
+const API = 'https://kairo-integrative-project-turing-production.up.railway.app/api';
 let dashboardData = null;
 let selectedCoder = null;
 let activeFilter = 'all';

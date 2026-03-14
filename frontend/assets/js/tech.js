@@ -1,4 +1,4 @@
-const _API = 'http://localhost:3000/api';
+const API = 'https://kairo-integrative-project-turing-production.up.railway.app/api';
 
 /* ── File selection ─────────────────────────────────────────── */
 const fileInput = document.getElementById('upload-file-input');

@@ -5,7 +5,7 @@
 import { guards, sessionManager } from '../../src/core/auth/session.js';
 import { loadMyAvatar } from '../../src/core/utils/avatarService.js';
 
-const API = 'http://localhost:3000/api';
+const API = 'https://kairo-integrative-project-turing-production.up.railway.app/api';
 let dashData = null;
 const el = (id) => document.getElementById(id);
 

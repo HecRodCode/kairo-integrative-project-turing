@@ -4,7 +4,7 @@
 import { guards } from '/frontend/src/core/auth/session.js';
 import { invalidateMyAvatar } from '/frontend/src/core/utils/avatarService.js';
 
-const API = 'http://localhost:3000/api';
+const API = 'https://kairo-integrative-project-turing-production.up.railway.app/api';
 let profileData = null;
 let isEditMode = false;
 let isReadOnly = false;

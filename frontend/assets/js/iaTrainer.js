@@ -12,7 +12,7 @@
 
 import { guards, sessionManager } from '../../src/core/auth/session.js';
 
-const API = 'http://localhost:3000/api';
+const API = 'https://kairo-integrative-project-turing-production.up.railway.app/api';
 const POLL_INTERVAL = 4000; // ms entre cada polling
 const POLL_MESSAGES = [
   'Analizando tu diagnóstico...',
