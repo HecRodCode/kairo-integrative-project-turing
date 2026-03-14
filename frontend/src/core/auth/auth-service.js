@@ -2,7 +2,7 @@
  * src/core/auth/auth-service.js
  */
 
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = 'https://tu-backend-node.up.railway.app';
 
 export const authService = {
   async login(credentials) {
