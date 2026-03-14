@@ -1,17 +1,14 @@
 /**
  * backend-node/services/emailService.js
- * Nodemailer + OTP Management — Production Ready.
+ * Nodemailer + OTP Management — Production Ready (Railway Optimized).
  */
 
 import nodemailer from 'nodemailer';
 import { supabase } from '../config/supabase.js';
 
 const SMTP_HOST = process.env.SMTP_HOST ?? 'smtp.gmail.com';
-const SMTP_PORT = Number(process.env.SMTP_PORT ?? 465);
-const SMTP_SECURE =
-  process.env.SMTP_SECURE !== undefined
-    ? process.env.SMTP_SECURE === 'true'
-    : SMTP_PORT === 465;
+const SMTP_PORT = Number(process.env.SMTP_PORT ?? 587);
+const SMTP_SECURE = false;
 
 const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
@@ -31,7 +28,10 @@ const transporter = nodemailer.createTransport({
   secure: SMTP_SECURE,
   auth:
     SMTP_USER && SMTP_PASS ? { user: SMTP_USER, pass: SMTP_PASS } : undefined,
-  pool: true, // Production: connection pooling
+  connectionTimeout: 10000, // 10 segundos
+  greetingTimeout: 10000,
+  socketTimeout: 15000,
+  pool: true,
   maxConnections: 5,
   maxMessages: 100,
 });
@@ -44,7 +44,6 @@ export function generateOtpCode() {
 /* SEND OTP - Production hardened */
 export async function sendOtpEmail(toEmail, code, userName = '') {
   try {
-    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(toEmail)) {
       throw new Error('Invalid email format');
@@ -64,7 +63,7 @@ export async function sendOtpEmail(toEmail, code, userName = '') {
     return info;
   } catch (error) {
     console.error('[emailService] ❌ Send failed:', error.message);
-    throw new Error('Failed to send OTP email');
+    throw new Error(`Failed to send OTP email: ${error.message}`);
   }
 }
 
@@ -78,7 +77,6 @@ export async function cleanupExpiredOtps() {
       .eq('is_used', false);
 
     if (error) throw error;
-
     console.log(`[emailService] 🧹 Cleaned ${count || 0} expired OTPs`);
     return count || 0;
   } catch (error) {
@@ -100,7 +98,7 @@ export async function testEmailConnection() {
 }
 
 /* ═══════════════════════════════════════════════
-   EMAIL TEMPLATE - Sin cambios (perfecto)
+   EMAIL TEMPLATE 
 ════════════════════════════════════════════════ */
 function buildOtpEmailHtml(code, userName) {
   const digitBoxes = code
@@ -137,11 +135,7 @@ function buildOtpEmailHtml(code, userName) {
             border-bottom:1px solid rgba(168,85,247,0.15);
             border-radius:20px 20px 0 0;
           ">
-            <div style="width:52px;height:52px;margin:0 auto 14px;background:rgba(168,85,247,0.12);border:1px solid rgba(168,85,247,0.35);border-radius:14px;display:flex;align-items:center;justify-content:center;">
-              <img src="https://i.ibb.co/placeholder/logo.png" alt="" style="width:28px;height:28px;display:block;" onerror="this.style.display='none'"/>
-            </div>
             <div style="font-size:22px;font-weight:800;color:#f8fafc;letter-spacing:-0.5px;">Kairo</div>
-            <div style="font-size:12px;color:#64748b;margin-top:4px;">Plataforma de Aprendizaje · Riwi</div>
           </td>
         </tr>
         <tr>
@@ -151,22 +145,10 @@ function buildOtpEmailHtml(code, userName) {
             </h2>
             <p style="font-size:14px;color:#94a3b8;line-height:1.7;margin:0 0 32px;">
               Ingresa el siguiente código en la pantalla de verificación.
-              Expira en <strong style="color:#f8fafc;">15 minutos</strong>.
             </p>
             <table cellpadding="0" cellspacing="0" style="margin:0 auto 32px;">
               <tr>${digitBoxes}</tr>
             </table>
-            <p style="font-size:12px;color:#475569;text-align:center;line-height:1.7;margin:0;">
-              Si no creaste una cuenta en Kairo, ignora este correo.<br/>
-              Nunca compartimos ni pedimos este código.
-            </p>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:18px 40px;text-align:center;border-top:1px solid rgba(168,85,247,0.1);border-radius:0 0 20px 20px;">
-            <p style="font-size:11px;color:#334155;margin:0;">
-              © ${new Date().getFullYear()} Kairo · Riwi Bootcamp Colombia
-            </p>
           </td>
         </tr>
       </table>
