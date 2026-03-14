@@ -1,3 +1,4 @@
+const PYTHON_API_URL = 'https://tu-backend-python.up.railway.app';
 
 async function generateReport(coderId) {
     const btn = event.target;
@@ -10,7 +11,7 @@ async function generateReport(coderId) {
         coderId = parseInt(coderId);
         
         // ✅ QUERY PARAM (tu endpoint actual)
-        const response = await fetch(`http://127.0.0.1:8000/api/reports/generar-informe-pdf?coder_id=${coderId}`, {
+        const response = await fetch(`${PYTHON_API_URL}/api/reports/generar-informe-pdf?coder_id=${coderId}`, {
             method: 'POST'
         });
         
@@ -41,7 +42,7 @@ async function generateReportClan(clan) {
         clan = (clan).toLowerCase();
         
         // ✅ NUEVO ENDPOINT para CLAN
-        const response = await fetch(`http://127.0.0.1:8000/api/reports/generar-informe-clan-pdf?clan_name=${clan}`, {
+        const response = await fetch(`${PYTHON_API_URL}/api/reports/generar-informe-clan-pdf?clan_name=${clan}`, {
             method: 'POST'
         });
         if (!response.ok) throw new Error(`Error ${response.status}`);
