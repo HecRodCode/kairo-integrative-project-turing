@@ -25,7 +25,7 @@ if (!SMTP_USER || !SMTP_PASS) {
   );
 }
 
-const transporter = nodemailer.createTransporter({
+const transporter = nodemailer.createTransport({
   host: SMTP_HOST,
   port: SMTP_PORT,
   secure: SMTP_SECURE,
