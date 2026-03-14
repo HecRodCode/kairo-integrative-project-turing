@@ -16,11 +16,16 @@ export function streamNotifications(req, res) {
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
-    'Connection': 'keep-alive',
+    Connection: 'keep-alive',
   });
 
-  // Keep-alive formatting
+  // Keep-alive formatting (some proxies/hosts close idle SSE connections)
   res.write(': connected\n\n');
+
+  // Send a ping message to keep the connection alive in case of network timeouts
+  const keepAlive = setInterval(() => {
+    res.write(': ping\n\n');
+  }, 15_000);
 
   // Register client
   addClient(userId, res);
@@ -28,6 +33,7 @@ export function streamNotifications(req, res) {
 
   // Handle client disconnect
   req.on('close', () => {
+    clearInterval(keepAlive);
     removeClient(userId, res);
     // console.log(`[SSE] User ${userId} disconnected.`);
   });
@@ -83,7 +89,9 @@ export async function deleteNotification(req, res) {
     );
 
     if (result.rowCount === 0) {
-      return res.status(404).json({ error: 'Notificación no encontrada o no tienes permisos.' });
+      return res
+        .status(404)
+        .json({ error: 'Notificación no encontrada o no tienes permisos.' });
     }
 
     res.json({ success: true, deletedId: id });

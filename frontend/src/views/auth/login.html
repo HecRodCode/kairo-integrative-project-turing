@@ -27,11 +27,13 @@
       <section class="content-form">
         <header class="header">
           <h1 data-i18n="auth.login_title">Bienvenido de vuelta</h1>
-          <p data-i18n="auth.login_p">Accede a tu cuenta para seguir aprendiendo.</p>
+          <p data-i18n="auth.login_p">
+            Accede a tu cuenta para seguir aprendiendo.
+          </p>
         </header>
 
         <div class="social-auth-container">
-          <a href="http://localhost:3000/api/auth/google" class="btn-social google">
+          <a href="#" data-provider="google" class="btn-social google">
             <img
               src="https://www.svgrepo.com/show/475656/google-color.svg"
               alt="Google"
@@ -40,8 +42,12 @@
             <span data-i18n="auth.google">Continua con Google</span>
           </a>
 
-          <a href="http://localhost:3000/api/auth/github" class="btn-social github">
-            <img src="https://www.svgrepo.com/show/512317/github-142.svg" alt="GitHub" width="20" />
+          <a href="#" data-provider="github" class="btn-social github">
+            <img
+              src="https://www.svgrepo.com/show/512317/github-142.svg"
+              alt="GitHub"
+              width="20"
+            />
             <span data-i18n="auth.github">Continua con GitHub</span>
           </a>
         </div>
@@ -53,7 +59,7 @@
         <form class="form-1" id="login-form">
           <div class="inputs">
             <label for="email" data-i18n="auth.label_mail">Gmail</label>
-            <input type="email" id="email"  required />
+            <input type="email" id="email" required />
           </div>
 
           <!-- Password -->
@@ -61,7 +67,12 @@
             <label for="password" data-i18n="auth.label_pass">Contraseña</label>
             <div class="password-wrapper">
               <input type="password" id="password" required />
-              <button type="button" class="toggle-password" data-target="password" tabindex="-1">
+              <button
+                type="button"
+                class="toggle-password"
+                data-target="password"
+                tabindex="-1"
+              >
                 <svg
                   class="eye-open"
                   xmlns="http://www.w3.org/2000/svg"
@@ -99,20 +110,30 @@
           </div>
 
           <!-- Button Submit -->
-          <button type="submit" class="btn-auth btn-submit" data-i18n="auth.btn_login">
+          <button
+            type="submit"
+            class="btn-auth btn-submit"
+            data-i18n="auth.btn_login"
+          >
             Iniciar Sesión
           </button>
 
           <p class="link">
             <span data-i18n="auth.no_acc">¿No tienes una cuenta?</span>
-            <a href="./register.html" data-i18n="auth.link_reg">Registrate Aqui</a>
+            <a href="./register.html" data-i18n="auth.link_reg"
+              >Registrate Aqui</a
+            >
           </p>
         </form>
       </section>
     </main>
 
     <div class="theme-switch-wrapper">
-      <button id="language-toggle" class="theme-btn me-2" title="Change Language">
+      <button
+        id="language-toggle"
+        class="theme-btn me-2"
+        title="Change Language"
+      >
         <svg
           id="lang-icon"
           class="theme-icon"

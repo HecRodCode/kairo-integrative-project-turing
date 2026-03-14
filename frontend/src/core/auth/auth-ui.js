@@ -1,15 +1,15 @@
 /**
  * src/core/auth/auth-ui.js
- * UI Orchestrator for Authentication — Kairo Project.
  */
 
 import { authService } from './auth-service.js';
 import { sessionManager, guards } from './session.js';
 import { validator } from './validation.js';
+import { API_BASE } from '../config.js';
 
-/* ── UI HELPERS ────────────────────────────────────────────────── */
 const ui = {
-  getLang: () => localStorage.getItem('kairo-lang') || document.documentElement.lang || 'es',
+  getLang: () =>
+    localStorage.getItem('kairo-lang') || document.documentElement.lang || 'es',
 
   showMessage(key, type = 'success', params = {}) {
     let message = typeof window.i18nT === 'function' ? window.i18nT(key) : key;
@@ -50,9 +50,12 @@ const ui = {
   setLoading(btn, isLoading, labelKey) {
     const lang = this.getLang();
     const loadingText = lang === 'es' ? 'Cargando...' : 'Loading...';
-    const label = typeof window.i18nT === 'function' ? window.i18nT(labelKey) : labelKey;
+    const label =
+      typeof window.i18nT === 'function' ? window.i18nT(labelKey) : labelKey;
     btn.disabled = isLoading;
-    btn.innerHTML = isLoading ? `<span class="spinner"></span> ${loadingText}` : label;
+    btn.innerHTML = isLoading
+      ? `<span class="spinner"></span> ${loadingText}`
+      : label;
   },
 
   updateStrengthUI(password, barId = 'strength-bar') {
@@ -91,9 +94,7 @@ const ui = {
     });
   },
 
-  /** Fade out the card and run callback when done */
   fadeOutCard(callback) {
-    // Try .card-content first (login layout), fallback to body
     const card =
       document.querySelector('.card-content') ||
       document.querySelector('.content-form') ||
@@ -105,10 +106,10 @@ const ui = {
   },
 };
 
-/* ── LOGIN HANDLER ──────────────────────────────────────────────── */
+/* ── HANDLERS ── */
+
 async function handleLogin(e) {
   e.preventDefault();
-
   const btn = e.target.querySelector('.btn-submit');
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
@@ -120,34 +121,32 @@ async function handleLogin(e) {
   }
 
   ui.setLoading(btn, true, 'auth.btn_login');
-
   try {
     const res = await authService.login({ email, password });
     const data = await res.json();
 
     if (res.ok) {
-      // ── BUG FIX 3: backend now returns firstLogin — use it ──
       ui.showMessage('auth.alerts.login_success', 'success', {
         name: data.user.fullName,
       });
       sessionManager.saveUser(data.user);
       setTimeout(() => sessionManager.redirectByRole(data.user), 1500);
     } else if (res.status === 403 && data.requiresOtp) {
-      // ── BUG FIX 2: user exists but hasn't verified OTP ──────
-      // Backend blocks login and tells us to go verify
       ui.showMessage('auth.alerts.verify_email_first', 'error');
-
-      // Save email so otp-ui.js can find it
       sessionStorage.setItem('kairo_pending_email', email);
-
-      setTimeout(() => {
-        ui.fadeOutCard(() => {
-          window.location.href = './email-validation.html';
-        });
-      }, 1500);
+      setTimeout(
+        () =>
+          ui.fadeOutCard(() => {
+            window.location.href = './email-validation.html';
+          }),
+        1500
+      );
     } else {
       validator.highlightError('password');
-      ui.showMessage(data.errorKey || 'auth.alerts.invalid_credentials', 'error');
+      ui.showMessage(
+        data.errorKey || 'auth.alerts.invalid_credentials',
+        'error'
+      );
     }
   } catch {
     ui.showMessage('auth.alerts.conn_error', 'error');
@@ -156,14 +155,13 @@ async function handleLogin(e) {
   }
 }
 
-/* ── REGISTER HANDLER ───────────────────────────────────────────── */
 async function handleRegister(e) {
   e.preventDefault();
-
   const btn = e.target.querySelector('.btn-submit');
   const pass = document.getElementById('password').value;
   const confirmPass = document.getElementById('confirm-password').value;
   const clan = document.getElementById('clan-select').value;
+  const email = document.getElementById('email').value.trim();
 
   if (pass !== confirmPass) {
     validator.highlightError('confirm-password');
@@ -171,15 +169,9 @@ async function handleRegister(e) {
     return;
   }
 
-  if (!clan) {
-    validator.highlightError('clan-select');
-    ui.showMessage('auth.alerts.clan_required', 'error');
-    return;
-  }
-
   const userData = {
     fullName: document.getElementById('name').value.trim(),
-    email: document.getElementById('email').value.trim(),
+    email: email,
     password: pass,
     clanId: clan,
     role: document.getElementById('role-select')?.value || 'coder',
@@ -189,54 +181,62 @@ async function handleRegister(e) {
 
   try {
     const res = await authService.register(userData);
-    const data = await res.json();
 
     if (res.ok) {
       ui.showMessage('auth.alerts.register_success', 'success', {
         clan: clan.toUpperCase(),
       });
-
-      // ── BUG FIX 1: save to sessionStorage, NOT query param ──
-      // otp-ui.js reads from sessionStorage — this is the bridge
       sessionStorage.setItem('kairo_pending_email', userData.email);
-
+      setTimeout(
+        () =>
+          ui.fadeOutCard(() => {
+            window.location.href = './email-validation.html';
+          }),
+        1000
+      );
+    } else if (res.status === 409) {
+      ui.showMessage('Registro previo detectado. Verificando...', 'success');
+      sessionStorage.setItem('kairo_pending_email', userData.email);
       setTimeout(() => {
-        ui.fadeOutCard(() => {
-          window.location.href = './email-validation.html';
-        });
+        window.location.href = './email-validation.html';
       }, 1000);
     } else {
-      if (res.status === 409 || res.status === 400) {
-        validator.highlightError('email');
-        ui.showMessage('auth.alerts.user_exists', 'error');
-      } else {
-        ui.showMessage(data.errorKey || 'auth.alerts.conn_error', 'error');
-      }
+      ui.showMessage('auth.alerts.conn_error', 'error');
     }
   } catch (err) {
-    console.error('[Register Error]:', err);
-    ui.showMessage('auth.alerts.conn_error', 'error');
+    if (err.name === 'AbortError') {
+      ui.showMessage(
+        'El servidor tarda pero está procesando. Revisa tu correo.',
+        'error'
+      );
+    } else {
+      ui.showMessage('auth.alerts.conn_error', 'error');
+    }
   } finally {
     ui.setLoading(btn, false, 'auth.btn_reg');
   }
 }
 
-/* ── INIT ───────────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', async () => {
   await guards.requireGuest();
-
+  document.querySelectorAll('.btn-social.google').forEach((a) => {
+    a.href = `${API_BASE}/auth/google`;
+  });
+  document.querySelectorAll('.btn-social.github').forEach((a) => {
+    a.href = `${API_BASE}/auth/github`;
+  });
   ui.setupPasswordToggles();
-
   document.querySelectorAll('input[type="password"]').forEach((input) => {
     input.addEventListener('input', (e) => {
-      const barId = input.id === 'confirm-password' ? 'strength-bar-confirm' : 'strength-bar';
+      const barId =
+        input.id === 'confirm-password'
+          ? 'strength-bar-confirm'
+          : 'strength-bar';
       ui.updateStrengthUI(e.target.value, barId);
     });
   });
-
   const loginForm = document.getElementById('login-form');
   const registerForm = document.getElementById('register-form');
-
   if (loginForm) loginForm.addEventListener('submit', handleLogin);
   if (registerForm) registerForm.addEventListener('submit', handleRegister);
 });

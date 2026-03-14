@@ -1,18 +1,10 @@
 /**
  * assets/js/aiTrainer.js
  * AI Trainer — Kairo
- *
- * Estados:
- *   1. generating  → polling GET /api/coder/plan cada 4s
- *   2. active      → renderiza el plan del día
- *   3. no-plan     → botón para solicitar generación
- *
- * Sin mock data. Todos los datos vienen del backend.
  */
 
 import { guards, sessionManager } from '../../src/core/auth/session.js';
-
-const API = 'http://localhost:3000/api';
+import { API_BASE } from '../../src/core/config.js';
 const POLL_INTERVAL = 4000; // ms entre cada polling
 const POLL_MESSAGES = [
   'Analizando tu diagnóstico...',
@@ -25,9 +17,9 @@ const POLL_MESSAGES = [
 ];
 
 /* ── State ── */
-let planData = null; // { id, planContent, completedDays, currentDay, ... }
-let viewDay = 1; // día que se está mostrando en pantalla
-let viewWeek = 1; // semana activa en el navegador
+let planData = null;
+let viewDay = 1;
+let viewWeek = 1;
 let pollTimer = null;
 let pollCount = 0;
 
@@ -77,7 +69,9 @@ const el = (id) => document.getElementById(id);
 ══════════════════════════════════════ */
 async function checkPlan() {
   try {
-    const res = await fetch(`${API}/coder/plan`, { credentials: 'include' });
+    const res = await fetch(`${API_BASE}/coder/plan`, {
+      credentials: 'include',
+    });
     const data = await res.json();
 
     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
@@ -89,8 +83,6 @@ async function checkPlan() {
 
     planData = data.plan;
 
-    // Si el plan acaba de llegar pero es de hace menos de 30s podría estar incompleto
-    // (generación Python aún escribiendo) — en ese caso el plan_content puede estar vacío
     if (!planData.planContent?.weeks?.length) {
       startPolling();
       return;
@@ -107,7 +99,7 @@ async function checkPlan() {
 /* ══════════════════════════════════════
    POLLING
 ══════════════════════════════════════ */
-const POLL_MAX = 30; // 30 × 4s = 2 min máximo
+const POLL_MAX = 30;
 
 function startPolling() {
   showState('generating');
@@ -128,10 +120,12 @@ function startPolling() {
     }
 
     try {
-      const res = await fetch(`${API}/coder/plan`, { credentials: 'include' });
+      const res = await fetch(`${API_BASE}/coder/plan`, {
+        credentials: 'include',
+      });
       const data = await res.json();
 
-      if (!data.hasPlan) return; // aún no existe, seguir esperando
+      if (!data.hasPlan) return;
 
       // Plan fallback (OpenAI falló): weeks vacías o status === 'fallback'
       const content = data.plan?.planContent;
@@ -144,7 +138,6 @@ function startPolling() {
         return;
       }
 
-      // Plan real con contenido ✓
       clearInterval(pollTimer);
       planData = data.plan;
       showState('active');
@@ -166,7 +159,7 @@ function wireRequestPlan() {
       '<i class="fa-solid fa-spinner fa-spin"></i> Solicitando...';
 
     try {
-      await fetch(`${API}/coder/plan/request`, {
+      await fetch(`${API_BASE}/coder/plan/request`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -181,9 +174,7 @@ function wireRequestPlan() {
   });
 }
 
-/* ══════════════════════════════════════
-   RENDER ACTIVE PLAN
-══════════════════════════════════════ */
+/* RENDER ACTIVE PLAN */
 function renderActivePlan() {
   const plan = planData.planContent;
   const meta = planData.moodleStatusSnapshot || {};
@@ -321,7 +312,6 @@ function renderDay(day) {
   el('tech-difficulty').textContent = capDifficulty(diff);
   el('tech-difficulty').className = `badge-difficulty ${diff}`;
 
-  // Resources
   // Resources: detecta URLs automáticamente → botón clickeable; sin URL → chip de texto
   const chips = (tech.resources || [])
     .map((r) => {
@@ -353,7 +343,6 @@ function renderDay(day) {
   // Sync dot styles
   renderWeekNav(Math.ceil(day / 5));
 
-  // Buscar recursos del TL para este topic (RAG — no bloquea el render)
   const tech1 = weekObj?.days?.[(day - 1) % 5]?.technical_activity || {};
   if (tech1.title) searchAndRenderResources(tech1.title, planData.moduleId);
 }
@@ -366,7 +355,7 @@ async function markDayComplete(day) {
 
   try {
     const res = await fetch(
-      `${API}/coder/plan/${planData.id}/day/${day}/complete`,
+      `${API_BASE}/coder/plan/${planData.id}/day/${day}/complete`,
       { method: 'POST', credentials: 'include' }
     );
     const data = await res.json();
@@ -411,10 +400,6 @@ function showState(state) {
   el(`state-${state}`).classList.remove('hidden');
 }
 
-/**
- * Muestra el estado sin-plan con un mensaje de error.
- * Usado cuando el plan es fallback (OpenAI 401, timeout, etc.)
- */
 function showNoPlanWithError(reason) {
   showState('no-plan');
   const sub = el('no-plan-sub');
@@ -452,11 +437,13 @@ function syncThemeIcon(theme) {
    UTILS
 ══════════════════════════════════════ */
 function wireLogout() {
-  document.querySelectorAll('.btn-logout')
-    .forEach(btn => btn.addEventListener('click', () => sessionManager.logout()));
+  document
+    .querySelectorAll('.btn-logout')
+    .forEach((btn) =>
+      btn.addEventListener('click', () => sessionManager.logout())
+    );
 }
 
-/* Language toggle — cycles es/en (UI label only for now) */
 const LANGS = ['ES', 'EN'];
 let langIdx = 0;
 function wireLang() {
@@ -503,22 +490,17 @@ function skillLabel(key) {
   );
 }
 
-/* ══════════════════════════════════════
-   URL EXTRACTOR — recursos como botones */
 function extractUrl(text) {
   const match = (text || '').match(/https?:\/\/[^\s"')]+/);
   return match ? match[0] : null;
 }
 
-/* ══════════════════════════════════════
-   EXERCISE MODAL
-══════════════════════════════════════ */
+/* EXERCISE MODAL */
 let monacoEditor = null;
 let currentExercise = null;
 let hintIndex = 0;
 let starterCode = '';
 
-// Monaco CDN loader — se carga una sola vez
 let monacoReady = false;
 function loadMonaco() {
   return new Promise((resolve) => {
@@ -569,7 +551,7 @@ async function openExerciseModal(day) {
     const tech = dayObj?.technical_activity || {};
 
     // Fetch exercise
-    const res = await fetch(`${API}/coder/exercise/generate`, {
+    const res = await fetch(`${API_BASE}/coder/exercise/generate`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -722,7 +704,7 @@ async function submitSolution(exerciseId) {
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
 
   try {
-    const res = await fetch(`${API}/coder/exercise/${exerciseId}/submit`, {
+    const res = await fetch(`${API_BASE}/coder/exercise/${exerciseId}/submit`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -764,9 +746,7 @@ function closeExerciseModal() {
 // Expose for inline fallback button
 window.closeExerciseModal = closeExerciseModal;
 
-/* ══════════════════════════════════════
-   RAG — RECURSOS DEL TL
-══════════════════════════════════════ */
+/* RAG — RECURSOS DEL TL */
 async function searchAndRenderResources(topic, moduleId) {
   const cardsEl = el('resources-cards');
   const emptyEl = el('resources-empty');
@@ -778,7 +758,7 @@ async function searchAndRenderResources(topic, moduleId) {
   loadingEl.classList.remove('hidden');
 
   try {
-    const res = await fetch(`${API}/coder/resources/search`, {
+    const res = await fetch(`${API_BASE}/coder/resources/search`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },

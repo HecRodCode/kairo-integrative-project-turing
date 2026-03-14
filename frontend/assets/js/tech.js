@@ -1,4 +1,4 @@
-const _API = 'http://localhost:3000/api';
+import { API_BASE } from '../src/core/config.js';
 
 /* ── File selection ─────────────────────────────────────────── */
 const fileInput = document.getElementById('upload-file-input');

@@ -5,7 +5,7 @@
 
 import { sessionManager } from './session.js';
 
-const API = 'http://localhost:3000';
+const API = 'https://kairo-integrative-project-turing-production.up.railway.app';
 
 /* ── DOM ────────────────────────────────────────────────────── */
 const inputs = document.querySelectorAll('#otp-inputs .otp-digit');
@@ -191,7 +191,7 @@ verifyBtn.addEventListener('click', async () => {
 
       // ── Redirect: directo al onboarding ─────────────────────
       setTimeout(() => {
-        window.location.href = '/frontend/src/views/coder/onboarding.html';
+        window.location.href = '/kairo-integrative-project-turing/frontend/src/views/coder/onboarding.html';
       }, 800);
     } else {
       attemptsLeft--;

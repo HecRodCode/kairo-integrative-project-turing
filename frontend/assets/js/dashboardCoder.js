@@ -4,8 +4,8 @@
  */
 import { guards, sessionManager } from '../../src/core/auth/session.js';
 import { loadMyAvatar } from '../../src/core/utils/avatarService.js';
+import { API_BASE } from '../../src/core/config.js';
 
-const API = 'http://localhost:3000/api';
 let dashData = null;
 const el = (id) => document.getElementById(id);
 
@@ -42,7 +42,7 @@ const el = (id) => document.getElementById(id);
 ══════════════════════════════════════ */
 async function loadDashboard() {
   try {
-    const res = await fetch(`${API}/coder/dashboard`, {
+    const res = await fetch(`${API_BASE}/coder/dashboard`, {
       credentials: 'include',
     });
     const data = await res.json();
@@ -280,7 +280,7 @@ function renderFeedback(notifications) {
 
 window.markAsRead = async (id) => {
   try {
-    const res = await fetch(`${API}/coder/feedback/${id}/read`, {
+    const res = await fetch(`${API_BASE}/coder/feedback/${id}/read`, {
       method: 'PATCH',
       credentials: 'include',
     });
@@ -312,8 +312,11 @@ function renderStrugglingTopics(progress) {
    INTERACTIONS
 ══════════════════════════════════════ */
 function wireLogout() {
-  document.querySelectorAll('.btn-logout')
-    .forEach(btn => btn.addEventListener('click', () => sessionManager.logout()));
+  document
+    .querySelectorAll('.btn-logout')
+    .forEach((btn) =>
+      btn.addEventListener('click', () => sessionManager.logout())
+    );
 }
 const LANGS = ['ES', 'EN'];
 let langIdx = 0;
