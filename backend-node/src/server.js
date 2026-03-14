@@ -10,6 +10,7 @@ import morgan from 'morgan';
 import passport from './config/passport.js';
 import { pool, testConnection } from './config/database.js';
 import { connectMongo } from './config/mongodb.js';
+import connectPg from 'connect-pg-simple';
 
 import authRoutes from './routes/authRoutes.js';
 import diagnosticRoutes from './routes/diagnosticRoutes.js';
@@ -22,6 +23,7 @@ import profileRoutes from './routes/profileRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const PgSession = connectPg(session);
 const isProduction = process.env.NODE_ENV === 'production';
 
 /* ════════════════════════════════════════
@@ -58,6 +60,11 @@ app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 ════════════════════════════════════════ */
 app.use(
   session({
+    store: new PgSession({
+      conString: process.env.DATABASE_URL,
+      tableName: 'session',
+      createTableIfMissing: true, // crea la tabla automáticamente
+    }),
     name: 'riwi.sid',
     secret: process.env.SESSION_SECRET || 'dev_secret_fallback',
     resave: false,
@@ -107,12 +114,10 @@ app.use((req, res) => res.status(404).json({ error: 'Endpoint not found' }));
 app.use((err, req, res, next) => {
   const status = err.status || 500;
   console.error(`[System Error] ${err.stack}`);
-  res
-    .status(status)
-    .json({
-      error: true,
-      message: isProduction ? 'Internal Server Error' : err.message,
-    });
+  res.status(status).json({
+    error: true,
+    message: isProduction ? 'Internal Server Error' : err.message,
+  });
 });
 
 /* ════════════════════════════════════════
