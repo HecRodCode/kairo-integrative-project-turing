@@ -1,4 +1,4 @@
-const PYTHON_API_URL = 'https://tu-backend-python.up.railway.app';
+const PYTHON_API_URL = 'https://kairo-integrative-project-turing-production-b3f6.up.railway.app';
 
 async function generateReport(coderId) {
     const btn = event.target;
