@@ -191,7 +191,7 @@ verifyBtn.addEventListener('click', async () => {
 
       // ── Redirect: directo al onboarding ─────────────────────
       setTimeout(() => {
-        window.location.href = '/frontend/src/views/coder/onboarding.html';
+        window.location.href = '/kairo-integrative-project-turing/frontend/src/views/coder/onboarding.html';
       }, 800);
     } else {
       attemptsLeft--;
