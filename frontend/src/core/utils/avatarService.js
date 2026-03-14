@@ -14,7 +14,7 @@
  *   await loadCoderAvatar(coder.id, el('detail-avatar')); // al seleccionar coder en TL
  */
 
-const API = 'http://localhost:3000/api';
+const API = 'https://kairo-integrative-project-turing-production.up.railway.app/api';
 
 /* ── Cache en memoria para no re-fetchear en la misma sesión ── */
 const _cache = new Map(); // userId → avatarUrl | null
