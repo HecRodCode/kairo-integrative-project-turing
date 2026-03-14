@@ -41,7 +41,6 @@ async function generateReportClan(clan) {
     try {
         clan = (clan).toLowerCase();
         
-        // ✅ NUEVO ENDPOINT para CLAN
         const response = await fetch(`${PYTHON_API_URL}/api/reports/generar-informe-clan-pdf?clan_name=${clan}`, {
             method: 'POST'
         });

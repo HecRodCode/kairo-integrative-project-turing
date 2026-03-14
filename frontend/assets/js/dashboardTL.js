@@ -8,7 +8,8 @@ import {
   loadCoderAvatar,
 } from '../../src/core/utils/avatarService.js';
 
-const API = 'https://kairo-integrative-project-turing-production.up.railway.app/api';
+const API =
+  'https://kairo-integrative-project-turing-production.up.railway.app/api';
 let dashboardData = null;
 let selectedCoder = null;
 let activeFilter = 'all';
@@ -271,7 +272,7 @@ function renderDetail(c) {
   const profileLinkContainer = el('d-profile-link');
   if (profileLinkContainer) {
     profileLinkContainer.innerHTML = `
-      <a href="/frontend/src/views/coder/profile.html?id=${c.id}" class="btn-profile-view">
+      <a href="../coder/profile.html?id=${c.id}" class="btn-profile-view">
         <i class="fa-solid fa-user-tie"></i> Ver Perfil Profesional
       </a>`;
   }

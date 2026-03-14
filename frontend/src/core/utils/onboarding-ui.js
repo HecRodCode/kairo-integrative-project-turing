@@ -89,9 +89,15 @@ const onboardingController = {
       const isActive = block.blockId === activeBlockId;
       const isCompleted =
         !isActive &&
-        block.questions.every((q) => this.userAnswers.some((a) => a.questionId === q.id));
+        block.questions.every((q) =>
+          this.userAnswers.some((a) => a.questionId === q.id)
+        );
       const label = t(block.title);
-      const cls = ['tab-item', isActive ? 'active' : '', isCompleted ? 'completed' : '']
+      const cls = [
+        'tab-item',
+        isActive ? 'active' : '',
+        isCompleted ? 'completed' : '',
+      ]
         .join(' ')
         .trim();
       return `<div class="${cls}" title="${label}">${isCompleted ? '✓ ' : ''}${label}</div>`;
@@ -120,11 +126,14 @@ const onboardingController = {
 
     q.options.forEach((opt, i) => {
       const btn = document.createElement('button');
-      btn.className = 'option-btn' + (current?.optionId === opt.id ? ' selected' : '');
+      btn.className =
+        'option-btn' + (current?.optionId === opt.id ? ' selected' : '');
       btn.dataset.optionId = opt.id;
       btn.type = 'button';
       btn.innerHTML = `<span class="option-key">${keys[i]}</span><span>${t(opt.text)}</span>`;
-      btn.addEventListener('click', () => this._answer(q.id, opt.id, opt.score));
+      btn.addEventListener('click', () =>
+        this._answer(q.id, opt.id, opt.score)
+      );
       container.appendChild(btn);
     });
   },
@@ -138,7 +147,9 @@ const onboardingController = {
 
     document
       .querySelectorAll('#options-container .option-btn')
-      .forEach((b) => b.classList.toggle('selected', b.dataset.optionId === optionId));
+      .forEach((b) =>
+        b.classList.toggle('selected', b.dataset.optionId === optionId)
+      );
     setTimeout(() => this._advance(), 320);
   },
 
@@ -207,7 +218,14 @@ const onboardingController = {
 
     const previousSelection = this.selectedClan;
 
-    const clans = ['hamilton', 'thompson', 'turing', 'mccarthy', 'ritchie', 'tesla'];
+    const clans = [
+      'hamilton',
+      'thompson',
+      'turing',
+      'mccarthy',
+      'ritchie',
+      'tesla',
+    ];
     const opts = clans
       .map(
         (c) =>
@@ -245,7 +263,9 @@ const onboardingController = {
     document.querySelectorAll('.clan-option').forEach((btn) => {
       if (btn.dataset.clan === this.selectedClan) btn.classList.add('selected');
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.clan-option').forEach((b) => b.classList.remove('selected'));
+        document
+          .querySelectorAll('.clan-option')
+          .forEach((b) => b.classList.remove('selected'));
         btn.classList.add('selected');
         this.selectedClan = btn.dataset.clan;
         document.getElementById('clan-error').style.display = 'none';
@@ -282,7 +302,7 @@ const onboardingController = {
     </div>`;
 
     document.getElementById('btnDash')?.addEventListener('click', () => {
-      window.location.href = '/frontend/src/views/coder/dashboard.html';
+      window.location.href = './dashboard.html';
     });
   },
 
@@ -296,7 +316,8 @@ const onboardingController = {
     const navStep = document.getElementById('navStep');
     if (fill) fill.style.width = '100%';
     if (navPct) navPct.textContent = '100%';
-    if (navStep) navStep.textContent = getLang() === 'en' ? 'Completed' : 'Completado';
+    if (navStep)
+      navStep.textContent = getLang() === 'en' ? 'Completed' : 'Completado';
 
     /* Mark all tabs completed */
     this._renderStepper(null);
@@ -326,7 +347,8 @@ const onboardingController = {
       const diagRes = await authService.saveDiagnostic({
         answers: this.userAnswers,
       });
-      if (!diagRes.ok) console.warn('[Kairo] Diagnostic save failed — non-blocking');
+      if (!diagRes.ok)
+        console.warn('[Kairo] Diagnostic save failed — non-blocking');
     } catch (err) {
       console.error('[Kairo] Finish error:', err);
     }
@@ -339,4 +361,6 @@ const onboardingController = {
 window.onboardingController = onboardingController;
 
 /* ── Boot ── */
-document.addEventListener('DOMContentLoaded', () => onboardingController.init());
+document.addEventListener('DOMContentLoaded', () =>
+  onboardingController.init()
+);

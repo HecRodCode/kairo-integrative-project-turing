@@ -9,14 +9,15 @@ import { notificationsClient } from '../notificationsSSE.js';
 /* ── Absolute paths from web root ──────────────────────────── */
 const PATHS = {
   login: '/kairo-integrative-project-turing/frontend/src/views/auth/login.html',
-  onboarding: '/kairo-integrative-project-turing/frontend/src/views/coder/onboarding.html',
-  coderDashboard: '/kairo-integrative-project-turing/frontend/src/views/coder/dashboard.html',
-  tlDashboard: '/kairo-integrative-project-turing/frontend/src/views/tl/dashboard.html',
+  onboarding:
+    '/kairo-integrative-project-turing/frontend/src/views/coder/onboarding.html',
+  coderDashboard:
+    '/kairo-integrative-project-turing/frontend/src/views/coder/dashboard.html',
+  tlDashboard:
+    '/kairo-integrative-project-turing/frontend/src/views/tl/dashboard.html',
 };
 
-/* ══════════════════════════════════════════════════════════════
-   SESSION MANAGER
-══════════════════════════════════════════════════════════════ */
+/* SESSION MANAGER */
 export const sessionManager = {
   saveUser(user) {
     localStorage.setItem('kairo_user', JSON.stringify(user));
@@ -40,6 +41,8 @@ export const sessionManager = {
     } catch (err) {
       console.error('[Session] Logout failed:', err);
     }
+
+    authService.invalidateAuthCheckCache();
     this.clearUser();
     window.location.href = PATHS.login;
   },
@@ -54,7 +57,9 @@ export const sessionManager = {
     }
 
     // Coder: first_login drives the split
-    window.location.href = user.firstLogin ? PATHS.onboarding : PATHS.coderDashboard;
+    window.location.href = user.firstLogin
+      ? PATHS.onboarding
+      : PATHS.coderDashboard;
   },
 };
 
@@ -78,7 +83,7 @@ export const guards = {
         notificationsClient.connect(data.user.role);
       }
 
-      return data; // shape: { authenticated: true, user: { ...firstLogin... } }
+      return data;
     } catch {
       sessionManager.clearUser();
       window.location.href = PATHS.login;
@@ -90,7 +95,6 @@ export const guards = {
     const session = await this.requireAuth();
     if (!session) return null;
 
-    // BUG WAS HERE: session.firstLogin (undefined) → session.user.firstLogin
     if (!session.user.firstLogin) {
       window.location.href = PATHS.coderDashboard;
       return null;
@@ -103,7 +107,6 @@ export const guards = {
     const session = await this.requireAuth();
     if (!session) return null;
 
-    // BUG WAS HERE: session.firstLogin (undefined) → session.user.firstLogin
     if (session.user.firstLogin) {
       window.location.href = PATHS.onboarding;
       return null;
@@ -113,6 +116,9 @@ export const guards = {
   },
 
   async requireGuest() {
+    const cached = sessionManager.getUser();
+    if (!cached) return;
+
     try {
       const res = await authService.checkAuth();
       const data = await res.json();
@@ -122,8 +128,8 @@ export const guards = {
         sessionManager.redirectByRole(data.user);
       }
       // Not authenticated → stay on login/register, no action needed
-    } catch {
-      // Network error or not logged in — stay on page
+    } catch (err) {
+      console.warn('[requireGuest] checkAuth failed:', err?.message || err);
     }
   },
 };

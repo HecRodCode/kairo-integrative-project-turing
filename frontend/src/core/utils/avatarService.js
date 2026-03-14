@@ -1,17 +1,6 @@
 /**
  * src/core/utils/avatarService.js
  * Servicio compartido de avatares — Kairo
- *
- * Carga el avatar del usuario logueado desde /api/profile
- * y lo inyecta en cualquier elemento .topbar-avatar de la página.
- *
- * También expone loadCoderAvatar(userId, containerEl) para que el
- * dashboard TL muestre la foto del coder seleccionado.
- *
- * USO:
- *   import { loadMyAvatar, loadCoderAvatar } from '../../src/core/utils/avatarService.js';
- *   await loadMyAvatar();                          // en init() de cualquier dashboard
- *   await loadCoderAvatar(coder.id, el('detail-avatar')); // al seleccionar coder en TL
  */
 
 const API = 'https://kairo-integrative-project-turing-production.up.railway.app/api';
@@ -42,13 +31,8 @@ function renderAvatarInto(container, avatarUrl, fullName = '') {
   }
 }
 
-/**
- * Carga y muestra el avatar del usuario logueado en TODOS los
- * elementos .topbar-avatar que haya en el DOM.
- */
 export async function loadMyAvatar() {
   try {
-    // Intenta desde cache primero
     if (_cache.has('me')) {
       _applyMyAvatar(_cache.get('me').avatarUrl, _cache.get('me').fullName);
       return;
@@ -78,20 +62,12 @@ function _applyMyAvatar(avatarUrl, fullName) {
   });
 }
 
-/**
- * Carga y muestra el avatar de un coder específico.
- * @param {number} userId       - ID del coder
- * @param {HTMLElement} container - Elemento donde renderizar
- * @param {string} [fallbackName] - Nombre para la inicial si no hay foto
- */
 export async function loadCoderAvatar(userId, container, fallbackName = '') {
   if (!container) return;
 
-  // Muestra inicial inmediatamente mientras carga
   renderAvatarInto(container, null, fallbackName);
 
   try {
-    // Usa cache si ya se cargó antes
     if (_cache.has(userId)) {
       const { avatarUrl, fullName } = _cache.get(userId);
       renderAvatarInto(container, avatarUrl, fullName || fallbackName);
@@ -117,10 +93,6 @@ export async function loadCoderAvatar(userId, container, fallbackName = '') {
   }
 }
 
-/**
- * Invalida el cache del usuario logueado.
- * Llamar después de guardar un nuevo avatar.
- */
 export function invalidateMyAvatar() {
   _cache.delete('me');
 }

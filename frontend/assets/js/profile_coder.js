@@ -1,10 +1,10 @@
 /**
  * assets/js/profile_coder.js
  */
-import { guards } from '/frontend/src/core/auth/session.js';
-import { invalidateMyAvatar } from '/frontend/src/core/utils/avatarService.js';
+import { guards } from '../../src/core/auth/session.js';
+import { invalidateMyAvatar } from '../../src/core/utils/avatarService.js';
+import { profileService } from '../../src/core/services/profileService.js';
 
-const API = 'https://kairo-integrative-project-turing-production.up.railway.app/api';
 let profileData = null;
 let isEditMode = false;
 let isReadOnly = false;
@@ -114,7 +114,6 @@ function showStatSkeletons() {
     return;
   }
 
-  // Detectar modo: ¿TL viendo un coder por ?id=
   const urlParams = new URLSearchParams(window.location.search);
   const profileId = urlParams.get('id');
   isReadOnly = !!profileId && profileId !== String(session.user.id);
@@ -124,15 +123,13 @@ function showStatSkeletons() {
   wireEvents();
 })();
 
-/* ══════════════════════════════════════
-   LOAD
-══════════════════════════════════════ */
+/* LOAD */
 async function loadProfile(profileId = null) {
   try {
-    const endpoint = profileId
-      ? `${API}/profile/${profileId}`
-      : `${API}/profile`;
-    const res = await fetch(endpoint, { credentials: 'include' });
+    const res = profileId
+      ? await profileService.getProfileById(profileId)
+      : await profileService.getMyProfile();
+
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
     profileData = data;
@@ -145,19 +142,26 @@ async function loadProfile(profileId = null) {
   }
 }
 
-/* ══════════════════════════════════════
-   RENDER
-══════════════════════════════════════ */
+/* RENDER */
 function renderProfile(d) {
-  // ── Modo solo lectura (TL viendo coder) ──────────────────────
   const topbarTitle = document.querySelector('.topbar-title');
   const backBtn = document.querySelector('.back-btn');
+
+  const currentDir = window.location.pathname
+    .replace(/\/$/, '')
+    .split('/')
+    .slice(0, -1)
+    .join('/');
+  const toDashboard = (role) =>
+    role === 'tl'
+      ? `${currentDir}/../tl/dashboard.html`
+      : `${currentDir}/dashboard.html`;
 
   if (isReadOnly) {
     document.title = `Kairo | Perfil de ${d.fullName || 'Coder'}`;
     if (topbarTitle)
       topbarTitle.textContent = `Perfil de ${d.fullName || 'Coder'}`;
-    if (backBtn) backBtn.href = '/frontend/src/views/tl/dashboard.html';
+    if (backBtn) backBtn.href = toDashboard('tl');
     el('btnEditProfile')?.classList.add('hidden');
     el('btnSaveProfile')?.classList.add('hidden');
     el('btnPreviewCV')?.classList.add('hidden');
@@ -167,7 +171,7 @@ function renderProfile(d) {
   } else {
     document.title = 'Kairo | Mi Perfil';
     if (topbarTitle) topbarTitle.textContent = 'Mi Perfil';
-    if (backBtn) backBtn.href = '/frontend/src/views/coder/dashboard.html';
+    if (backBtn) backBtn.href = toDashboard('coder');
   }
 
   el('fullName').textContent = d.fullName || '--';
@@ -246,12 +250,9 @@ function renderSkills(skills) {
   }
 }
 
-/* ══════════════════════════════════════
-   EVENTS
-══════════════════════════════════════ */
+/* EVENTS */
 function wireEvents() {
   if (isReadOnly) {
-    // En modo solo lectura solo permitir ver el CV del coder
     el('btnPreviewCV')?.addEventListener('click', openCVModal);
     el('btnCloseModal')?.addEventListener('click', () =>
       el('cvModal').classList.remove('active')
@@ -262,7 +263,6 @@ function wireEvents() {
     return;
   }
 
-  // Modo editable (coder propio)
   el('btnEditProfile').addEventListener('click', toggleEditMode);
   el('btnSaveProfile').addEventListener('click', saveProfile);
   el('btnAddSkill').addEventListener('click', addSkill);
@@ -282,9 +282,7 @@ function wireEvents() {
   });
 }
 
-/* ══════════════════════════════════════
-   EDIT MODE
-══════════════════════════════════════ */
+/* EDIT MODE */
 function toggleEditMode() {
   isEditMode = !isEditMode;
   document.body.classList.toggle('editing', isEditMode);
@@ -309,9 +307,7 @@ function toggleEditMode() {
   renderSkills(profileData?.metadata?.skills || []);
 }
 
-/* ══════════════════════════════════════
-   SAVE
-══════════════════════════════════════ */
+/* SAVE */
 async function saveProfile() {
   if (!profileData) return;
 
@@ -337,12 +333,7 @@ async function saveProfile() {
   };
 
   try {
-    const res = await fetch(`${API}/profile/update`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      credentials: 'include',
-    });
+    const res = await profileService.updateProfile(payload);
     const data = await res.json();
     if (!res.ok)
       throw new Error(
@@ -367,9 +358,7 @@ async function saveProfile() {
   }
 }
 
-/* ══════════════════════════════════════
-   SKILLS
-══════════════════════════════════════ */
+/* SKILLS */
 function addSkill() {
   const input = el('newSkillInput');
   const val = input.value.trim();
@@ -382,9 +371,7 @@ function addSkill() {
   input.focus();
 }
 
-/* ══════════════════════════════════════
-   AVATAR — auto-save a MongoDB
-══════════════════════════════════════ */
+/* AVATAR — auto-save a MongoDB */
 function handleAvatarChange(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -397,13 +384,8 @@ function handleAvatarChange(e) {
     profileData.metadata.avatarUrl = base64;
 
     try {
-      await fetch(`${API}/profile/update`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ metadata: { avatarUrl: base64 } }),
-        credentials: 'include',
-      });
-      invalidateMyAvatar(); // limpia cache para que el topbar recargue la foto
+      await profileService.updateProfile({ metadata: { avatarUrl: base64 } });
+      invalidateMyAvatar();
       toast('Foto de perfil actualizada', 'success');
     } catch {
       toast('Foto guardada localmente', 'info');
@@ -412,9 +394,7 @@ function handleAvatarChange(e) {
   reader.readAsDataURL(file);
 }
 
-/* ══════════════════════════════════════
-   CV MODAL
-══════════════════════════════════════ */
+/* CV MODAL */
 function openCVModal() {
   const d = profileData;
   if (!d) return;
@@ -486,9 +466,7 @@ async function generatePDF() {
   });
 }
 
-/* ══════════════════════════════════════
-   UTILS
-══════════════════════════════════════ */
+/* UTILS */
 function setDate() {
   const d = el('currentDate');
   if (d)

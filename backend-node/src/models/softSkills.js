@@ -1,18 +1,9 @@
 /**
  * models/softSkills.js
- * Soft Skills Persistence Layer.
- *
- * FIX: create() now accepts and persists rawAnswers → raw_answers column.
- *      Without this, the full onboarding answers array sent by the frontend
- *      was silently dropped and never stored in the DB.
  */
 
 import { query } from '../config/database.js';
 
-/**
- * Upserts a soft skills assessment.
- * If the coder already has one, all fields are updated (re-take scenario).
- */
 export async function create({
   coderId,
   autonomy,

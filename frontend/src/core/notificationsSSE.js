@@ -1,11 +1,5 @@
 /**
  * src/core/notificationsSSE.js
- * Singleton SSE Client — Kairo real-time notification hub.
- *
- * FIXES:
- * - onerror: para de reintentar si nunca conectó (404/auth) → evita loop infinito
- * - onerror: backoff exponencial 5s→10s→20s→máx 60s en lugar de fijo 5s
- * - onopen movido antes de onmessage para que _everConnected se setee correctamente
  */
 
 const API_BASE = 'https://kairo-integrative-project-turing-production.up.railway.app/api';
@@ -14,8 +8,8 @@ class NotificationService {
   constructor() {
     this.eventSource = null;
     this.isConnected = false;
-    this._everConnected = false; // true solo si onopen disparó al menos una vez
-    this._retryDelay = 5000; // backoff inicial 5s
+    this._everConnected = false;
+    this._retryDelay = 5000;
     this.userRole = null;
     this.toastTimer = null;
     this._pendingToast = null;
@@ -29,12 +23,11 @@ class NotificationService {
       withCredentials: true,
     });
 
-    // onopen PRIMERO — para detectar si el stream nunca llegó a abrir
     this.eventSource.onopen = () => {
       console.log('[SSE] Connected to Kairo Realtime Notifications.');
       this.isConnected = true;
       this._everConnected = true;
-      this._retryDelay = 5000; // reset backoff al reconectar con éxito
+      this._retryDelay = 5000;
     };
 
     this.eventSource.onmessage = (event) => {
@@ -57,7 +50,6 @@ class NotificationService {
       this.isConnected = false;
       this.eventSource.close();
 
-      // Si nunca llegó a conectar (404, 401, servidor caído) → no reintentar en loop
       if (!this._everConnected) {
         console.warn(
           '[SSE] Stream no disponible — notificaciones en tiempo real deshabilitadas.'
@@ -65,7 +57,6 @@ class NotificationService {
         return;
       }
 
-      // Backoff exponencial: 5s → 10s → 20s → 40s → máx 60s
       this._retryDelay = Math.min(this._retryDelay * 2, 60000);
       console.warn(`[SSE] Reconectando en ${this._retryDelay / 1000}s...`);
       setTimeout(() => this.connect(userRole), this._retryDelay);
@@ -87,10 +78,7 @@ class NotificationService {
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
   //  DOM WIRING
-  // ─────────────────────────────────────────────────────────────
-
   _wireToast() {
     if (document.getElementById('toast')) return;
     const cls =
@@ -210,10 +198,7 @@ class NotificationService {
     });
   }
 
-  // ─────────────────────────────────────────────────────────────
   //  LIVE SSE HANDLERS
-  // ─────────────────────────────────────────────────────────────
-
   injectToDropdown(notif) {
     const list = document.getElementById('notif-list');
     if (!list) return;

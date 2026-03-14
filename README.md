@@ -86,6 +86,10 @@ You must create specific environment files in the root of their respective
 directories. **Note:** These files contain sensitive keys and should never be
 committed to version control.
 
+> ⚠️ **Production tip:** `FRONTEND_URL` must match exactly the origin where the
+> frontend is hosted (e.g. GitHub Pages, Vercel, Railway custom domain). If it
+> doesn’t match, the backend will block requests due to CORS.
+
 #### 📁 `backend-node/.env`
 
 Controls database connectivity, authentication, and frontend permissions.
@@ -112,6 +116,7 @@ SUPABASE_URL=your_supabase_url
 SUPABASE_ANON_KEY=your_anon_key
 
 # FRONTEND CONNECTION
+# In production this should be the full origin (e.g. https://hecrodcode.github.io)
 FRONTEND_URL=http://127.0.0.1:5500/frontend
 
 # PYTHON CONNECTION

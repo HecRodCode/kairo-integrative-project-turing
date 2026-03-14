@@ -1,4 +1,4 @@
-import { guards, sessionManager } from '/frontend/src/core/auth/session.js';
+import { guards, sessionManager } from '../../src/core/auth/session.js';
 
 const API = 'https://kairo-integrative-project-turing-production.up.railway.app/api';
 const GROUP_SIZE = 4;

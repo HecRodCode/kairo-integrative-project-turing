@@ -8,9 +8,9 @@
  * - Spinner de carga
  * - Tema usa theme.js global (no duplicar lógica)
  */
-import { guards } from '/frontend/src/core/auth/session.js';
+import { guards } from '../../src/core/auth/session.js';
+import { profileService } from '../../src/core/services/profileService.js';
 
-const API = 'https://kairo-integrative-project-turing-production.up.railway.app/api';
 let profileData = null;
 let isEditMode = false;
 
@@ -128,7 +128,7 @@ function hidePageSpinner() {
 ══════════════════════════════════════ */
 async function loadProfile() {
   try {
-    const res = await fetch(`${API}/profile`, { credentials: 'include' });
+    const res = await profileService.getMyProfile();
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
     profileData = data;
@@ -271,12 +271,7 @@ async function saveProfile() {
   };
 
   try {
-    const res = await fetch(`${API}/profile/update`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      credentials: 'include',
-    });
+    const res = await profileService.updateProfile(payload);
     const data = await res.json();
 
     if (!res.ok) {
@@ -337,12 +332,7 @@ function handleAvatarChange(e) {
     profileData.metadata.avatarUrl = base64;
 
     try {
-      await fetch(`${API}/profile/update`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ metadata: { avatarUrl: base64 } }),
-        credentials: 'include',
-      });
+      await profileService.updateProfile({ metadata: { avatarUrl: base64 } });
       toast('Foto de perfil actualizada', 'success');
     } catch {
       toast('Foto guardada localmente, sincroniza al guardar', 'info');
