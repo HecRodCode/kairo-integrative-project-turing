@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import { supabase } from '../config/supabase.js';
-import { generateOtpCode, sendOtpEmail } from '../services/emailService.js';
+import { generateOtpCode, sendOtpEmail } from '../services/email.service.js';
 
 const OTP_EXPIRY = 15 * 60 * 1000;
 const MAX_ATTEMPTS = 5;
