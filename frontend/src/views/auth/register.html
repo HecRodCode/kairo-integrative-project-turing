@@ -41,30 +41,50 @@
           </a>
 
           <a href="#" data-provider="github" class="btn-social github">
-            <img src="https://www.svgrepo.com/show/512317/github-142.svg" alt="GitHub" width="20" />
+            <img
+              src="https://www.svgrepo.com/show/512317/github-142.svg"
+              alt="GitHub"
+              width="20"
+            />
             <span data-i18n="auth.github">Registrarse con GitHub</span>
           </a>
         </div>
 
         <div class="separator">
-          <span data-i18n="auth.or_mail">O REGÍSTRATE CON TU CORREO ELECTRÓNICO</span>
+          <span data-i18n="auth.or_mail"
+            >O REGÍSTRATE CON TU CORREO ELECTRÓNICO</span
+          >
         </div>
 
         <form class="form-1" id="register-form">
           <div class="inputs">
-            <label for="name" data-i18n="auth.label_name">Nombre Completo</label>
+            <label for="name" data-i18n="auth.label_name"
+              >Nombre Completo</label
+            >
             <input type="text" id="name" required placeholder="John Doe" />
           </div>
 
           <div class="inputs">
             <label for="email" data-i18n="auth.label_mail">Gmail</label>
-            <input type="email" id="email" required placeholder="example@riwi.io" />
+            <input
+              type="email"
+              id="email"
+              required
+              placeholder="example@riwi.io"
+            />
           </div>
 
           <div class="inputs">
-            <label for="clan-select" data-i18n="auth.label_clan">Selecciona tu Clan</label>
+            <label for="clan-select" data-i18n="auth.label_clan"
+              >Selecciona tu Clan</label
+            >
             <select id="clan-select" required class="custom-select">
-              <option value="" disabled selected data-i18n="auth.clan_placeholder">
+              <option
+                value=""
+                disabled
+                selected
+                data-i18n="auth.clan_placeholder"
+              >
                 Escoger clan...
               </option>
               <option value="hamilton">Hamilton</option>
@@ -79,10 +99,22 @@
           <!-- Password and Confirm -->
           <div class="password-row">
             <div class="inputs">
-              <label for="password" data-i18n="auth.label_pass">Contraseña</label>
+              <label for="password" data-i18n="auth.label_pass"
+                >Contraseña</label
+              >
               <div class="password-wrapper">
-                <input type="password" id="password" required placeholder="••••••••" />
-                <button type="button" class="toggle-password" data-target="password" tabindex="-1">
+                <input
+                  type="password"
+                  id="password"
+                  required
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  class="toggle-password"
+                  data-target="password"
+                  tabindex="-1"
+                >
                   <svg
                     class="eye-open"
                     xmlns="http://www.w3.org/2000/svg"
@@ -120,9 +152,16 @@
             </div>
 
             <div class="inputs">
-              <label for="confirm-password" data-i18n="auth.label_confirm">Confirmar</label>
+              <label for="confirm-password" data-i18n="auth.label_confirm"
+                >Confirmar</label
+              >
               <div class="password-wrapper">
-                <input type="password" id="confirm-password" required placeholder="••••••••" />
+                <input
+                  type="password"
+                  id="confirm-password"
+                  required
+                  placeholder="••••••••"
+                />
                 <button
                   type="button"
                   class="toggle-password"
@@ -171,20 +210,30 @@
 
           <input type="hidden" id="role-select" value="coder" />
 
-          <button type="submit" class="btn-auth btn-submit" data-i18n="auth.btn_reg">
+          <button
+            type="submit"
+            class="btn-auth btn-submit"
+            data-i18n="auth.btn_reg"
+          >
             Registrarse
           </button>
 
           <p class="link">
             <span data-i18n="auth.has_acc">¿Ya tienes una cuenta?</span>
-            <a href="./login.html" data-i18n="auth.link_login">Iniciar Sesión</a>
+            <a href="./login.html" data-i18n="auth.link_login"
+              >Iniciar Sesión</a
+            >
           </p>
         </form>
       </section>
     </main>
 
     <div class="theme-switch-wrapper">
-      <button id="language-toggle" class="theme-btn me-2" title="Change Language">
+      <button
+        id="language-toggle"
+        class="theme-btn me-2"
+        title="Change Language"
+      >
         <svg
           id="lang-icon"
           class="theme-icon"

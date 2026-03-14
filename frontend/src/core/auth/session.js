@@ -44,7 +44,9 @@ export const sessionManager = {
 
     authService.invalidateAuthCheckCache();
     this.clearUser();
-    window.location.href = PATHS.login;
+
+    // Replace history entry so Back button does not return to protected pages
+    window.location.replace(PATHS.login);
   },
 
   redirectByRole(user) {
@@ -65,6 +67,13 @@ export const sessionManager = {
 
 export const guards = {
   async requireAuth() {
+    const cached = sessionManager.getUser();
+    if (!cached) {
+      // If there is no cached user (e.g. after logout), avoid calling the server.
+      window.location.href = PATHS.login;
+      return null;
+    }
+
     try {
       const res = await authService.checkAuth();
       const data = await res.json();

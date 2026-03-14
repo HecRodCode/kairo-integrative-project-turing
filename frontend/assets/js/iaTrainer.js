@@ -69,7 +69,9 @@ const el = (id) => document.getElementById(id);
 ══════════════════════════════════════ */
 async function checkPlan() {
   try {
-    const res = await fetch(`${API_BASE}/coder/plan`, { credentials: 'include' });
+    const res = await fetch(`${API_BASE}/coder/plan`, {
+      credentials: 'include',
+    });
     const data = await res.json();
 
     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
@@ -118,7 +120,9 @@ function startPolling() {
     }
 
     try {
-      const res = await fetch(`${API_BASE}/coder/plan`, { credentials: 'include' });
+      const res = await fetch(`${API_BASE}/coder/plan`, {
+        credentials: 'include',
+      });
       const data = await res.json();
 
       if (!data.hasPlan) return;
@@ -433,8 +437,11 @@ function syncThemeIcon(theme) {
    UTILS
 ══════════════════════════════════════ */
 function wireLogout() {
-  document.querySelectorAll('.btn-logout')
-    .forEach(btn => btn.addEventListener('click', () => sessionManager.logout()));
+  document
+    .querySelectorAll('.btn-logout')
+    .forEach((btn) =>
+      btn.addEventListener('click', () => sessionManager.logout())
+    );
 }
 
 const LANGS = ['ES', 'EN'];

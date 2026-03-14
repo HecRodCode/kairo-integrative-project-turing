@@ -38,7 +38,7 @@ let _toastTimer = null;
   }
 
   // Wire UI before any fetches — buttons must work even if backend is slow
-  
+
   wireLogout();
   setDate();
   wireAddModal();
@@ -68,7 +68,8 @@ async function loadAll() {
       const clan = d.tl?.clanId || d.tl?.clan_id || d.tl?.clan || '';
       if (clan) {
         el('clan-heading').textContent = String(clan).toUpperCase();
-        el('scope-clan-label').textContent = `Coders del clan ${String(clan).toUpperCase()}`;
+        el('scope-clan-label').textContent =
+          `Coders del clan ${String(clan).toUpperCase()}`;
       }
     }
   } catch {
@@ -269,9 +270,9 @@ async function deleteAssignment(id) {
   const confirmed = await confirmAction({
     title: '¿Eliminar actividad?',
     text: 'Esta acción notificará a todos los coders que la actividad ya no está disponible.',
-    type: 'danger'
+    type: 'danger',
   });
-  
+
   if (!confirmed) return;
 
   try {
@@ -292,7 +293,7 @@ async function deleteResource(id) {
   const confirmed = await confirmAction({
     title: '¿Eliminar recurso?',
     text: 'Los coders ya no podrán utilizar este material de estudio en sus planes.',
-    type: 'danger'
+    type: 'danger',
   });
 
   if (!confirmed) return;
@@ -665,8 +666,11 @@ function setDate() {
 }
 
 function wireLogout() {
-  document.querySelectorAll('.btn-logout')
-    .forEach(btn => btn.addEventListener('click', () => sessionManager.logout()));
+  document
+    .querySelectorAll('.btn-logout')
+    .forEach((btn) =>
+      btn.addEventListener('click', () => sessionManager.logout())
+    );
 }
 /* ── Custom Confirm Modal ── */
 function confirmAction({ title, text, type = 'info' }) {
@@ -674,19 +678,20 @@ function confirmAction({ title, text, type = 'info' }) {
     const modal = el('confirm-modal');
     el('confirm-title').textContent = title;
     el('confirm-text').textContent = text;
-    
+
     const icon = el('confirm-icon');
     icon.className = `confirm-icon ${type}`;
-    icon.innerHTML = type === 'danger' 
-      ? '<i class="fa-solid fa-trash-can"></i>' 
-      : '<i class="fa-solid fa-circle-exclamation"></i>';
+    icon.innerHTML =
+      type === 'danger'
+        ? '<i class="fa-solid fa-trash-can"></i>'
+        : '<i class="fa-solid fa-circle-exclamation"></i>';
 
     const onCancel = () => {
       modal.classList.add('hidden');
       cleanup();
       resolve(false);
     };
-    
+
     const onConfirm = () => {
       modal.classList.add('hidden');
       cleanup();
@@ -701,7 +706,7 @@ function confirmAction({ title, text, type = 'info' }) {
 
     el('btn-confirm-cancel').addEventListener('click', onCancel);
     el('btn-confirm-ok').addEventListener('click', onConfirm);
-    
+
     modal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
   });

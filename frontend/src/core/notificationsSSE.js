@@ -19,6 +19,10 @@ class NotificationService {
     if (this.isConnected) return;
     this.userRole = userRole;
 
+    // Only open an SSE connection when the page actually has notification UI.
+    // This avoids connecting on pages that don't render the bell/dropdown.
+    if (!document.getElementById('btn-notif')) return;
+
     this.eventSource = new EventSource(`${API_BASE}/notifications/stream`, {
       withCredentials: true,
     });

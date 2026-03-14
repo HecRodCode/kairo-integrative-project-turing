@@ -29,11 +29,11 @@ async function start() {
     return;
   }
 
-document.querySelectorAll('.btn-logout').forEach(btn => {
-  btn.addEventListener('click', function () {
-    sessionManager.logout();
+  document.querySelectorAll('.btn-logout').forEach((btn) => {
+    btn.addEventListener('click', function () {
+      sessionManager.logout();
+    });
   });
-});
 
   await loadCoders();
   renderCoderList();
@@ -42,7 +42,9 @@ document.querySelectorAll('.btn-logout').forEach(btn => {
 
 async function loadCoders() {
   try {
-    const res = await fetch(`${API_BASE}/tl/dashboard`, { credentials: 'include' });
+    const res = await fetch(`${API_BASE}/tl/dashboard`, {
+      credentials: 'include',
+    });
     const data = await res.json();
 
     if (!res.ok) {
@@ -78,12 +80,22 @@ function renderCoderList() {
       const selected = manualAssignments[c.id] || '';
 
       selectHtml =
-        '<select class="manual-select" data-id="' + c.id + '">' +
+        '<select class="manual-select" data-id="' +
+        c.id +
+        '">' +
         '<option value="">Sin grupo</option>' +
-        '<option value="A"' + (selected === 'A' ? ' selected' : '') + '>Grupo A</option>' +
-        '<option value="B"' + (selected === 'B' ? ' selected' : '') + '>Grupo B</option>' +
-        '<option value="C"' + (selected === 'C' ? ' selected' : '') + '>Grupo C</option>' +
-        '<option value="D"' + (selected === 'D' ? ' selected' : '') + '>Grupo D</option>' +
+        '<option value="A"' +
+        (selected === 'A' ? ' selected' : '') +
+        '>Grupo A</option>' +
+        '<option value="B"' +
+        (selected === 'B' ? ' selected' : '') +
+        '>Grupo B</option>' +
+        '<option value="C"' +
+        (selected === 'C' ? ' selected' : '') +
+        '>Grupo C</option>' +
+        '<option value="D"' +
+        (selected === 'D' ? ' selected' : '') +
+        '>Grupo D</option>' +
         '</select>';
     }
 
@@ -91,12 +103,20 @@ function renderCoderList() {
     div.className = 'coder-card';
     div.innerHTML =
       '<div>' +
-      '<h4>' + name + '</h4>' +
-      '<p class="muted">' + email + '</p>' +
+      '<h4>' +
+      name +
+      '</h4>' +
+      '<p class="muted">' +
+      email +
+      '</p>' +
       '</div>' +
       '<div class="coder-meta">' +
-      '<span>Semana: <strong>' + week + '</strong></span>' +
-      '<span>Score: <strong>' + score + '</strong></span>' +
+      '<span>Semana: <strong>' +
+      week +
+      '</strong></span>' +
+      '<span>Score: <strong>' +
+      score +
+      '</strong></span>' +
       '</div>' +
       selectHtml;
 
@@ -140,8 +160,12 @@ function renderGroups(groups) {
     const div = document.createElement('div');
     div.className = 'group-card';
     div.innerHTML =
-      '<div class="group-title">' + g.title + '</div>' +
-      '<ul class="group-list">' + members + '</ul>';
+      '<div class="group-title">' +
+      g.title +
+      '</div>' +
+      '<ul class="group-list">' +
+      members +
+      '</ul>';
 
     groupsContainer.appendChild(div);
   }

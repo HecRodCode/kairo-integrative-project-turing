@@ -49,7 +49,9 @@ const el = (id) => document.getElementById(id);
 async function loadDashboard() {
   hideBanner();
   try {
-    const res = await fetch(`${API_BASE}/tl/dashboard`, { credentials: 'include' });
+    const res = await fetch(`${API_BASE}/tl/dashboard`, {
+      credentials: 'include',
+    });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
     dashboardData = data;

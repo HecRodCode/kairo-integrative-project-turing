@@ -312,8 +312,11 @@ function renderStrugglingTopics(progress) {
    INTERACTIONS
 ══════════════════════════════════════ */
 function wireLogout() {
-  document.querySelectorAll('.btn-logout')
-    .forEach(btn => btn.addEventListener('click', () => sessionManager.logout()));
+  document
+    .querySelectorAll('.btn-logout')
+    .forEach((btn) =>
+      btn.addEventListener('click', () => sessionManager.logout())
+    );
 }
 const LANGS = ['ES', 'EN'];
 let langIdx = 0;
