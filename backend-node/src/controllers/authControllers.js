@@ -28,44 +28,55 @@ async function createOtpRecord(email, code) {
 /* REGISTER */
 export const register = async (req, res) => {
   const { email, password, fullName, role, clanId } = req.body;
-
+  
   try {
     const { data: existingUser } = await supabase
-      .from('users')
-      .select('id')
-      .eq('email', email)
-      .single();
-
+      .from('users').select('id').eq('email', email).single();
+    
     if (existingUser) {
       return res.status(409).json({ error: 'Correo ya registrado' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
+    const { data: newUser, error: userError } = await supabase
+      .from('users')
+      .insert({ 
+        email, 
+        password: hashedPassword, 
+        full_name: fullName, 
+        role: role || 'coder', 
+        clan: clanId,
+        otp_verified: false,
+        first_login: true 
+      })
+      .select()
+      .single();
+    
+    if (userError) throw userError;
+
     const code = generateOtpCode();
-
     await createOtpRecord(email, code);
-
+    
     req.session.pendingRegistration = {
-      email,
-      password: hashedPassword,
-      fullName,
-      role: role || 'coder',
-      clan: clanId,
+      email, password: hashedPassword, fullName,
+      role: role || 'coder', clan: clanId,
       otp: { code, expiresAt: Date.now() + OTP_EXPIRY, attempts: 0 },
+      userId: newUser.id
     };
 
     await sendOtpEmail(email, code, fullName);
-
-    res.status(201).json({
-      message: 'Código enviado ✓',
+    
+    res.status(201).json({ 
+      message: 'Código enviado ✓', 
       email,
-      ttl: OTP_EXPIRY / 1000,
+      ttl: OTP_EXPIRY / 1000 
     });
   } catch (error) {
     console.error('[register]', error);
     res.status(500).json({ error: 'Error en registro' });
   }
 };
+
 
 /* VERIFY OTP - DB autoridad + Session sync */
 export const verifyOtp = async (req, res) => {

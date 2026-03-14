@@ -138,8 +138,6 @@ async function handleLogin(e) {
       sessionManager.saveUser(data.user);
       setTimeout(() => sessionManager.redirectByRole(data.user), 1500);
     } else if (res.status === 403 && data.requiresOtp) {
-      // ── BUG FIX 2: user exists but hasn't verified OTP ──────
-      // Backend blocks login and tells us to go verify
       ui.showMessage('auth.alerts.verify_email_first', 'error');
 
       // Save email so otp-ui.js can find it
@@ -204,8 +202,6 @@ async function handleRegister(e) {
         clan: clan.toUpperCase(),
       });
 
-      // ── BUG FIX 1: save to sessionStorage, NOT query param ──
-      // otp-ui.js reads from sessionStorage — this is the bridge
       sessionStorage.setItem('kairo_pending_email', userData.email);
 
       setTimeout(() => {
