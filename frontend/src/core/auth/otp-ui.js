@@ -5,7 +5,7 @@
 
 import { sessionManager } from './session.js';
 
-const API = 'http://localhost:3000';
+const API = 'https://tu-backend-node.up.railway.app';
 
 /* ── DOM ────────────────────────────────────────────────────── */
 const inputs = document.querySelectorAll('#otp-inputs .otp-digit');
