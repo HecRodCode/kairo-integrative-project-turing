@@ -8,10 +8,10 @@ import { notificationsClient } from '../notificationsSSE.js';
 
 /* ── Absolute paths from web root ──────────────────────────── */
 const PATHS = {
-  login: '/frontend/src/views/auth/login.html',
-  onboarding: '/frontend/src/views/coder/onboarding.html',
-  coderDashboard: '/frontend/src/views/coder/dashboard.html',
-  tlDashboard: '/frontend/src/views/tl/dashboard.html',
+  login: '/kairo-integrative-project-turing/frontend/src/views/auth/login.html',
+  onboarding: '/kairo-integrative-project-turing/frontend/src/views/coder/onboarding.html',
+  coderDashboard: '/kairo-integrative-project-turing/frontend/src/views/coder/dashboard.html',
+  tlDashboard: '/kairo-integrative-project-turing/frontend/src/views/tl/dashboard.html',
 };
 
 /* ══════════════════════════════════════════════════════════════
