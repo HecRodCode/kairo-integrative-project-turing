@@ -49,13 +49,11 @@ export const register = async (req, res) => {
     await createOtpRecord(email, code);
     await sendOtpEmail(email, code, fullName);
 
-    res
-      .status(201)
-      .json({
-        message: 'Verification code sent.',
-        email,
-        ttl: OTP_EXPIRY_MS / 1000,
-      });
+    res.status(201).json({
+      message: 'Verification code sent.',
+      email,
+      ttl: OTP_EXPIRY_MS / 1000,
+    });
   } catch (error) {
     console.error('[Register Error]:', error);
     res.status(500).json({ error: 'Registration process failed.' });
@@ -134,13 +132,11 @@ export const resendOtp = async (req, res) => {
     await createOtpRecord(email, newCode);
     await sendOtpEmail(email, newCode, user.full_name);
 
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: 'A new verification code has been sent.',
-        ttl: OTP_EXPIRY_MS / 1000,
-      });
+    res.status(200).json({
+      success: true,
+      message: 'A new verification code has been sent.',
+      ttl: OTP_EXPIRY_MS / 1000,
+    });
   } catch (error) {
     console.error('[ResendOtp Error]:', error.message);
     res.status(500).json({ error: 'Failed to resend code.' });
@@ -239,7 +235,7 @@ export const logout = (req, res) => {
 export const socialAuthSuccess = async (req, res) => {
   if (!req.user) {
     return res.redirect(
-      `${process.env.FRONTEND_URL}/login.html?error=auth_failed`
+      `${process.env.FRONTEND_URL}${process.env.FRONTEND_VIEWS_PATH || ''}/auth/login.html?error=auth_failed`
     );
   }
 
@@ -256,14 +252,16 @@ export const socialAuthSuccess = async (req, res) => {
     ]);
 
     const base = process.env.FRONTEND_URL;
+    const views = process.env.FRONTEND_VIEWS_PATH || '/frontend/src/views';
     const dest = req.user.first_login
-      ? `${base}/onboarding.html`
-      : `${base}/dashboard.html`;
+      ? `${base}${views}/coder/onboarding.html`
+      : `${base}${views}/coder/dashboard.html`;
+
     return res.redirect(dest);
   } catch (err) {
     console.error('[SocialAuthSuccess Error]:', err);
     return res.redirect(
-      `${process.env.FRONTEND_URL}/login.html?error=session_error`
+      `${process.env.FRONTEND_URL}${process.env.FRONTEND_VIEWS_PATH || ''}/auth/login.html?error=session_error`
     );
   }
 };

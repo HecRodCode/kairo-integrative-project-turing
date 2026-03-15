@@ -1,10 +1,9 @@
 /**
  * assets/js/activitiesCoder.js
- * Página Actividades — vista Coder.
- * Lista actividades del TL (PDF/repo), descarga, notificaciones.
  */
 
 import { guards, sessionManager } from '../../src/core/auth/session.js';
+import { loadMyAvatar } from '../../src/core/utils/avatarService.js';
 import { API_BASE } from '../../src/core/config.js';
 
 const el = (id) => document.getElementById(id);
@@ -14,9 +13,7 @@ let allAssignments = [];
 let allResources = [];
 let activeFilter = 'all';
 
-/* ══════════════════════════════════════
-   BOOTSTRAP
-══════════════════════════════════════ */
+/* BOOTSTRAP */
 (async function init() {
   applyTheme();
   wireThemeToggle();
@@ -31,6 +28,10 @@ let activeFilter = 'all';
   // Set topbar name
   el('topbar-name').textContent =
     session.user.fullName || session.user.full_name || '—';
+
+  loadMyAvatar().catch((err) =>
+    console.warn('[Dashboard] Avatar load failed:', err.message)
+  );
 
   wireLogout();
   setDate();
@@ -47,9 +48,7 @@ let activeFilter = 'all';
   });
 })();
 
-/* ══════════════════════════════════════
-   LOAD ACTIVITIES
-══════════════════════════════════════ */
+/* LOAD ACTIVITIES */
 async function loadActivities() {
   el('act-loading').style.display = 'grid';
   el('act-empty').classList.add('hidden');
@@ -228,9 +227,7 @@ function renderCard(a) {
     </div>`;
 }
 
-/* ══════════════════════════════════════
-   DOWNLOAD PDF
-══════════════════════════════════════ */
+/*  OWNLOAD PDF */
 async function downloadAssignment(id, btn) {
   const original = btn.innerHTML;
   btn.disabled = true;
@@ -263,10 +260,7 @@ async function downloadAssignment(id, btn) {
 }
 window.downloadAssignment = downloadAssignment;
 
-/* ══════════════════════════════════════
-   DOWNLOAD RESOURCE
-   (Función separada para evitar confusiones de endpoint)
-══════════════════════════════════════ */
+/* DOWNLOAD RESOURCE */
 async function downloadResource(id, btn) {
   const original = btn.innerHTML;
   btn.disabled = true;
@@ -297,9 +291,7 @@ async function downloadResource(id, btn) {
 }
 window.downloadResource = downloadResource;
 
-/* ══════════════════════════════════════
-   FILTERS
-══════════════════════════════════════ */
+/*  FILTERS */
 function wireFilters() {
   el('act-filter-row').addEventListener('click', (e) => {
     const chip = e.target.closest('.chip');
@@ -316,7 +308,7 @@ function wireFilters() {
 function applyFilter(items) {
   if (activeFilter === 'pending') {
     return items.filter((a) => {
-      if (a._kind === 'resource') return true; // los recursos no vencen
+      if (a._kind === 'resource') return true;
       if (!a.deadline) return true;
       return new Date(a.deadline) >= new Date();
     });
@@ -331,9 +323,7 @@ function applyFilter(items) {
   return items;
 }
 
-/* ══════════════════════════════════════
-   TOAST
-══════════════════════════════════════ */
+/* TOAST */
 let _toastTimer = null;
 
 function showToast(msg, type = 'success') {
@@ -352,9 +342,7 @@ function showToast(msg, type = 'success') {
   _toastTimer = setTimeout(() => toast.classList.add('hidden'), 3500);
 }
 
-/* ══════════════════════════════════════
-   HELPERS
-══════════════════════════════════════ */
+/* HELPERS */
 function buildDeadlineBadge(deadline) {
   if (!deadline) return 'Sin fecha límite';
   const d = new Date(deadline);

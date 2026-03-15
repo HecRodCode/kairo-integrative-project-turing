@@ -14,9 +14,7 @@ let selectedCoder = null;
 let activeFilter = 'all';
 const el = (id) => document.getElementById(id);
 
-/* ══════════════════════════════════════
-   BOOTSTRAP
-══════════════════════════════════════ */
+/* BOOTSTRAP */
 (async function init() {
   const session = await guards.requireAuth();
   if (!session) return;
@@ -30,10 +28,13 @@ const el = (id) => document.getElementById(id);
   wireLogout();
   setDate();
 
-  // Carga avatar del TL en el topbar (no bloquea el dashboard)
-  loadMyAvatar();
+  loadMyAvatar().catch((err) =>
+    console.warn('[Dashboard] Avatar load failed:', err.message)
+  );
 
   await loadDashboard();
+  await loadSubmissions();
+  await loadRanking();
 
   window.addEventListener('kairo-notification', (e) => {
     const n = e.detail;
@@ -43,9 +44,7 @@ const el = (id) => document.getElementById(id);
   });
 })();
 
-/* ══════════════════════════════════════
-   LOAD DATA
-══════════════════════════════════════ */
+/* LOAD DATA */
 async function loadDashboard() {
   hideBanner();
   try {
@@ -62,9 +61,7 @@ async function loadDashboard() {
   }
 }
 
-/* ══════════════════════════════════════
-   RENDER
-══════════════════════════════════════ */
+/* RENDER */
 function renderAll(data) {
   renderTLInfo(data.tl);
   renderStats(data.overview);
@@ -84,8 +81,7 @@ function renderStats(ov) {
   el('st-done').textContent = ov.completedOnboarding;
   el('st-pending').textContent = ov.pendingOnboarding;
   el('st-risk').textContent = ov.highRiskCoders;
-  el('st-score').textContent =
-    ov.clanAvgScore > 0 ? `${parseFloat(ov.clanAvgScore).toFixed(1)}%` : '0.0%';
+  el('st-score').textContent = `${ov.clanAvgScore} pts`;
   if (ov.highRiskCoders > 0) {
     el('topbar-risk-badge').style.display = 'inline-flex';
     el('badge-risk-count').textContent = ov.highRiskCoders;
@@ -131,11 +127,13 @@ function renderLearningStyles(coders) {
     auditory: 0,
     kinesthetic: 0,
     read_write: 0,
+    mixed: 0,
     other: 0,
   };
   coders.forEach((c) => {
     const s = (c.learning_style || 'other').toLowerCase();
-    counts.hasOwnProperty(s) ? counts[s]++ : counts.other++;
+    if (counts.hasOwnProperty(s)) counts[s]++;
+    else counts.other++;
   });
   const total = coders.length;
   const data = [
@@ -164,12 +162,19 @@ function renderLearningStyles(coders) {
       count: counts.read_write,
     },
     {
+      key: 'mixed',
+      label: 'Mixto',
+      color: 'var(--accent-border)',
+      count: counts.mixed,
+    },
+    {
       key: 'other',
-      label: 'No diagnosticado',
+      label: 'Sin diagnóstico',
       color: 'var(--border-glass)',
       count: counts.other,
     },
   ].filter((d) => d.count > 0);
+
   let cum = 0;
   pie.style.background = `conic-gradient(${data
     .map((d) => {
@@ -179,6 +184,7 @@ function renderLearningStyles(coders) {
       return `${d.color} ${s}% ${e}%`;
     })
     .join(', ')})`;
+
   legend.innerHTML = data
     .map(
       (d) => `
@@ -201,6 +207,7 @@ function renderTable(coders) {
   }
   el('tbl-empty').classList.add('hidden');
   el('tbl-wrap').classList.remove('hidden');
+
   const tbody = el('coder-tbody');
   tbody.innerHTML = filtered
     .map((c) => {
@@ -212,21 +219,21 @@ function renderTable(coders) {
           ? `<span class="status-pending"><i class="fa-regular fa-clock"></i> Pendiente</span>`
           : `<span class="status-ok"><i class="fa-solid fa-circle-check"></i> Activo</span>`;
       return `
-      <tr data-id="${c.id}" class="${selectedCoder?.id === c.id ? 'selected' : ''}">
-        <td><strong>${c.full_name}</strong></td>
-        <td>${
-          c.average_score > 0
-            ? `<span class="score-pill">${parseFloat(c.average_score).toFixed(1)}</span>`
-            : '<span class="score-pill" style="opacity:0.5">0.0</span>'
-        }</td>
-        <td>${c.current_week > 0 ? `Sem. ${c.current_week}` : 'Sem. 1'}</td>
-        <td>${
-          c.learning_style
-            ? `<span class="style-tag">${cap(c.learning_style)}</span>`
-            : '<span style="color:var(--text-muted)">—</span>'
-        }</td>
-        <td>${statusHTML}</td>
-      </tr>`;
+    <tr data-id="${c.id}" class="${selectedCoder?.id === c.id ? 'selected' : ''}">
+      <td><strong>${c.full_name}</strong></td>
+      <td>${
+        c.kairo_score != null
+          ? `<span class="score-pill">${c.kairo_score} pts</span>`
+          : '<span class="score-pill" style="opacity:0.5">50 pts</span>'
+      }</td>
+      <td>${c.current_week > 0 ? `Sem. ${c.current_week}` : 'Sem. 1'}</td>
+      <td>${
+        c.learning_style
+          ? `<span class="style-tag">${cap(c.learning_style)}</span>`
+          : '<span style="color:var(--text-muted)">—</span>'
+      }</td>
+      <td>${statusHTML}</td>
+    </tr>`;
     })
     .join('');
 
@@ -263,13 +270,9 @@ function renderDetail(c) {
   el('d-name').textContent = c.full_name;
   el('d-clan').textContent = cap(c.clan_id || '—');
 
-  // ── Avatar del coder — carga async desde MongoDB ──────────────
   const avatarContainer = el('detail-avatar');
-  if (avatarContainer) {
-    loadCoderAvatar(c.id, avatarContainer, c.full_name);
-  }
+  if (avatarContainer) loadCoderAvatar(c.id, avatarContainer, c.full_name);
 
-  // Perfil link
   const profileLinkContainer = el('d-profile-link');
   if (profileLinkContainer) {
     profileLinkContainer.innerHTML = `
@@ -282,7 +285,7 @@ function renderDetail(c) {
   el('d-week').textContent =
     c.current_week > 0 ? `Semana ${c.current_week}` : 'Semana 1';
   el('d-score').textContent =
-    c.average_score > 0 ? `${parseFloat(c.average_score).toFixed(1)}%` : '0.0%';
+    c.kairo_score != null ? `${c.kairo_score} pts` : '50 pts';
   el('d-style').textContent = c.learning_style
     ? cap(c.learning_style)
     : 'Sin diagnóstico';
@@ -307,9 +310,7 @@ function renderDetail(c) {
   el('feedback-status').textContent = '';
 }
 
-/* ══════════════════════════════════════
-   INTERACTIONS
-══════════════════════════════════════ */
+/* INTERACTIONS */
 function wireFilters() {
   el('filter-row').addEventListener('click', (e) => {
     const chip = e.target.closest('.chip');
@@ -378,8 +379,9 @@ function generatePDF(c) {
     ['Nombre', c.full_name],
     ['Email', c.email],
     ['Clan', cap(c.clan_id || '—')],
+    ['Kairo Score', c.kairo_score != null ? `${c.kairo_score} pts` : '50 pts'],
     [
-      'Score promedio',
+      'Score Moodle',
       c.average_score > 0 ? `${parseFloat(c.average_score).toFixed(1)}%` : '—',
     ],
     ['Semana actual', c.current_week > 0 ? `Semana ${c.current_week}` : '—'],
@@ -412,9 +414,7 @@ function wireLogout() {
   el('btn-logout').addEventListener('click', () => sessionManager.logout());
 }
 
-/* ══════════════════════════════════════
-   HELPERS
-══════════════════════════════════════ */
+/* HELPERS */
 function applyFilter(coders) {
   if (activeFilter === 'risk')
     return coders.filter(
@@ -443,4 +443,274 @@ function cap(str) {
   if (!str) return '—';
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/* SUBMISSIONS */
+let _currentSubmissions = [];
+
+async function loadSubmissions() {
+  try {
+    const res = await fetch(`${API_BASE}/tl/submissions`, {
+      credentials: 'include',
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    _currentSubmissions = data.submissions || [];
+    renderSubmissions(_currentSubmissions);
+  } catch (err) {
+    console.error('[TL] loadSubmissions:', err);
+  }
+}
+
+function renderSubmissions(submissions) {
+  const listEl = document.getElementById('submissions-list');
+  const emptyEl = document.getElementById('submissions-empty');
+  const countEl = document.getElementById('submissions-count');
+
+  if (!submissions.length) {
+    emptyEl.classList.remove('hidden');
+    if (countEl) countEl.textContent = '0 envíos';
+    return;
+  }
+
+  const pending = submissions.filter((s) => !s.reviewed_at).length;
+  if (countEl)
+    countEl.textContent = `${submissions.length} envíos · ${pending} sin revisar`;
+
+  const LANG_COLORS = {
+    sql: '#4fc3f7',
+    python: '#ffb74d',
+    javascript: '#fff176',
+    html: '#ef9a9a',
+  };
+  const LANG_LABELS = {
+    sql: 'SQL',
+    python: 'Python',
+    javascript: 'JS',
+    html: 'HTML',
+  };
+
+  listEl.innerHTML = submissions
+    .map((s) => {
+      const langColor = LANG_COLORS[s.language] || '#ccc';
+      const date = new Date(s.submitted_at).toLocaleDateString('es-CO', {
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      const initials = s.coder_name
+        .split(' ')
+        .map((w) => w[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase();
+
+      return `
+    <div class="sub-row ${s.reviewed_at ? 'reviewed' : 'pending'}" id="sub-${s.id}">
+      <div class="sub-row-left">
+        <div class="sub-avatar">${initials}</div>
+        <div class="sub-row-info">
+          <span class="sub-row-name">${escapeHtml(s.coder_name)}</span>
+          <span class="sub-row-exercise">${escapeHtml(s.exercise_title)} · Día ${s.day_number}</span>
+        </div>
+        <span class="sub-row-lang" style="color:${langColor}">${LANG_LABELS[s.language] || s.language}</span>
+        <span class="sub-row-date">${date}</span>
+      </div>
+      <div class="sub-row-right">
+        ${
+          s.reviewed_at
+            ? `<span class="sub-badge-reviewed"><i class="fa-solid fa-circle-check"></i> Revisado</span>`
+            : `<span class="sub-badge-pending"><i class="fa-solid fa-clock"></i> Pendiente</span>`
+        }
+        <button class="btn-review-code"
+          onclick="openReviewModal(${s.id}, '${escapeHtml(s.coder_name)}', '${escapeHtml(s.exercise_title)}', ${s.day_number}, '${s.language}', ${s.reviewed_at ? 'true' : 'false'})">
+          <i class="fa-solid fa-code"></i> Revisar código
+        </button>
+      </div>
+    </div>`;
+    })
+    .join('');
+}
+
+window.openReviewModal = function (
+  id,
+  coderName,
+  exerciseTitle,
+  dayNumber,
+  language,
+  isReviewed
+) {
+  const sub = _currentSubmissions.find((s) => s.id === id);
+  if (!sub) return;
+
+  const LANG_LABELS = {
+    sql: 'SQL',
+    python: 'Python',
+    javascript: 'JS',
+    html: 'HTML',
+  };
+  const modal = document.getElementById('review-modal');
+
+  document.getElementById('rm-title').textContent =
+    `${exerciseTitle} — Día ${dayNumber}`;
+  document.getElementById('rm-coder').textContent = coderName;
+  document.getElementById('rm-lang').textContent =
+    LANG_LABELS[language] || language;
+  document.getElementById('rm-code').value = sub.code_submitted || '';
+  document.getElementById('rm-expected').textContent =
+    sub.expected_output || '—';
+
+  const feedbackSection = document.getElementById('rm-feedback-section');
+  const reviewedSection = document.getElementById('rm-reviewed-section');
+
+  if (isReviewed) {
+    feedbackSection.classList.add('hidden');
+    reviewedSection.classList.remove('hidden');
+    document.getElementById('rm-existing-feedback').textContent =
+      sub.tl_feedback_text || '';
+  } else {
+    feedbackSection.classList.remove('hidden');
+    reviewedSection.classList.add('hidden');
+    document.getElementById('rm-feedback-input').value = '';
+  }
+
+  document.getElementById('rm-btn-send').onclick = () => sendReviewFeedback(id);
+  modal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+};
+
+window.closeReviewModal = function () {
+  document.getElementById('review-modal').classList.add('hidden');
+  document.body.style.overflow = '';
+};
+
+async function sendReviewFeedback(submissionId) {
+  const feedbackText = document
+    .getElementById('rm-feedback-input')
+    .value.trim();
+  if (!feedbackText) {
+    document.getElementById('rm-feedback-input').focus();
+    return;
+  }
+
+  const btn = document.getElementById('rm-btn-send');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
+
+  try {
+    const res = await fetch(
+      `${API_BASE}/tl/submissions/${submissionId}/review`,
+      {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ feedbackText }),
+      }
+    );
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    closeReviewModal();
+    showToast('Feedback enviado. El coder ganó +15 puntos.', 'success');
+    await loadSubmissions();
+  } catch (err) {
+    console.error('[sendReviewFeedback]', err);
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Enviar feedback';
+    showToast('Error al enviar feedback.', 'error');
+  }
+}
+
+/* RANKING */
+async function loadRanking() {
+  try {
+    const res = await fetch(`${API_BASE}/tl/ranking`, {
+      credentials: 'include',
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    renderRanking(data);
+  } catch (err) {
+    console.error('[TL] loadRanking:', err);
+  }
+}
+
+function renderRanking(data) {
+  const section = document.getElementById('ranking-section');
+  if (!section) return;
+
+  const MEDALS = ['🥇', '🥈', '🥉'];
+
+  const renderList = (coders) =>
+    coders
+      .map(
+        (c, i) => `
+    <div class="ranking-row ${i < 3 ? 'top-' + (i + 1) : ''}">
+      <span class="ranking-pos">${MEDALS[i] || `#${c.rank}`}</span>
+      <span class="ranking-name">${escapeHtml(c.full_name)}</span>
+      ${
+        c.clan !== data.clan
+          ? `<span class="ranking-clan">${escapeHtml(c.clan)}</span>`
+          : ''
+      }
+      <span class="ranking-score">${c.kairo_score} pts</span>
+    </div>
+  `
+      )
+      .join('');
+
+  section.innerHTML = `
+    <div class="ranking-grid">
+      <div class="glass-card ranking-card">
+        <div class="card-head">
+          <h2 class="card-title"><i class="fa-solid fa-trophy"></i> Ranking del Clan</h2>
+          <span class="card-meta">${escapeHtml(data.clan)}</span>
+        </div>
+        <div class="ranking-list">
+          ${
+            data.clanRanking?.length
+              ? renderList(data.clanRanking)
+              : '<p style="color:var(--text-muted);font-size:13px;padding:8px 0">Sin datos aún</p>'
+          }
+        </div>
+      </div>
+      <div class="glass-card ranking-card">
+        <div class="card-head">
+          <h2 class="card-title"><i class="fa-solid fa-earth-americas"></i> Ranking Global</h2>
+          <span class="card-meta">Todos los clanes</span>
+        </div>
+        <div class="ranking-list">
+          ${
+            data.globalRanking?.length
+              ? renderList(data.globalRanking)
+              : '<p style="color:var(--text-muted);font-size:13px;padding:8px 0">Sin datos aún</p>'
+          }
+        </div>
+      </div>
+    </div>`;
+}
+
+/* TOAST helper  */
+function showToast(msg, type = 'success') {
+  const toast = el('toast');
+  const toastMsg = el('toast-msg');
+  const toastIcon = el('toast-icon');
+  if (!toast) return;
+
+  toastMsg.textContent = msg;
+  toastIcon.className =
+    type === 'success'
+      ? 'fa-solid fa-circle-check'
+      : 'fa-solid fa-circle-exclamation';
+  toast.className = `toast ${type}`;
+
+  setTimeout(() => {
+    toast.className = 'toast hidden';
+  }, 3500);
+}
+
 window.loadDashboard = loadDashboard;

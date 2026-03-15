@@ -14,35 +14,35 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
     />
+    <link rel="icon" href="../../../assets/img/logo.png" type="image/png" />
     <link rel="stylesheet" href="../../../assets/css/global.css" />
     <link rel="stylesheet" href="../../../assets/css/iaTrainer.css" />
   </head>
 
-
   <nav class="bottom-nav" aria-label="Navegación principal">
-  <div class="bottom-nav-inner">
-    <a class="bottom-nav-item" href="./dashboard.html">
-      <i class="fa-solid fa-table-columns"></i>
-      <span>Dashboard</span>
-    </a>
-    <a class="bottom-nav-item active" href="#">
-      <i class="fa-solid fa-microchip"></i>
-      <span>AI Trainer</span>
-    </a>
-    <a class="bottom-nav-item" href="./assignment.html">
-      <i class="fa-solid fa-clipboard-list"></i>
-      <span>Actividades</span>
-    </a>
-    <a class="bottom-nav-item" href="./profile.html">
-      <i class="fa-solid fa-user"></i>
-      <span>Perfil</span>
-      <button class="bottom-nav-item btn-logout">
-  <i class="fa-solid fa-arrow-right-from-bracket"></i>
-  <span>Logout</span>
-</button>
-    </a>
-  </div>
-</nav>
+    <div class="bottom-nav-inner">
+      <a class="bottom-nav-item" href="./dashboard.html">
+        <i class="fa-solid fa-table-columns"></i>
+        <span>Dashboard</span>
+      </a>
+      <a class="bottom-nav-item active" href="#">
+        <i class="fa-solid fa-microchip"></i>
+        <span>AI Trainer</span>
+      </a>
+      <a class="bottom-nav-item" href="./assignment.html">
+        <i class="fa-solid fa-clipboard-list"></i>
+        <span>Actividades</span>
+      </a>
+      <a class="bottom-nav-item" href="./profile.html">
+        <i class="fa-solid fa-user"></i>
+        <span>Perfil</span>
+        <button class="bottom-nav-item btn-logout">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          <span>Logout</span>
+        </button>
+      </a>
+    </div>
+  </nav>
 
   <body>
     <!-- Loading overlay — starts hidden -->
@@ -327,6 +327,20 @@
               <i class="fa-regular fa-folder-open"></i>
               Tu TL aún no ha subido recursos para este tema.
             </p>
+          </div>
+
+          <div class="perf-day-banner hidden" id="perf-day-banner">
+            <div class="perf-day-icon">
+              <i class="fa-solid fa-graduation-cap"></i>
+            </div>
+            <div class="perf-day-content">
+              <strong>Día de Simulación de Prueba de Desempeño</strong>
+              <p>
+                Este es el último día de tu plan. Realiza la simulación bajo
+                condiciones reales: sin ayuda, con tiempo limitado. Al terminar,
+                evalúa tu nivel de preparación.
+              </p>
+            </div>
           </div>
 
           <div class="day-completed-banner hidden" id="day-completed-banner">

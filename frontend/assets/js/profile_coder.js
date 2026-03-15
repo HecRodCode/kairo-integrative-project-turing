@@ -52,9 +52,7 @@ function toast(message, type = 'success') {
   }, 3000);
 }
 
-/* ══════════════════════════════════════
-   SPINNER + SKELETON
-══════════════════════════════════════ */
+/* SPINNER + SKELETON */
 function showPageSpinner() {
   if (document.getElementById('page-spinner')) return;
   const style = document.createElement('style');
@@ -100,9 +98,7 @@ function showStatSkeletons() {
     el('statWeek').innerHTML = '<span class="stat-skeleton"></span>';
 }
 
-/* ══════════════════════════════════════
-   BOOTSTRAP
-══════════════════════════════════════ */
+/* BOOTSTRAP */
 (async function init() {
   showPageSpinner();
   showStatSkeletons();

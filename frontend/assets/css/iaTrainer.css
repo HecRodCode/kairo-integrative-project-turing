@@ -1101,19 +1101,74 @@
   background: rgba(56, 189, 248, 0.18);
   transform: translateY(-1px);
 }
+
+.perf-day-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  background: linear-gradient(
+    135deg,
+    rgba(168, 85, 247, 0.15),
+    rgba(59, 130, 246, 0.1)
+  );
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  border-radius: 12px;
+  margin-bottom: 16px;
+  animation: pulse-border 2s ease-in-out infinite;
+}
+
+.perf-day-banner.hidden {
+  display: none;
+}
+
+.perf-day-icon {
+  font-size: 28px;
+  color: #a855f7;
+  flex-shrink: 0;
+}
+
+.perf-day-content strong {
+  display: block;
+  color: var(--text-primary);
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+
+.perf-day-content p {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.btn-exercise-perf {
+  background: linear-gradient(135deg, #7c3aed, #2563eb) !important;
+  box-shadow: 0 0 20px rgba(124, 58, 237, 0.4);
+}
+
+@keyframes pulse-border {
+  0%,
+  100% {
+    border-color: rgba(168, 85, 247, 0.4);
+  }
+  50% {
+    border-color: rgba(168, 85, 247, 0.8);
+  }
+}
+
 .btn-exercise:disabled {
   opacity: 0.4;
   cursor: not-allowed;
   transform: none;
 }
+
 /* Btn complete in two-button layout */
 .card-footer-actions .btn-complete {
   flex: 1;
 }
 
-/* ════════════════════════════════════════
-   EXERCISE MODAL
-════════════════════════════════════════ */
+/* EXERCISE MODAL  */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -1125,6 +1180,7 @@
   justify-content: center;
   padding: 20px;
 }
+
 .modal-overlay.hidden {
   display: none !important;
 }
@@ -1151,12 +1207,14 @@
   border-bottom: 1px solid var(--border-glass);
   flex-shrink: 0;
 }
+
 .modal-title-block {
   display: flex;
   align-items: center;
   gap: 10px;
   min-width: 0;
 }
+
 .modal-lang-badge {
   padding: 3px 10px;
   border-radius: 6px;
@@ -1168,6 +1226,7 @@
   letter-spacing: 0.5px;
   flex-shrink: 0;
 }
+
 .modal-title {
   font-size: 15px;
   font-weight: 700;
@@ -1177,12 +1236,14 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .modal-header-actions {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
 }
+
 .modal-difficulty {
   font-size: 11px;
   font-weight: 600;
@@ -1214,6 +1275,7 @@
   flex-direction: column;
   gap: 16px;
 }
+
 .ex-description {
   font-size: 14px;
   color: var(--text-main);
@@ -1233,6 +1295,7 @@
   background: rgba(245, 158, 11, 0.06);
   border: 1px solid rgba(245, 158, 11, 0.2);
 }
+
 .hint-label {
   font-size: 11px;
   font-weight: 700;
@@ -1244,12 +1307,14 @@
   align-items: center;
   gap: 6px;
 }
+
 .hint-text {
   font-size: 13.5px;
   color: var(--text-main);
   margin: 0 0 10px;
   line-height: 1.6;
 }
+
 .hint-nav {
   display: flex;
   align-items: center;
@@ -1257,6 +1322,7 @@
   font-size: 12px;
   color: var(--text-muted);
 }
+
 .btn-hint-nav {
   background: none;
   border: 1px solid var(--border-glass);
@@ -1269,14 +1335,17 @@
     color 0.15s,
     border-color 0.15s;
 }
+
 .btn-hint-nav:hover:not(:disabled) {
   color: var(--color-warning);
   border-color: rgba(245, 158, 11, 0.3);
 }
+
 .btn-hint-nav:disabled {
   opacity: 0.3;
   cursor: not-allowed;
 }
+
 .hint-counter {
   flex: 1;
   text-align: center;
@@ -1288,6 +1357,7 @@
   border-radius: 12px;
   overflow: hidden;
 }
+
 .editor-topbar {
   display: flex;
   justify-content: space-between;
@@ -1296,6 +1366,7 @@
   background: rgba(255, 255, 255, 0.03);
   border-bottom: 1px solid var(--border-glass);
 }
+
 .editor-label {
   font-size: 12px;
   font-weight: 700;
@@ -1304,10 +1375,12 @@
   align-items: center;
   gap: 6px;
 }
+
 .editor-actions {
   display: flex;
   gap: 8px;
 }
+
 .btn-editor-action {
   display: flex;
   align-items: center;
@@ -1323,10 +1396,12 @@
     color 0.15s,
     border-color 0.15s;
 }
+
 .btn-editor-action:hover {
   color: var(--text-main);
   border-color: rgba(255, 255, 255, 0.2);
 }
+
 .monaco-container {
   height: 300px;
 }
@@ -1338,6 +1413,7 @@
   background: rgba(16, 185, 129, 0.05);
   border: 1px solid rgba(16, 185, 129, 0.2);
 }
+
 .expected-label {
   font-size: 11px;
   font-weight: 700;
@@ -1349,6 +1425,7 @@
   align-items: center;
   gap: 6px;
 }
+
 .expected-text {
   font-size: 13px;
   color: var(--text-main);
@@ -1363,6 +1440,7 @@
   background: rgba(168, 85, 247, 0.05);
   border: 1px solid var(--accent-border);
 }
+
 .solution-label {
   font-size: 11px;
   font-weight: 700;
@@ -1374,6 +1452,7 @@
   align-items: center;
   gap: 6px;
 }
+
 .solution-code {
   font-family: 'Fira Code', monospace;
   font-size: 12.5px;
@@ -1393,6 +1472,7 @@
   border-top: 1px solid var(--border-glass);
   flex-shrink: 0;
 }
+
 .btn-submit-exercise {
   display: flex;
   align-items: center;
@@ -1410,24 +1490,25 @@
     transform 0.15s;
   box-shadow: 0 4px 20px var(--primary-glow);
 }
+
 .btn-submit-exercise:hover:not(:disabled) {
   opacity: 0.9;
   transform: translateY(-1px);
 }
+
 .btn-submit-exercise:disabled {
   opacity: 0.4;
   cursor: not-allowed;
   transform: none;
 }
+
 .submit-note {
   font-size: 11.5px;
   color: var(--text-muted);
   margin: 0;
 }
 
-/* ════════════════════════════════════════
-   TL RESOURCES SECTION (RAG)
-════════════════════════════════════════ */
+/* TL RESOURCES SECTION (RAG) */
 .resources-section {
   display: flex;
   flex-direction: column;
@@ -1437,12 +1518,14 @@
   border: 1px solid var(--border-glass);
   border-radius: 14px;
 }
+
 .resources-section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
 }
+
 .resources-section-title {
   font-size: 13px;
   font-weight: 700;
@@ -1453,9 +1536,11 @@
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
+
 .resources-section-title i {
   color: var(--accent);
 }
+
 .resources-loading-badge {
   display: flex;
   align-items: center;
@@ -1487,6 +1572,7 @@
     border-color 0.18s,
     background 0.18s;
 }
+
 .resource-card:hover {
   background: rgba(255, 255, 255, 0.04);
   border-color: rgba(255, 255, 255, 0.12);
@@ -1511,6 +1597,7 @@
   flex-direction: column;
   gap: 4px;
 }
+
 .resource-card-title {
   font-size: 13.5px;
   font-weight: 700;
@@ -1519,6 +1606,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .resource-card-preview {
   font-size: 12px;
   color: var(--text-muted);
@@ -1528,12 +1616,14 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
 .resource-card-meta {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-top: 2px;
 }
+
 .resource-similarity {
   font-size: 10.5px;
   font-weight: 700;
@@ -1651,7 +1741,6 @@
     font-size: 11px;
   }
 
-  /* Modal de ejercicio */
   .modal-box {
     max-width: 100%;
     border-radius: 16px 16px 0 0;
@@ -1763,4 +1852,3 @@
     padding: 11px 20px;
   }
 }
-

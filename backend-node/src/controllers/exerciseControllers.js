@@ -105,6 +105,8 @@ export async function submitExercise(req, res) {
       [exerciseId, userId, code]
     );
 
+    await awardPoints(userId, 'exercise_submit', exerciseId);
+
     return res.json({
       success: true,
       submissionId: result.rows[0].id,

@@ -10,19 +10,45 @@ class NotificationService {
     this.isConnected = false;
     this._everConnected = false;
     this._connecting = false;
-    this._retryDelay = 5000;
+    this._retryDelay = 8000;
     this._retryTimer = null;
+    this._uiWired = false;
     this.userRole = null;
     this.toastTimer = null;
   }
 
-  connect(userRole) {
+  async connect(userRole) {
+    window.addEventListener(
+      'pagehide',
+      () => {
+        this.eventSource?.close();
+        this.eventSource = null;
+        this.isConnected = false;
+        this._connecting = false;
+      },
+      { once: true }
+    );
+
+    // Evita doble conexión
     if (this.isConnected || this._connecting) return;
 
+    // Solo conecta si existe el bell en el DOM — si no hay bell no hay página de usuario
     if (!document.getElementById('btn-notif')) return;
 
     this._connecting = true;
     this.userRole = userRole;
+
+    // Cablear UI solo una vez, antes de abrir el stream
+    if (!this._uiWired) {
+      this._wireToast();
+      this._wireBellDropdown();
+      this._wireDeleteHandler();
+      this._uiWired = true;
+    }
+
+    // Cargar conteo real del servidor ANTES de mostrar el badge
+    // Esto evita el badge fantasma al recargar
+    await this._syncBadgeFromServer();
 
     this.eventSource = new EventSource(`${API_BASE}/notifications/stream`, {
       withCredentials: true,
@@ -32,60 +58,65 @@ class NotificationService {
       this.isConnected = true;
       this._connecting = false;
       this._everConnected = true;
-      this._retryDelay = 5000;
+      this._retryDelay = 8000;
       console.log('[SSE] Conectado — notificaciones en tiempo real activas.');
     };
 
     this.eventSource.onmessage = (event) => {
       try {
         const payload = JSON.parse(event.data);
-
         if (!payload?.type) return;
-
         if (payload.type === 'NEW_NOTIFICATION') {
           this._handleNewNotification(payload.data);
         }
-      } catch (err) {
-        console.error('[SSE] Error parseando notificación:', err.message);
+        // Ignorar silenciosamente CONNECTED y ping
+      } catch {
+        // JSON parse error — ignorar silenciosamente
       }
     };
 
     this.eventSource.onerror = () => {
       this.isConnected = false;
       this._connecting = false;
+
+      if (document.visibilityState === 'hidden' || !document.body) {
+        this.eventSource?.close();
+        this.eventSource = null;
+        return;
+      }
+
       this.eventSource?.close();
       this.eventSource = null;
 
       if (!this._everConnected) {
-        console.warn(
-          '[SSE] Stream no disponible — probablemente backend local apagado.'
-        );
+        if (window.location.hostname === 'localhost') {
+          console.warn('[SSE] Stream no disponible — backend no responde.');
+        }
         return;
       }
 
       if (document.hidden) {
-        const onVisible = () => {
-          document.removeEventListener('visibilitychange', onVisible);
-          this.connect(this.userRole);
-        };
-        document.addEventListener('visibilitychange', onVisible);
+        document.addEventListener(
+          'visibilitychange',
+          () => {
+            this._connecting = false;
+            this.connect(this.userRole);
+          },
+          { once: true }
+        );
         return;
       }
 
+      // Backoff exponencial — solo logear en desarrollo
       this._retryDelay = Math.min(this._retryDelay * 2, 60000);
-      console.warn(`[SSE] Reconectando en ${this._retryDelay / 1000}s...`);
-      this._retryTimer = setTimeout(
-        () => this.connect(this.userRole),
-        this._retryDelay
-      );
+      if (window.location.hostname === 'localhost') {
+        console.warn(`[SSE] Reconectando en ${this._retryDelay / 1000}s...`);
+      }
+      this._retryTimer = setTimeout(() => {
+        this._connecting = false;
+        this.connect(this.userRole);
+      }, this._retryDelay);
     };
-
-    // Cablear UI una sola vez
-    this._whenDOMReady(() => {
-      this._wireToast();
-      this._wireBellDropdown();
-      this._wireDeleteHandler();
-    });
   }
 
   disconnect() {
@@ -95,9 +126,36 @@ class NotificationService {
     this.isConnected = false;
     this._connecting = false;
     this._everConnected = false;
+    this._uiWired = false;
   }
 
-  /* ── Manejo de nueva notificación entrante ── */
+  /* ════════════════════════════════
+     SYNC BADGE — lee el conteo real
+     del servidor al iniciar
+  ════════════════════════════════ */
+  async _syncBadgeFromServer() {
+    try {
+      const res = await fetch(`${API_BASE}/notifications`, {
+        credentials: 'include',
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      this._setBadgeCount(0);
+
+      if ((data.unread ?? 0) > 0) {
+        fetch(`${API_BASE}/notifications/read`, {
+          method: 'POST',
+          credentials: 'include',
+        }).catch(() => {});
+      }
+    } catch {
+      this._setBadgeCount(0);
+    }
+  }
+
+  /* ════════════════════════════════
+     NUEVA NOTIFICACIÓN ENTRANTE
+  ════════════════════════════════ */
   _handleNewNotification(data) {
     this.showVisualToast(data);
     this.updateBell(+1);
@@ -107,16 +165,9 @@ class NotificationService {
     );
   }
 
-  /* ── DOM ready helper ── */
-  _whenDOMReady(fn) {
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', fn, { once: true });
-    } else {
-      fn();
-    }
-  }
-
-  /* ── Toast ── */
+  /* ════════════════════════════════
+     TOAST
+  ════════════════════════════════ */
   _wireToast() {
     if (document.getElementById('toast')) return;
     const div = document.createElement('div');
@@ -129,19 +180,14 @@ class NotificationService {
     document.body.appendChild(div);
   }
 
-  /* ── Bell + Dropdown ── */
+  /* ════════════════════════════════
+     BELL + DROPDOWN
+  ════════════════════════════════ */
   _wireBellDropdown() {
     const btn = document.getElementById('btn-notif');
     const dropdown = document.getElementById('notif-dropdown');
     const list = document.getElementById('notif-list');
-
-    if (!btn || !dropdown || !list) {
-      console.warn(
-        '[SSE] Elementos del bell no encontrados — saltando wire-up.'
-      );
-      return;
-    }
-
+    if (!btn || !dropdown || !list) return;
     if (btn.dataset.ssebound) return;
     btn.dataset.ssebound = 'true';
 
@@ -165,7 +211,6 @@ class NotificationService {
   async _loadNotificationsIntoDropdown(list) {
     list.innerHTML =
       '<p class="notif-empty" style="opacity:0.5">Cargando...</p>';
-
     try {
       const res = await fetch(`${API_BASE}/notifications`, {
         credentials: 'include',
@@ -173,7 +218,8 @@ class NotificationService {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
 
-      this._setBadgeCount(data.unread || 0);
+      // Actualizar badge con el conteo real
+      this._setBadgeCount(data.unread ?? 0);
 
       list.innerHTML = data.notifications?.length
         ? data.notifications
@@ -182,12 +228,16 @@ class NotificationService {
             .join('')
         : '<p class="notif-empty">Sin notificaciones nuevas</p>';
 
-      fetch(`${API_BASE}/notifications/read`, {
-        method: 'POST',
-        credentials: 'include',
-      }).catch(() => {});
-    } catch (err) {
-      console.error('[SSE] Error cargando notificaciones:', err.message);
+      // Marcar como leídas después de abrir
+      if (data.unread > 0) {
+        fetch(`${API_BASE}/notifications/read`, {
+          method: 'POST',
+          credentials: 'include',
+        })
+          .then(() => this._setBadgeCount(0))
+          .catch(() => {});
+      }
+    } catch {
       list.innerHTML =
         '<p class="notif-empty" style="color:var(--color-error)">Error al cargar</p>';
     }
@@ -202,7 +252,6 @@ class NotificationService {
       const delBtn = e.target.closest('.btn-delete-notif');
       if (!delBtn) return;
       e.stopPropagation();
-
       const id = delBtn.dataset.id;
       try {
         const res = await fetch(`${API_BASE}/notifications/${id}`, {
@@ -216,8 +265,8 @@ class NotificationService {
               '<p class="notif-empty">Sin notificaciones nuevas</p>';
           }
         }
-      } catch (err) {
-        console.error('[SSE] Error eliminando notificación:', err.message);
+      } catch {
+        /* ignorar */
       }
     });
   }
@@ -229,7 +278,9 @@ class NotificationService {
     list.insertAdjacentHTML('afterbegin', this._notifItemHTML(notif, true));
   }
 
-  /* ── Toast visual ── */
+  /* ════════════════════════════════
+     TOAST VISUAL
+  ════════════════════════════════ */
   showVisualToast(notification) {
     const ICONS = {
       feedback: 'fa-comment-dots',
@@ -260,19 +311,15 @@ class NotificationService {
     this.toastTimer = setTimeout(() => toastEl.classList.add('hidden'), 4500);
   }
 
-  /* ── Badge counter ── */
+  /* ════════════════════════════════
+     BADGE
+  ════════════════════════════════ */
   updateBell(delta = 0) {
     const dot = document.getElementById('notif-dot');
     if (!dot) return;
     const current = parseInt(dot.textContent) || 0;
     const next = Math.max(0, current + delta);
-    if (next > 0) {
-      dot.classList.remove('hidden');
-      dot.textContent = next > 9 ? '9+' : String(next);
-    } else {
-      dot.classList.add('hidden');
-      dot.textContent = '';
-    }
+    this._setBadgeCount(next);
   }
 
   _setBadgeCount(count) {
@@ -287,35 +334,32 @@ class NotificationService {
     }
   }
 
-  /* ── HTML ── */
+  /* ════════════════════════════════
+     HTML HELPERS
+  ════════════════════════════════ */
   _notifItemHTML(n, isNew = false) {
     const unread = isNew || !n.is_read;
     return `
       <div class="notif-item ${unread ? 'notif-item-unread' : ''}" id="notif-box-${n.id}">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
           <p class="notif-title" style="margin:0;font-size:13px;font-weight:500">
             ${this._esc(n.title)}
           </p>
-          <button
-            class="btn-delete-notif"
-            data-id="${n.id}"
-            title="Eliminar"
-            type="button"
+          <button class="btn-delete-notif" data-id="${n.id}" title="Eliminar" type="button"
             style="background:none;border:none;color:var(--text-muted);cursor:pointer;
-                   font-size:12px;padding:2px;flex-shrink:0;">
+                   font-size:12px;padding:2px;flex-shrink:0">
             <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
-        <p class="notif-text" style="font-size:12px;margin:4px 0 0;color:var(--text-muted)">
+        <p style="font-size:12px;margin:4px 0 0;color:var(--text-muted)">
           ${this._esc(n.message || n.text || '')}
         </p>
-        <p class="notif-time" style="font-size:11px;margin-top:6px;color:var(--text-muted)">
+        <p style="font-size:11px;margin-top:6px;color:var(--text-muted)">
           ${this._ftm(n.created_at)}
         </p>
       </div>`;
   }
 
-  /* ── Utils ── */
   _esc(str) {
     if (!str) return '';
     return str
