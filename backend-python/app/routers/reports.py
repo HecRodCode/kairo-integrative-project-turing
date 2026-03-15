@@ -12,18 +12,12 @@ from datetime import datetime
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from groq import Groq
-from supabase import create_client
 from fpdf import FPDF
+from app.services.ia_services import _extract_json
+from app.services.clients import get_groq_client, get_supabase_client
 
 logger = logging.getLogger("kairo-reports")
 router = APIRouter(tags=["TL Reports"])
-
-def _get_clients():
-    return (
-        Groq(api_key=os.getenv("GROQ_API_KEY")),
-        create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_KEY"))
-    )
 
 # ════════════════════════════════════════
 # AI REPORT GENERATION
@@ -44,7 +38,8 @@ async def generate_report(req: ReportRequest):
     Called by Node.js: POST /generate-report
     Generates an AI analytical report for a clan and saves to ai_reports.
     """
-    groq_client, supabase = _get_clients()
+    groq_client = get_groq_client()
+    supabase = get_supabase_client()
 
     try:
         prompt = f"""
@@ -86,11 +81,9 @@ Return ONLY valid JSON with no markdown, no backticks:
         )
 
         raw = completion.choices[0].message.content.strip()
-        if raw.startswith("```"):
-            raw = raw.split("```")[1]
-            if raw.startswith("json"):
-                raw = raw[4:]
-        report = json.loads(raw)
+        report = _extract_json(raw)
+        if not report:
+            raise json.JSONDecodeError("Invalid JSON response", raw, 0)
 
         # Save to ai_reports
         supabase.table("ai_reports").insert({
@@ -132,7 +125,7 @@ async def generate_clan_pdf(clan: str):
     Called by Node.js: GET /generate-pdf/{clan}
     No AI needed here — pure data + PDF build.
     """
-    _, supabase = _get_clients()
+    supabase = get_supabase_client()
 
     try:
         coders_result = supabase.table("users") \

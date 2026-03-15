@@ -7,14 +7,35 @@
  * Note: This cache exists only per browser session (page load). It is NOT persisted.
  */
 
-const DEFAULT_TTL = 5_000; // ms
+const DEFAULT_TTL = 10_000; // ms
 const _cache = new Map(); // key -> { expires, promise }
 
-export function cachedFetch(url, options = {}, ttlMs = DEFAULT_TTL) {
+export const CACHE_TTL = {
+  AUTH_CHECK: 10_000,
+  USER_PROFILE: 30_000,
+  DASHBOARD: 5_000,
+  STATIC: 60_000,
+};
+
+function fetchWithTimeout(url, options = {}, timeoutMs = 10_000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => {
+    clearTimeout(id);
+  });
+}
+
+export function cachedFetch(
+  url,
+  options = {},
+  ttlMs = DEFAULT_TTL,
+  timeoutMs = 10_000
+) {
   const method = (options.method || 'GET').toUpperCase();
 
   // Only cache GET requests; other methods should bypass.
-  if (method !== 'GET') return fetch(url, options);
+  if (method !== 'GET') return fetchWithTimeout(url, options, timeoutMs);
 
   const key = `${method}:${url}`;
   const now = Date.now();
@@ -24,7 +45,7 @@ export function cachedFetch(url, options = {}, ttlMs = DEFAULT_TTL) {
     return entry.promise;
   }
 
-  const promise = fetch(url, options).finally(() => {
+  const promise = fetchWithTimeout(url, options, timeoutMs).finally(() => {
     // Keep the cache entry until TTL expires.
   });
 

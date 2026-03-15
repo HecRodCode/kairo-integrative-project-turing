@@ -7,17 +7,11 @@ import json
 import logging
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from groq import Groq
-from supabase import create_client
+from app.services.ia_services import _extract_json
+from app.services.clients import get_groq_client, get_supabase_client
 
 logger = logging.getLogger("kairo-cards")
 router = APIRouter(tags=["Focus Cards"])
-
-def _get_clients():
-    return (
-        Groq(api_key=os.getenv("GROQ_API_KEY")),
-        create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_KEY"))
-    )
 
 class FocusCardsRequest(BaseModel):
     coder_id:          int
@@ -30,7 +24,8 @@ async def generate_focus_cards(req: FocusCardsRequest):
     Called by Node.js: POST /generate-focus-cards
     Returns 6 cards: 2 High / 2 Medium / 2 Low priority
     """
-    groq_client, supabase = _get_clients()
+    groq_client = get_groq_client()
+    supabase = get_supabase_client()
 
     try:
         result = supabase.table("soft_skills_assessment") \
@@ -83,12 +78,9 @@ Return ONLY valid JSON with no markdown, no backticks:
         )
 
         raw = completion.choices[0].message.content.strip()
-        # Strip accidental markdown fences
-        if raw.startswith("```"):
-            raw = raw.split("```")[1]
-            if raw.startswith("json"):
-                raw = raw[4:]
-        data = json.loads(raw)
+        data = _extract_json(raw)
+        if not data:
+            raise json.JSONDecodeError("Invalid JSON response", raw, 0)
 
         cards = data.get("cards", [])
         if len(cards) != 6:

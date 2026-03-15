@@ -14,6 +14,8 @@ class NotificationService {
     this._retryTimer = null;
     this.userRole = null;
     this.toastTimer = null;
+    this._retryCount = 0;
+    this._maxRetryAttempts = 10;
   }
 
   connect(userRole) {
@@ -33,6 +35,7 @@ class NotificationService {
       this._connecting = false;
       this._everConnected = true;
       this._retryDelay = 5000;
+      this._retryCount = 0;
       console.log('[SSE] Conectado — notificaciones en tiempo real activas.');
     };
 
@@ -69,6 +72,12 @@ class NotificationService {
           this.connect(this.userRole);
         };
         document.addEventListener('visibilitychange', onVisible);
+        return;
+      }
+
+      this._retryCount += 1;
+      if (this._retryCount > this._maxRetryAttempts) {
+        console.warn('[SSE] Máximo de reintentos alcanzado; reconexión detenida.');
         return;
       }
 
@@ -167,7 +176,7 @@ class NotificationService {
       '<p class="notif-empty" style="opacity:0.5">Cargando...</p>';
 
     try {
-      const res = await fetch(`${API_BASE}/notifications`, {
+      const res = await fetch(`${API_BASE}/notifications?page=1&limit=10`, {
         credentials: 'include',
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -177,7 +186,6 @@ class NotificationService {
 
       list.innerHTML = data.notifications?.length
         ? data.notifications
-            .slice(0, 10)
             .map((n) => this._notifItemHTML(n))
             .join('')
         : '<p class="notif-empty">Sin notificaciones nuevas</p>';

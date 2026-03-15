@@ -39,15 +39,16 @@ let dashData = null;
     return;
   }
 
-  loadMyAvatar().catch((err) =>
-    console.warn('[Dashboard] Avatar load failed:', err.message)
-  );
-
-  await loadDashboard();
+  await Promise.all([
+    loadMyAvatar().catch((err) =>
+      console.warn('[Dashboard] Avatar load failed:', err.message)
+    ),
+    loadDashboard(),
+  ]);
 
   window.addEventListener('kairo-notification', (e) => {
     const n = e.detail;
-    if (n.type === 'feedback' || n.type === 'assignment') {
+    if (n.type === 'feedback') {
       loadDashboard();
     }
   });

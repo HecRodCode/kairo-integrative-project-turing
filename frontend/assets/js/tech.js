@@ -1,4 +1,4 @@
-import { API_BASE } from '../src/core/config.js';
+import { API_BASE } from '../../src/core/config.js';
 
 /* ── File selection ─────────────────────────────────────────── */
 const fileInput = document.getElementById('upload-file-input');
@@ -98,7 +98,7 @@ window.doUpload = async function () {
     form.append('title', title);
     form.append('moduleId', moduleId);
 
-    const res = await fetch(`${_API}/tl/resource/upload`, {
+    const res = await fetch(`${API_BASE}/tl/resource/upload`, {
       method: 'POST',
       credentials: 'include',
       body: form,
@@ -134,7 +134,7 @@ window.openResourcesList = async function (moduleId = 4) {
     '<p style="color:var(--text-muted);font-size:13px;text-align:center;padding:20px 0">Cargando...</p>';
 
   try {
-    const res = await fetch(`${_API}/tl/resource/list?moduleId=${moduleId}`, {
+    const res = await fetch(`${API_BASE}/tl/resource/list?moduleId=${moduleId}`, {
       credentials: 'include',
     });
     const data = await res.json();
@@ -175,7 +175,7 @@ window.deleteResource = async function (resourceId, moduleId) {
     return;
 
   try {
-    const res = await fetch(`${_API}/tl/resource/${resourceId}`, {
+    const res = await fetch(`${API_BASE}/tl/resource/${resourceId}`, {
       method: 'DELETE',
       credentials: 'include',
     });

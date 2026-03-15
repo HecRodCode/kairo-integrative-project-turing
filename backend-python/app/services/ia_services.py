@@ -14,6 +14,7 @@ always gets a JSON-parseable response — the DB insert never crashes.
 
 import os
 import json
+import asyncio
 import logging
 from typing import Dict, Optional
 from groq import Groq
@@ -95,27 +96,31 @@ async def generate_plan_with_ai(context: Dict) -> Dict:
     )
 
     try:
-        client   = _get_client()
-        response = client.chat.completions.create(
-            model=MODEL,
-            messages=[
-                {
-                    "role":    "system",
-                    "content": (
-                        "Eres Kairo, un arquitecto educativo de Riwi. "
-                        "Respondes ÚNICAMENTE con JSON válido, sin texto adicional, "
-                        "sin markdown, sin explicaciones antes o después del JSON."
-                    ),
-                },
-                {
-                    "role":    "user",
-                    "content": prompt,
-                },
-            ],
-            temperature=0.7,
-            max_tokens=8192,
-            response_format={"type": "json_object"},
-        )
+        client = _get_client()
+
+        def _call_groq():
+            return client.chat.completions.create(
+                model=MODEL,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "Eres Kairo, un arquitecto educativo de Riwi. "
+                            "Respondes ÚNICAMENTE con JSON válido, sin texto adicional, "
+                            "sin markdown, sin explicaciones antes o después del JSON."
+                        ),
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt,
+                    },
+                ],
+                temperature=0.7,
+                max_tokens=8192,
+                response_format={"type": "json_object"},
+            )
+
+        response = await asyncio.to_thread(_call_groq)
         raw_text = response.choices[0].message.content
 
     except Exception as e:

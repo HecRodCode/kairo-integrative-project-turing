@@ -142,7 +142,7 @@ async def generate_exercise(req: GenerateExerciseRequest):
 
     db_manager.log_generation(
         coder_id       = req.coder_id,
-        agent_type     = "exercise_generator",
+        agent_type     = "learning_plan",
         input_payload  = {"plan_id": req.plan_id, "day": req.day_number, "topic": req.topic},
         output_payload = {"exercise_id": exercise_id, "language": language},
         execution_time_ms = exec_ms,

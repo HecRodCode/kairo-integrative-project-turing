@@ -6,7 +6,7 @@ import { cachedFetch } from '../utils/fetchCache.js';
 import { API_BASE } from '../config.js';
 
 const DEFAULT_FETCH_TIMEOUT = 60_000;
-const AUTH_CHECK_CACHE_TTL = 5_000; 
+const AUTH_CHECK_CACHE_TTL = 10_000;
 let _cachedCheckAuth = null;
 let _cachedCheckAuthExpires = 0;
 
@@ -74,8 +74,13 @@ export const authService = {
   },
 
   async getMe() {
-    // Caching this avoids repeated calls during onboarding and role checks.
-    return cachedFetch(`${API_BASE}/auth/me`, { credentials: 'include' });
+    // Caching + timeout avoids hanging requests during connectivity issues.
+    return cachedFetch(
+      `${API_BASE}/auth/me`,
+      { credentials: 'include' },
+      30_000,
+      10_000
+    );
   },
 
   async completeOnboarding(payload) {

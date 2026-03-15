@@ -238,7 +238,7 @@ async function downloadAssignment(id, btn) {
     '<i class="fa-solid fa-spinner fa-spin"></i> Generando enlace...';
 
   try {
-    const res = await fetch(`${API}/coder/assignment/${id}/download`, {
+    const res = await fetch(`${API_BASE}/coder/assignment/${id}/download`, {
       credentials: 'include',
     });
     const data = await res.json();
@@ -273,7 +273,7 @@ async function downloadResource(id, btn) {
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
   try {
-    const res = await fetch(`${API}/coder/resource/${id}/download`, {
+    const res = await fetch(`${API_BASE}/coder/resource/${id}/download`, {
       credentials: 'include',
     });
     const data = await res.json();

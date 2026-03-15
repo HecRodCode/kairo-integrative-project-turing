@@ -119,7 +119,7 @@ async def generate_plan(req: GeneratePlanRequest):
 
     db_manager.log_generation(
         coder_id=req.coder_id,
-        agent_type="plan_generator",
+        agent_type="learning_plan",
         input_payload={
             "plan_type":         req.plan_type,
             "module_id":         req.module_id,

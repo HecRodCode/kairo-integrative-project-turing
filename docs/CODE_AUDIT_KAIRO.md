@@ -28,6 +28,39 @@
 | 🟢 Bajo | 7 | Código muerto sin impacto funcional |
 | ✅ Descartados | 3 | Falsos positivos de reportes anteriores |
 
+### Estado de ejecución (actualizado en esta rama)
+
+| ID | Estado | Nota de verificación en esta versión |
+|---|---|---|
+| C-01 | ✅ Corregido | `API` reemplazado por `API_BASE` en descargas de `assignmentCoder.js`. |
+| C-02 | ✅ Corregido | `_API` reemplazado por `API_BASE` y ruta de import corregida en `tech.js`. |
+| C-03 | ✅ Corregido | `coderControllers.js` ajustado para evitar columnas/tablas opcionales y `completed_days` movido a `plan_content`. |
+| C-04 | ✅ Corregido | `agent_type` normalizado a ENUM válido (`learning_plan/report_generator/risk_detector`). |
+| C-05 | ✅ Corregido | `get_module()` ya no selecciona `is_critical` ni `has_performance_test`. |
+| C-06 | ✅ Corregido | Se eliminaron endpoints duplicados de notificaciones en `assignmentRoutes/assignmentControllers`. |
+| C-07 | ✅ Corregido | Quedó resuelto junto con C-01 (uso consistente de `API_BASE`). |
+| C-08 | ✅ Corregido | Eliminado fallback hardcodeado de Supabase URL; ahora exige variables de entorno. |
+| A-01 | ✅ Corregido | `exerciseRoutes.js` ahora está montado en `server.js` (`/api/exercise`). |
+| A-02 | ✅ Corregido | Bucles secuenciales de notificaciones cambiados a `Promise.all` en `resourceControllers` y `assignmentControllers`. |
+| A-03 | ℹ️ Desactualizado | En el código actual ya estaba `ON CONFLICT (coder_id, module_id)` en `moodleProgress.js`. |
+| A-04 | ✅ Corregido | `authLimiter` y `otpLimiter` aplicados en rutas `/api/auth`. |
+| A-05 | ✅ Corregido | `reports.js` dejó URL hardcodeada y usa `API_BASE`. |
+| M-01 | ✅ Corregido | `basicRoutes.js` eliminado (archivo muerto). |
+| M-02 | ✅ Corregido | `onboarding-logic.js` eliminado (archivo vacío). |
+| M-03 | ✅ Corregido | Se añadieron rutas para los 4 controllers exportados de `tlControllers.js`. |
+| M-04 | ✅ Corregido | Eliminada duplicación de notificaciones entre controllers. |
+| M-05 | ✅ Corregido | Clientes compartidos en `app/services/clients.py`; routers `cards/reports` reutilizan clientes y parser JSON común. |
+| M-06 | ✅ Corregido | `backend-node/utils.js` ya no tiene contraseña hardcodeada; recibe argumento/env. |
+| B-01 | ✅ Corregido | `PYTHON_API` sin uso eliminado de `resourceControllers.js`. |
+| B-02 | ✅ Corregido | `callPythonApiGet` eliminada de `pythonApiService.js` por no tener llamadas activas. |
+| B-03 | ✅ Corregido | Eliminado comentario residual de `resources.router` en `backend-python/main.py`. |
+| B-04 | ✅ Corregido | `toCamelCase` y `truncateText` removidas de `helpers.js` (código muerto confirmado). |
+| B-05 | ✅ Corregido | Validadores integrados en `authControllers.js` para validación server-side real. |
+| B-06 | ✅ Corregido | `testEmailConnection` y `cleanupExpiredOtps` integradas al bootstrap de `server.js` (health + limpieza horaria). |
+| B-07 | ✅ Corregido | `cards.py` y `reports.py` usan `_extract_json()` de `ia_services.py`. |
+
+> Nota: “Pendiente” se marca cuando el hallazgo existe pero su solución requiere decisión de producto/operación (eliminar utilidades, agendar cron, etc.) y no era seguro eliminarlo automáticamente sin validar uso externo.
+
 ---
 
 ## 🔴 CRÍTICOS — Rompen funcionalidad en producción

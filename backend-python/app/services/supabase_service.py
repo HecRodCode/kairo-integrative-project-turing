@@ -36,7 +36,7 @@ class SupabaseManager:
     def get_module(self, module_id: int) -> Optional[Dict]:
         try:
             r = self.client.table("modules") \
-                .select("id, name, description, total_weeks, is_critical, has_performance_test") \
+                .select("id, name, description, total_weeks") \
                 .eq("id", module_id).single().execute()
             return r.data
         except Exception as e:
@@ -56,7 +56,7 @@ class SupabaseManager:
     def get_coder(self, coder_id: int) -> Optional[Dict]:
         try:
             r = self.client.table("users") \
-                .select("id, full_name, email, clan") \
+                .select("id, full_name, email, clan:clan_id") \
                 .eq("id", coder_id).single().execute()
             return r.data
         except Exception as e:
@@ -124,9 +124,18 @@ class SupabaseManager:
                        execution_time_ms: int = 0, success: bool = True,
                        error_message: Optional[str] = None) -> None:
         try:
+            agent_map = {
+                "plan_generator": "learning_plan",
+                "exercise_generator": "learning_plan",
+                "learning_plan": "learning_plan",
+                "report_generator": "report_generator",
+                "risk_detector": "risk_detector",
+            }
+            normalized_agent = agent_map.get(agent_type, "learning_plan")
+
             self.client.table("ai_generation_log").insert({
                 "coder_id":          coder_id,
-                "agent_type":        agent_type,
+                "agent_type":        normalized_agent,
                 "input_payload":     input_payload,
                 "output_payload":    output_payload,
                 # BUG FIX: was hardcoded to "gpt-4o-mini" — now reads from env

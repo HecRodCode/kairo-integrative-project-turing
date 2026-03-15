@@ -1,4 +1,4 @@
-const PYTHON_API_URL = 'https://kairo-integrative-project-turing-production-b3f6.up.railway.app';
+import { API_BASE } from '../config.js';
 
 async function generateReport(coderId) {
     const btn = event.target;
@@ -11,7 +11,7 @@ async function generateReport(coderId) {
         coderId = parseInt(coderId);
         
         // ✅ QUERY PARAM (tu endpoint actual)
-        const response = await fetch(`${PYTHON_API_URL}/api/reports/generar-informe-pdf?coder_id=${coderId}`, {
+        const response = await fetch(`${API_BASE}/reports/generar-informe-pdf?coder_id=${coderId}`, {
             method: 'POST'
         });
         
@@ -41,7 +41,7 @@ async function generateReportClan(clan) {
     try {
         clan = (clan).toLowerCase();
         
-        const response = await fetch(`${PYTHON_API_URL}/api/reports/generar-informe-clan-pdf?clan_name=${clan}`, {
+        const response = await fetch(`${API_BASE}/reports/generar-informe-clan-pdf?clan_name=${clan}`, {
             method: 'POST'
         });
         if (!response.ok) throw new Error(`Error ${response.status}`);
