@@ -1,8 +1,7 @@
 /**
  * routes/authRoutes.js
- * Authentication & User Routes.
+ * Authentication & User Routes — Kairo Project
  */
-
 import { Router } from 'express';
 import passport from 'passport';
 import {
@@ -10,7 +9,6 @@ import {
   login,
   checkAuth,
   logout,
-  getCurrentUser,
   updateFirstLoginStatus,
   updateUserProfile,
   socialAuthSuccess,
@@ -36,27 +34,34 @@ router.get(
     prompt: 'select_account',
   })
 );
+
 router.get(
   '/google/callback',
   passport.authenticate('google', {
-    failureRedirect: '/login?error=google_failed',
+    failureRedirect: `${process.env.FRONTEND_URL}/login.html?error=google_failed`,
+    session: true,
   }),
   socialAuthSuccess
 );
 
 /* ── Social Auth — GitHub ────────────────────────────────── */
-router.get('/github', passport.authenticate('github', { scope: ['user:email'] }));
+router.get(
+  '/github',
+  passport.authenticate('github', { scope: ['user:email'] })
+);
+
 router.get(
   '/github/callback',
   passport.authenticate('github', {
-    failureRedirect: '/login?error=github_failed',
+    failureRedirect: `${process.env.FRONTEND_URL}/login.html?error=github_failed`,
+    session: true,
   }),
   socialAuthSuccess
 );
 
 /* ── Identity & Session ──────────────────────────────────── */
 router.post('/logout', isAuthenticated, logout);
-router.get('/me', isAuthenticated, getCurrentUser);
+router.get('/me', isAuthenticated, checkAuth);
 
 /* ── User Self-Service ───────────────────────────────────── */
 router.patch('/profile', isAuthenticated, updateUserProfile);

@@ -1,7 +1,6 @@
 /**
  * Database Infrastructure Module
- * Manages PostgreSQL connection pooling for Supabase Session Pooler.
- * Optimized for IPv4 network compatibility.
+
  */
 
 import pkg from 'pg';
@@ -11,12 +10,6 @@ const { Pool } = pkg;
 
 /**
  * Pool Configuration
- * FIXED: aws-1-us-east-1 cluster connectivity.
- * FIXED: SSL enabled with unauthorized rejection bypass for cloud compatibility.
- */
-/**
- * Build connection options to support both full DATABASE_URL and
- * individual env vars (DB_HOST/DB_USER/DB_PASSWORD/DB_NAME).
  */
 function buildConnectionString() {
   if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
@@ -52,10 +45,8 @@ const pool = new Pool({
   statement_timeout: 30000, // Terminate queries exceeding 30s
 });
 
-// ============================================
-// POOL EVENT LISTENERS
-// ============================================
 
+// POOL EVENT LISTENERS
 pool.on('connect', () => {
   // Silent in production, useful for debug in dev
   if (process.env.NODE_ENV !== 'production') {
@@ -68,10 +59,7 @@ pool.on('error', (err) => {
   console.error(`   Code: ${err.code} | Detail: ${err.detail || 'None'}`);
 });
 
-// ============================================
 // QUERY HELPERS
-// ============================================
-
 /**
  * Global Query Wrapper
  * Executes SQL commands and monitors execution time.

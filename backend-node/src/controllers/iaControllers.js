@@ -1,18 +1,6 @@
 /**
  * backend-node/controllers/iaControllers.js
- *
- * Slim Communication Architecture:
- * Node.js is a thin orchestrator — it only sends IDs + dynamic context.
- * Python owns all data retrieval from Supabase.
- *
- * Payload to Python:
- * {
- *   coder_id:         int,
- *   module_id:        int,
- *   topic:            string,
- *   struggling_topics: string[],
- *   additional_topics: string[]
- * }
+
  */
 
 import { supabase } from '../config/supabase.js';

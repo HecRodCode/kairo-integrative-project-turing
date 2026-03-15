@@ -1,8 +1,6 @@
 /**
- * Riwi Learning Platform - User Model
- * Data Access Object for user persistence and authentication.
+ * models/user.js — agrega createOAuth separado para no hashear passwords de OAuth
  */
-
 import { query } from '../config/database.js';
 import bcrypt from 'bcrypt';
 
@@ -17,86 +15,74 @@ export async function create({
   first_login = true,
 }) {
   const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
-  const queryText = `
-    INSERT INTO users (email, password, full_name, role, clan, first_login)
-    VALUES ($1, $2, $3, $4, $5, $6)
-    RETURNING id, email, full_name, role, clan AS clan_id, first_login, created_at
-  `;
-
-  const values = [
-    email,
-    hashedPassword,
-    fullName,
-    role,
-    clanId || null,
-    first_login,
-  ];
-
-  const result = await query(queryText, values);
+  const result = await query(
+    `INSERT INTO users (email, password, full_name, role, clan, first_login, otp_verified)
+     VALUES ($1, $2, $3, $4, $5, $6, false)
+     RETURNING id, email, full_name, role, clan AS clan_id, first_login, otp_verified, created_at`,
+    [email, hashedPassword, fullName, role, clanId || null, first_login]
+  );
   return result.rows[0];
 }
 
 /**
- * Finds a user by their unique email address.
+ * Para OAuth: no necesita password real ni OTP.
+ * Se marca otp_verified = true directamente.
  */
+export async function createOAuth({ email, fullName, provider, providerId }) {
+  // Password placeholder no hasheable — nunca se usa para login con contraseña
+  const placeholderPassword = `oauth_${provider}_${providerId}_${Date.now()}`;
+  const result = await query(
+    `INSERT INTO users (email, password, full_name, role, clan, first_login, otp_verified)
+     VALUES ($1, $2, $3, 'coder', null, true, true)
+     RETURNING id, email, full_name, role, clan AS clan_id, first_login, otp_verified, created_at`,
+    [email, placeholderPassword, fullName]
+  );
+  return result.rows[0];
+}
+
 export async function findByEmail(email) {
-  const queryText = `
-    SELECT id, email, password, full_name, role, clan AS clan_id, first_login
-    FROM users
-    WHERE email = $1
-  `;
-  const result = await query(queryText, [email]);
+  const result = await query(
+    `SELECT id, email, password, full_name, role, clan AS clan_id, first_login, otp_verified
+     FROM users WHERE email = $1`,
+    [email]
+  );
   return result.rows[0];
 }
 
-/**
- * Retrieves core user data by primary key.
- */
 export async function findById(id) {
-  const queryText = `
-    SELECT id, email, full_name, role, clan AS clan_id, first_login, created_at
-    FROM users
-    WHERE id = $1
-  `;
-  const result = await query(queryText, [id]);
+  const result = await query(
+    `SELECT id, email, full_name, role, clan AS clan_id, first_login, otp_verified, created_at
+     FROM users WHERE id = $1`,
+    [id]
+  );
   return result.rows[0];
 }
 
-/**
- * Compares plain text password with stored hash.
- */
 export async function verifyPassword(plainPassword, hashedPassword) {
   if (!plainPassword || !hashedPassword) return false;
+  // Los passwords de OAuth no son hasheados con bcrypt válido — esto los rechaza correctamente
+  if (hashedPassword.startsWith('oauth_')) return false;
   return await bcrypt.compare(plainPassword, hashedPassword);
 }
 
 export async function updateFirstLogin(userId, clanId = null) {
-  const queryText = `
-    UPDATE users
-    SET first_login = false,
-        clan = COALESCE($2, clan)
-    WHERE id = $1
-    RETURNING id, first_login, clan AS clan_id
-  `;
-  const result = await query(queryText, [userId, clanId]);
+  const result = await query(
+    `UPDATE users SET first_login = false, clan = COALESCE($2, clan)
+     WHERE id = $1
+     RETURNING id, first_login, clan AS clan_id`,
+    [userId, clanId]
+  );
   return result.rows[0];
 }
 
-/**
- * Performs dynamic updates on user profile fields.
- */
 export async function updateUserInDb(userId, updates) {
   const finalUpdates = { ...updates };
-
   if (finalUpdates.password) {
     finalUpdates.password = await bcrypt.hash(
       finalUpdates.password,
       SALT_ROUNDS
     );
   }
-
-  // Rename 'clan' to 'clan_id' if present in updates
-  // Map 'clanId' or 'clan_id' to 'clan' for the database column
   if (finalUpdates.clan_id !== undefined) {
     finalUpdates.clan = finalUpdates.clan_id;
     delete finalUpdates.clan_id;
@@ -108,17 +94,12 @@ export async function updateUserInDb(userId, updates) {
 
   const keys = Object.keys(finalUpdates);
   if (keys.length === 0) return null;
-  const setClause = keys.map((field, index) => `${field} = $${index + 1}`).join(', ');
-
+  const setClause = keys.map((field, i) => `${field} = $${i + 1}`).join(', ');
   const values = [...Object.values(finalUpdates), userId];
-
-  const queryText = `
-    UPDATE users
-    SET ${setClause}
-    WHERE id = $${values.length}
-    RETURNING id, email, full_name, role, clan AS clan_id, first_login
-  `;
-
-  const result = await query(queryText, values);
+  const result = await query(
+    `UPDATE users SET ${setClause} WHERE id = $${values.length}
+     RETURNING id, email, full_name, role, clan AS clan_id, first_login`,
+    values
+  );
   return result.rows[0];
 }

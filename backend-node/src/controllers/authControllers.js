@@ -1,197 +1,214 @@
+/**
+ * controllers/authControllers.js
+ */
 import bcrypt from 'bcrypt';
-import { supabase } from '../config/supabase.js';
+import { query } from '../config/database.js';
 import { generateOtpCode, sendOtpEmail } from '../services/email.service.js';
 
-const OTP_EXPIRY = 15 * 60 * 1000;
-const MAX_ATTEMPTS = 5;
+const OTP_EXPIRY_MS = 15 * 60 * 1000;
 
-/* OTP CORE LOGIC */
+/* ── OTP helpers (pg directo, sin supabase-js) ── */
 async function createOtpRecord(email, code) {
-  const expiresAt = new Date(Date.now() + OTP_EXPIRY).toISOString();
-
-  try {
-    await supabase
-      .from('otp_verifications')
-      .update({ is_used: true })
-      .eq('user_email', email)
-      .eq('is_used', false);
-
-    const { error } = await supabase.from('otp_verifications').insert({
-      user_email: email,
-      otp_code: code,
-      expires_at: expiresAt,
-      attempts: 0,
-      is_used: false,
-    });
-
-    if (error) throw error;
-  } catch (err) {
-    console.error('[OTP Internal Error]:', err.message);
-    throw err;
-  }
+  const expiresAt = new Date(Date.now() + OTP_EXPIRY_MS).toISOString();
+  // Invalida códigos anteriores
+  await query(
+    `UPDATE otp_verifications SET is_used = true WHERE user_email = $1 AND is_used = false`,
+    [email]
+  );
+  await query(
+    `INSERT INTO otp_verifications (user_email, otp_code, expires_at, attempts, is_used)
+     VALUES ($1, $2, $3, 0, false)`,
+    [email, code, expiresAt]
+  );
 }
 
-/* AUTH FLOWS (Register, Login, Verify) */
+/* ── Register ── */
 export const register = async (req, res) => {
   const { email, password, fullName, role, clanId } = req.body;
-
-  if (email === 'riosrodriguezhectorhernan59@gmail.com') {
-    return res
-      .status(403)
-      .json({ error: 'Email reservado para administración.' });
-  }
-
   try {
-    const { data: existingUser } = await supabase
-      .from('users')
-      .select('id')
-      .eq('email', email)
-      .single();
+    const { rows } = await query(
+      `SELECT id, otp_verified FROM users WHERE email = $1`,
+      [email]
+    );
+    const existing = rows[0];
 
-    if (existingUser) {
-      return res.status(409).json({ error: 'El correo ya está registrado.' });
+    if (existing?.otp_verified) {
+      return res.status(409).json({ error: 'Email already registered.' });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 12);
+    if (!existing) {
+      const hashedPassword = await bcrypt.hash(password, 12);
+      await query(
+        `INSERT INTO users (email, password, full_name, role, clan, otp_verified, first_login)
+         VALUES ($1, $2, $3, $4, $5, false, true)`,
+        [email, hashedPassword, fullName, role || 'coder', clanId || null]
+      );
+    }
+
     const code = generateOtpCode();
-
-    const { data: newUser, error: userError } = await supabase
-      .from('users')
-      .insert({
-        email,
-        password: hashedPassword,
-        full_name: fullName,
-        role: role || 'coder',
-        clan: clanId || null,
-        otp_verified: false,
-        first_login: true,
-      })
-      .select()
-      .single();
-
-    if (userError) throw userError;
-
     await createOtpRecord(email, code);
-
     await sendOtpEmail(email, code, fullName);
 
-    res.status(201).json({
-      message: 'Código enviado ✓',
-      email,
-      ttl: OTP_EXPIRY / 1000,
-    });
+    res
+      .status(201)
+      .json({
+        message: 'Verification code sent.',
+        email,
+        ttl: OTP_EXPIRY_MS / 1000,
+      });
   } catch (error) {
     console.error('[Register Error]:', error);
-    res.status(500).json({ error: 'Error en el proceso de registro.' });
+    res.status(500).json({ error: 'Registration process failed.' });
   }
 };
 
+/* ── Verify OTP ── */
 export const verifyOtp = async (req, res) => {
   const { email, code } = req.body;
-
   try {
-    const { data: record, error: otpErr } = await supabase
-      .from('otp_verifications')
-      .select('*')
-      .eq('user_email', email)
-      .eq('otp_code', code)
-      .eq('is_used', false)
-      .gte('expires_at', new Date().toISOString())
-      .single();
+    const { rows } = await query(
+      `SELECT * FROM otp_verifications
+       WHERE user_email = $1 AND otp_code = $2 AND is_used = false AND expires_at > NOW()
+       ORDER BY id DESC LIMIT 1`,
+      [email, code]
+    );
+    const record = rows[0];
 
-    if (otpErr || !record) {
-      return res.status(400).json({ error: 'Código incorrecto o expirado.' });
+    if (!record) {
+      return res.status(400).json({ error: 'Invalid or expired code.' });
     }
 
-    await supabase
-      .from('otp_verifications')
-      .update({ is_used: true })
-      .eq('id', record.id);
+    await query(`UPDATE otp_verifications SET is_used = true WHERE id = $1`, [
+      record.id,
+    ]);
 
-    const { data: user, error: userUpdErr } = await supabase
-      .from('users')
-      .update({ otp_verified: true })
-      .eq('email', email)
-      .select()
-      .single();
+    const { rows: userRows } = await query(
+      `UPDATE users SET otp_verified = true WHERE email = $1
+       RETURNING id, email, full_name, role, clan AS clan_id, first_login`,
+      [email]
+    );
+    const user = userRows[0];
+    if (!user) throw new Error('User not found after OTP update');
 
-    if (userUpdErr) throw userUpdErr;
-
+    // req.login espera el mismo objeto que findById devuelve
     req.login(user, (err) => {
-      if (err) return res.status(500).json({ error: 'Error de sesión.' });
+      if (err)
+        return res
+          .status(500)
+          .json({ error: 'Session initialization failed.' });
       req.session.userId = user.id;
-      res.json({ success: true, user });
+      res.json({
+        success: true,
+        user: {
+          id: user.id,
+          fullName: user.full_name,
+          role: user.role,
+          clanId: user.clan_id,
+          firstLogin: user.first_login,
+        },
+      });
     });
   } catch (error) {
     console.error('[VerifyOtp Error]:', error);
-    res.status(500).json({ error: 'Error de verificación.' });
+    res.status(500).json({ error: 'Verification failed.' });
   }
 };
 
+/* ── Resend OTP ── */
 export const resendOtp = async (req, res) => {
   const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email is required.' });
   try {
-    const code = generateOtpCode();
-    await createOtpRecord(email, code);
-    await sendOtpEmail(email, code, '');
-    res.json({ success: true, message: 'Código reenviado ✓' });
+    const { rows } = await query(
+      `SELECT full_name, otp_verified FROM users WHERE email = $1`,
+      [email]
+    );
+    const user = rows[0];
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+    if (user.otp_verified)
+      return res
+        .status(400)
+        .json({ error: 'Email already verified. Please login.' });
+
+    const newCode = generateOtpCode();
+    await createOtpRecord(email, newCode);
+    await sendOtpEmail(email, newCode, user.full_name);
+
+    res
+      .status(200)
+      .json({
+        success: true,
+        message: 'A new verification code has been sent.',
+        ttl: OTP_EXPIRY_MS / 1000,
+      });
   } catch (error) {
-    console.error('[ResendOtp Error]:', error);
-    res.status(500).json({ error: 'Error al reenviar código.' });
+    console.error('[ResendOtp Error]:', error.message);
+    res.status(500).json({ error: 'Failed to resend code.' });
   }
 };
 
+/* ── Login ── */
 export const login = async (req, res) => {
   const { email, password } = req.body;
-
   try {
-    const { data: user, error: userErr } = await supabase
-      .from('users')
-      .select('*, otp_verified, first_login')
-      .eq('email', email)
-      .single();
+    const { rows } = await query(`SELECT * FROM users WHERE email = $1`, [
+      email,
+    ]);
+    const user = rows[0];
 
-    if (userErr || !user || !(await bcrypt.compare(password, user.password))) {
-      return res.status(401).json({ error: 'Credenciales inválidas.' });
+    // Usuarios OAuth no tienen password hasheable
+    const isOAuthUser = user?.password?.startsWith('oauth_');
+    const passwordValid =
+      !isOAuthUser && user && (await bcrypt.compare(password, user.password));
+
+    if (!user || isOAuthUser || !passwordValid) {
+      return res.status(401).json({ error: 'Invalid credentials.' });
     }
 
     if (!user.otp_verified) {
       const code = generateOtpCode();
       await createOtpRecord(email, code);
       await sendOtpEmail(email, code, user.full_name);
-
       return res.status(403).json({
         requiresOtp: true,
-        error: 'Verifica tu correo primero.',
+        error: 'Please verify your email first.',
         email: user.email,
       });
     }
 
     req.login(user, (err) => {
-      if (err) return res.status(500).json({ error: 'Error login.' });
+      if (err) return res.status(500).json({ error: 'Login failed.' });
       req.session.userId = user.id;
-      res.json({ success: true, user });
+      res.json({
+        success: true,
+        user: {
+          id: user.id,
+          fullName: user.full_name,
+          role: user.role,
+          clanId: user.clan,
+          firstLogin: user.first_login,
+        },
+      });
     });
   } catch (error) {
     console.error('[Login Error]:', error);
-    res.status(500).json({ error: 'Error en el servidor.' });
+    res.status(500).json({ error: 'Server error during login.' });
   }
 };
 
-/* SESSION & AUTH STATUS */
+/* ── checkAuth — valida req.user (passport) O session.userId ── */
 export const checkAuth = async (req, res) => {
-  if (!req.session.userId) {
-    return res.status(401).json({ authenticated: false });
-  }
+  const userId = req.user?.id || req.session?.userId;
+  if (!userId) return res.status(401).json({ authenticated: false });
 
   try {
-    const { data: user, error } = await supabase
-      .from('users')
-      .select('id, email, full_name, role, clan, first_login')
-      .eq('id', req.session.userId)
-      .single();
-
-    if (error || !user) return res.status(401).json({ authenticated: false });
+    const { rows } = await query(
+      `SELECT id, email, full_name, role, clan AS clan_id, first_login
+       FROM users WHERE id = $1`,
+      [userId]
+    );
+    const user = rows[0];
+    if (!user) return res.status(401).json({ authenticated: false });
 
     return res.status(200).json({
       authenticated: true,
@@ -200,99 +217,120 @@ export const checkAuth = async (req, res) => {
         email: user.email,
         fullName: user.full_name,
         role: user.role,
-        clanId: user.clan,
+        clanId: user.clan_id,
         firstLogin: user.first_login,
       },
     });
   } catch (error) {
-    return res.status(500).json({ error: 'Error de servidor.' });
+    return res.status(500).json({ error: 'Server error checking auth.' });
   }
 };
 
-export const getCurrentUser = checkAuth;
-
+/* ── Logout ── */
 export const logout = (req, res) => {
   req.session.destroy((err) => {
-    if (err) return res.status(500).json({ error: 'Error al cerrar sesión.' });
+    if (err) return res.status(500).json({ error: 'Could not log out.' });
     res.clearCookie('riwi.sid');
-    return res.status(200).json({ message: 'Sesión cerrada.' });
+    return res.status(200).json({ message: 'Session closed.' });
   });
 };
 
-/* PROFILE & ONBOARDING */
-export const updateFirstLoginStatus = async (req, res) => {
-  const { clanId } = req.body;
-  if (!req.session.userId)
-    return res.status(401).json({ error: 'No autorizado' });
-
-  try {
-    const updateData = { first_login: false };
-    if (clanId) updateData.clan = clanId;
-
-    const { error } = await supabase
-      .from('users')
-      .update(updateData)
-      .eq('id', req.session.userId);
-
-    if (error) throw error;
-    return res
-      .status(200)
-      .json({ success: true, message: 'Onboarding completado.' });
-  } catch (error) {
-    console.error('[UpdateStatus Error]:', error.message);
-    return res.status(500).json({ error: 'Error al actualizar estado.' });
-  }
-};
-
-export const updateUserProfile = async (req, res) => {
-  const { fullName, clanId } = req.body;
-  if (!req.session.userId)
-    return res.status(401).json({ error: 'No autorizado' });
-
-  try {
-    const { data, error } = await supabase
-      .from('users')
-      .update({ full_name: fullName, clan: clanId })
-      .eq('id', req.session.userId)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return res.status(200).json({ success: true, user: data });
-  } catch (error) {
-    return res.status(500).json({ error: 'Error al actualizar perfil.' });
-  }
-};
-
-/* SOCIAL AUTH (Google / GitHub)*/
-
-export const socialAuthSuccess = (req, res) => {
+/* ── Social Auth Callback — async/await con manejo de error ── */
+export const socialAuthSuccess = async (req, res) => {
   if (!req.user) {
     return res.redirect(
-      `${process.env.FRONTEND_URL}/src/views/auth/login.html?error=auth_failed`
+      `${process.env.FRONTEND_URL}/login.html?error=auth_failed`
     );
   }
 
   req.session.userId = req.user.id;
 
-  req.session.save((err) => {
-    if (err) {
-      return res.redirect(
-        `${process.env.FRONTEND_URL}/src/views/auth/login.html?error=session_error`
-      );
+  try {
+    await new Promise((resolve, reject) => {
+      req.session.save((err) => (err ? reject(err) : resolve()));
+    });
+
+    // Marcar otp_verified para usuarios OAuth
+    await query(`UPDATE users SET otp_verified = true WHERE id = $1`, [
+      req.user.id,
+    ]);
+
+    const base = process.env.FRONTEND_URL;
+    const dest = req.user.first_login
+      ? `${base}/onboarding.html`
+      : `${base}/dashboard.html`;
+    return res.redirect(dest);
+  } catch (err) {
+    console.error('[SocialAuthSuccess Error]:', err);
+    return res.redirect(
+      `${process.env.FRONTEND_URL}/login.html?error=session_error`
+    );
+  }
+};
+
+/* ── updateFirstLoginStatus ── */
+export const updateFirstLoginStatus = async (req, res) => {
+  const { clanId } = req.body;
+  const userId = req.user?.id || req.session?.userId;
+  if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+  try {
+    await query(
+      `UPDATE users SET first_login = false, clan = $2 WHERE id = $1`,
+      [userId, clanId || null]
+    );
+    return res
+      .status(200)
+      .json({ success: true, message: 'Onboarding completed.' });
+  } catch (error) {
+    console.error('[UpdateStatus Error]:', error.message);
+    return res.status(500).json({ error: 'Failed to update status.' });
+  }
+};
+
+/* ── updateUserProfile ── */
+export const updateUserProfile = async (req, res) => {
+  const { fullName, clanId } = req.body;
+  const userId = req.user?.id || req.session?.userId;
+
+  if (!userId)
+    return res.status(401).json({ error: 'Unauthorized: No session found' });
+  if (!fullName && !clanId)
+    return res.status(400).json({ error: 'At least one field required' });
+
+  try {
+    const sets = [];
+    const vals = [];
+    if (fullName) {
+      sets.push(`full_name = $${sets.length + 1}`);
+      vals.push(fullName);
     }
+    if (clanId) {
+      sets.push(`clan = $${sets.length + 1}`);
+      vals.push(clanId);
+    }
+    vals.push(userId);
 
-    supabase
-      .from('users')
-      .update({ otp_verified: true })
-      .eq('id', req.user.id)
-      .then(() => {
-        const base = process.env.FRONTEND_URL;
-        const dest = req.user.first_login
-          ? `${base}/src/views/coder/onboarding.html`
-          : `${base}/src/views/coder/dashboard.html`;
-
-        return res.redirect(dest);
-      });
-  });
+    const { rows } = await query(
+      `UPDATE users SET ${sets.join(', ')} WHERE id = $${vals.length}
+       RETURNING id, email, full_name, role, clan AS clan_id`,
+      vals
+    );
+    const updated = rows[0];
+    return res.status(200).json({
+      success: true,
+      user: {
+        id: updated.id,
+        email: updated.email,
+        fullName: updated.full_name,
+        role: updated.role,
+        clanId: updated.clan_id,
+      },
+    });
+  } catch (error) {
+    console.error('[UpdateProfile Error]:', error.message);
+    return res
+      .status(500)
+      .json({ error: 'Failed to update profile information' });
+  }
 };
