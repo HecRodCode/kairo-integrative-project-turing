@@ -4,6 +4,7 @@
  */
 
 import { supabase } from '../config/supabase.js';
+import { PYTHON_API_URL } from '../config/runtime.js';
 import { callPythonApi } from '../services/pythonApiService.js';
 
 // ════════════════════════════════════════
@@ -58,7 +59,7 @@ export const generatePlan = async (req, res) => {
       .from('ai_generation_log')
       .insert({
         coder_id: user.id,
-        agent_type: 'plan_generator',
+        agent_type: 'learning_plan',
         input_payload: payload,
         output_payload: { plan_id: aiResponse.metadata?.plan_id ?? null },
         model_name: process.env.MODEL_NAME || 'llama-3.3-70b-versatile',
@@ -185,7 +186,7 @@ export const generateReport = async (req, res) => {
 
 export const checkAiHealth = async (req, res) => {
   try {
-    const response = await fetch(`${process.env.PYTHON_API_URL || 'http://localhost:8000'}/health`);
+    const response = await fetch(`${PYTHON_API_URL}/health`);
     const data = await response.json();
     return res.status(200).json({ node: 'ok', python: data });
   } catch (error) {

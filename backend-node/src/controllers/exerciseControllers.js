@@ -3,8 +3,7 @@
  */
 
 import { query } from '../config/database.js';
-
-const PYTHON_API = process.env.PYTHON_API_URL || 'http://localhost:8000';
+import { PYTHON_API_URL } from '../config/runtime.js';
 
 /* ══ GET/GENERATE EXERCISE POST /api/coder/exercise/generate ══ */
 export async function generateExercise(req, res) {
@@ -45,7 +44,7 @@ export async function generateExercise(req, res) {
     }
 
     // ── 2. Call Python to generate ───────────────────────────────────────────
-    const pyRes = await fetch(`${PYTHON_API}/generate-exercise`, {
+    const pyRes = await fetch(`${PYTHON_API_URL}/generate-exercise`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

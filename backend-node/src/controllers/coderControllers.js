@@ -9,6 +9,7 @@
 import 'dotenv/config';
 import { query } from '../config/database.js';
 import { notifyUser } from '../services/notificationService.js';
+import { PYTHON_API_URL } from '../config/runtime.js';
 
 /* ════════════════════════════════════════
    DASHBOARD  —  GET /api/coder/dashboard
@@ -18,6 +19,28 @@ export async function getCoderDashboard(req, res) {
   try {
     const userId = req.session.userId;
 
+    // Optional table: not all DB snapshots include performance_tests yet.
+    let performanceResult = { rows: [] };
+    try {
+      performanceResult = await query(
+        `
+        SELECT
+          pt.score,
+          pt.status,
+          pt.taken_at,
+          m.name AS module_name
+        FROM performance_tests pt
+        JOIN modules m ON m.id = pt.module_id
+        WHERE pt.coder_id = $1
+        ORDER BY pt.taken_at DESC
+        LIMIT 3
+      `,
+        [userId]
+      );
+    } catch {
+      performanceResult = { rows: [] };
+    }
+
     const [
       userResult,
       softSkillsResult,
@@ -25,20 +48,28 @@ export async function getCoderDashboard(req, res) {
       planResult,
       feedbackResult,
       riskResult,
-      performanceResult,
     ] = await Promise.all([
       /* 1 — User + current module info */
       query(
         `
         SELECT
-          u.full_name, u.email, u.clan AS clan_id, u.role,
-          u.current_module_id,
-          u.learning_style_cache,
+          u.full_name,
+          u.email,
+          COALESCE(to_jsonb(u)->>'clan', to_jsonb(u)->>'clan_id') AS clan_id,
+          u.role,
+          u.first_login,
+          mp.module_id AS current_module_id,
           m.name        AS module_name,
-          m.total_weeks AS module_total_weeks,
-          m.is_critical
+          m.total_weeks AS module_total_weeks
         FROM users u
-        LEFT JOIN modules m ON m.id = u.current_module_id
+        LEFT JOIN LATERAL (
+          SELECT module_id
+          FROM moodle_progress
+          WHERE coder_id = u.id
+          ORDER BY updated_at DESC
+          LIMIT 1
+        ) mp ON true
+        LEFT JOIN modules m ON m.id = mp.module_id
         WHERE u.id = $1
       `,
         [userId]
@@ -119,23 +150,6 @@ export async function getCoderDashboard(req, res) {
       `,
         [userId]
       ),
-
-      /* 7 — Performance test history */
-      query(
-        `
-        SELECT
-          pt.score,
-          pt.status,
-          pt.taken_at,
-          m.name AS module_name
-        FROM performance_tests pt
-        JOIN modules m ON m.id = pt.module_id
-        WHERE pt.coder_id = $1
-        ORDER BY pt.taken_at DESC
-        LIMIT 3
-      `,
-        [userId]
-      ),
     ]);
 
     const user = userResult.rows[0] || null;
@@ -182,8 +196,8 @@ export async function getCoderDashboard(req, res) {
             moduleId: user.current_module_id,
             moduleName: user.module_name,
             moduleTotalWeeks: user.module_total_weeks,
-            isModuleCritical: user.is_critical,
-            learningStyleCache: user.learning_style_cache,
+            isModuleCritical: null,
+            learningStyleCache: null,
           }
         : null,
 
@@ -328,7 +342,7 @@ export async function getActivePlan(req, res) {
         id, coder_id, module_id, plan_content,
         soft_skills_snapshot, moodle_status_snapshot,
         targeted_soft_skill, is_active, generated_at,
-        COALESCE(completed_days, '{}'::jsonb) AS completed_days
+        COALESCE(plan_content->'completed_days', '{}'::jsonb) AS completed_days
       FROM complementary_plans
       WHERE coder_id = $1 AND is_active = true
       ORDER BY generated_at DESC
@@ -395,7 +409,7 @@ export async function completeDay(req, res) {
     // Verificar que el plan pertenece al coder
     const check = await query(
       `
-      SELECT id, completed_days
+      SELECT id, plan_content
       FROM complementary_plans
       WHERE id = $1 AND coder_id = $2 AND is_active = true
     `,
@@ -406,13 +420,18 @@ export async function completeDay(req, res) {
       return res.status(404).json({ error: 'Plan no encontrado o inactivo.' });
     }
 
-    const current = check.rows[0].completed_days || {};
+    const current = check.rows[0].plan_content?.completed_days || {};
     current[String(dayNum)] = { completedAt: new Date().toISOString() };
 
     await query(
       `
       UPDATE complementary_plans
-      SET completed_days = $1::jsonb
+      SET plan_content = jsonb_set(
+        COALESCE(plan_content, '{}'::jsonb),
+        '{completed_days}',
+        $1::jsonb,
+        true
+      )
       WHERE id = $2
     `,
       [JSON.stringify(current), planId]
@@ -443,8 +462,6 @@ export async function completeDay(req, res) {
 }
 
 /* ══ REQUEST PLAN === */
-const PYTHON_API = process.env.PYTHON_API_URL || 'http://localhost:8000';
-
 export async function requestPlan(req, res) {
   try {
     const userId = req.session.userId;
@@ -452,12 +469,16 @@ export async function requestPlan(req, res) {
     // Obtener module_id del coder
     const userResult = await query(
       `
-      SELECT current_module_id FROM users WHERE id = $1
+      SELECT module_id
+      FROM moodle_progress
+      WHERE coder_id = $1
+      ORDER BY updated_at DESC
+      LIMIT 1
     `,
       [userId]
     );
 
-    const moduleId = userResult.rows[0]?.current_module_id ?? 4;
+    const moduleId = userResult.rows[0]?.module_id ?? 4;
     const planType = req.body.plan_type || 'interpretive';
     const currentWeek = req.body.current_week || 1;
 
@@ -468,7 +489,7 @@ export async function requestPlan(req, res) {
     });
 
     // Fire-and-forget hacia Python
-    fetch(`${PYTHON_API}/generate-plan`, {
+    fetch(`${PYTHON_API_URL}/generate-plan`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

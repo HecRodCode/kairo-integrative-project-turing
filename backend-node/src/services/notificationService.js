@@ -4,9 +4,22 @@
 import { query } from '../config/database.js';
 
 const clients = new Map();
+const MAX_CONNECTIONS_PER_USER = 3;
 
 export function addClient(userId, res) {
   if (!clients.has(userId)) clients.set(userId, []);
+  const userClients = clients.get(userId);
+
+  if (userClients.length >= MAX_CONNECTIONS_PER_USER) {
+    const oldest = userClients.shift();
+    clearInterval(oldest.heartbeatInterval);
+    try {
+      oldest.res.end();
+    } catch {
+      // ignore close errors
+    }
+  }
+
   const heartbeatInterval = setInterval(() => {
     try {
       res.write(': ping\n\n');
@@ -15,7 +28,7 @@ export function addClient(userId, res) {
     }
   }, 25000);
 
-  clients.get(userId).push({ res, heartbeatInterval });
+  userClients.push({ res, heartbeatInterval });
 
   return () => removeClient(userId, res, heartbeatInterval);
 }

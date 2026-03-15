@@ -1,8 +1,13 @@
 import bcrypt from 'bcrypt';
 
 // ── CONFIGURACIÓN ──────────────────────────────────────────────
-const passwordPlana = '123'; // <--- CAMBIA ESTO por la clave que quieras
+const passwordPlana = process.argv[2] || process.env.KAIRO_HASH_PASSWORD;
 const saltRounds = 10;
+
+if (!passwordPlana) {
+  console.error('❌ Debes enviar la contraseña: node utils.js "miPasswordSegura"');
+  process.exit(1);
+}
 
 console.log('--------------------------------------------------');
 console.log('🔐 GENERADOR DE HASH PARA KAIRO');

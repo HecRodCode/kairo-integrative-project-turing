@@ -4,6 +4,13 @@
 import bcrypt from 'bcrypt';
 import { query } from '../config/database.js';
 import { generateOtpCode, sendOtpEmail } from '../services/email.service.js';
+import {
+  validateEmail,
+  validatePassword,
+  validateRole,
+  validateFullName,
+  sanitizeInput,
+} from '../utils/validators.js';
 
 const OTP_EXPIRY_MS = 15 * 60 * 1000;
 
@@ -25,10 +32,30 @@ async function createOtpRecord(email, code) {
 /* ── Register ── */
 export const register = async (req, res) => {
   const { email, password, fullName, role, clanId } = req.body;
+  const safeEmail = sanitizeInput(email)?.toLowerCase();
+  const safeFullName = sanitizeInput(fullName);
+  const safeRole = sanitizeInput(role) || 'coder';
+  const safeClanId = sanitizeInput(clanId) || null;
+
+  if (!validateEmail(safeEmail)) {
+    return res.status(400).json({ error: 'Invalid email format.' });
+  }
+  if (!validatePassword(password)) {
+    return res
+      .status(400)
+      .json({ error: 'Password must be at least 6 characters.' });
+  }
+  if (!validateFullName(safeFullName)) {
+    return res.status(400).json({ error: 'Invalid full name.' });
+  }
+  if (!validateRole(safeRole)) {
+    return res.status(400).json({ error: 'Invalid role.' });
+  }
+
   try {
     const { rows } = await query(
       `SELECT id, otp_verified FROM users WHERE email = $1`,
-      [email]
+      [safeEmail]
     );
     const existing = rows[0];
 
@@ -41,19 +68,19 @@ export const register = async (req, res) => {
       await query(
         `INSERT INTO users (email, password, full_name, role, clan, otp_verified, first_login)
          VALUES ($1, $2, $3, $4, $5, false, true)`,
-        [email, hashedPassword, fullName, role || 'coder', clanId || null]
+        [safeEmail, hashedPassword, safeFullName, safeRole, safeClanId]
       );
     }
 
     const code = generateOtpCode();
-    await createOtpRecord(email, code);
-    await sendOtpEmail(email, code, fullName);
+    await createOtpRecord(safeEmail, code);
+    await sendOtpEmail(safeEmail, code, safeFullName);
 
     res
       .status(201)
       .json({
         message: 'Verification code sent.',
-        email,
+        email: safeEmail,
         ttl: OTP_EXPIRY_MS / 1000,
       });
   } catch (error) {
@@ -65,12 +92,18 @@ export const register = async (req, res) => {
 /* ── Verify OTP ── */
 export const verifyOtp = async (req, res) => {
   const { email, code } = req.body;
+  const safeEmail = sanitizeInput(email)?.toLowerCase();
+  const safeCode = sanitizeInput(code);
+
+  if (!validateEmail(safeEmail) || !safeCode) {
+    return res.status(400).json({ error: 'Invalid verification payload.' });
+  }
   try {
     const { rows } = await query(
       `SELECT * FROM otp_verifications
        WHERE user_email = $1 AND otp_code = $2 AND is_used = false AND expires_at > NOW()
        ORDER BY id DESC LIMIT 1`,
-      [email, code]
+      [safeEmail, safeCode]
     );
     const record = rows[0];
 
@@ -85,7 +118,7 @@ export const verifyOtp = async (req, res) => {
     const { rows: userRows } = await query(
       `UPDATE users SET otp_verified = true WHERE email = $1
        RETURNING id, email, full_name, role, clan AS clan_id, first_login`,
-      [email]
+      [safeEmail]
     );
     const user = userRows[0];
     if (!user) throw new Error('User not found after OTP update');
@@ -117,11 +150,14 @@ export const verifyOtp = async (req, res) => {
 /* ── Resend OTP ── */
 export const resendOtp = async (req, res) => {
   const { email } = req.body;
-  if (!email) return res.status(400).json({ error: 'Email is required.' });
+  const safeEmail = sanitizeInput(email)?.toLowerCase();
+  if (!validateEmail(safeEmail)) {
+    return res.status(400).json({ error: 'Email is required.' });
+  }
   try {
     const { rows } = await query(
       `SELECT full_name, otp_verified FROM users WHERE email = $1`,
-      [email]
+      [safeEmail]
     );
     const user = rows[0];
     if (!user) return res.status(404).json({ error: 'User not found.' });
@@ -131,8 +167,8 @@ export const resendOtp = async (req, res) => {
         .json({ error: 'Email already verified. Please login.' });
 
     const newCode = generateOtpCode();
-    await createOtpRecord(email, newCode);
-    await sendOtpEmail(email, newCode, user.full_name);
+    await createOtpRecord(safeEmail, newCode);
+    await sendOtpEmail(safeEmail, newCode, user.full_name);
 
     res
       .status(200)
@@ -150,10 +186,13 @@ export const resendOtp = async (req, res) => {
 /* ── Login ── */
 export const login = async (req, res) => {
   const { email, password } = req.body;
+  const safeEmail = sanitizeInput(email)?.toLowerCase();
+
+  if (!validateEmail(safeEmail) || !validatePassword(password || '')) {
+    return res.status(400).json({ error: 'Invalid credentials format.' });
+  }
   try {
-    const { rows } = await query(`SELECT * FROM users WHERE email = $1`, [
-      email,
-    ]);
+    const { rows } = await query(`SELECT * FROM users WHERE email = $1`, [safeEmail]);
     const user = rows[0];
 
     // Usuarios OAuth no tienen password hasheable
@@ -271,13 +310,14 @@ export const socialAuthSuccess = async (req, res) => {
 /* ── updateFirstLoginStatus ── */
 export const updateFirstLoginStatus = async (req, res) => {
   const { clanId } = req.body;
+  const safeClanId = sanitizeInput(clanId) || null;
   const userId = req.user?.id || req.session?.userId;
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
   try {
     await query(
       `UPDATE users SET first_login = false, clan = $2 WHERE id = $1`,
-      [userId, clanId || null]
+      [userId, safeClanId]
     );
     return res
       .status(200)
@@ -291,23 +331,28 @@ export const updateFirstLoginStatus = async (req, res) => {
 /* ── updateUserProfile ── */
 export const updateUserProfile = async (req, res) => {
   const { fullName, clanId } = req.body;
+  const safeFullName = sanitizeInput(fullName);
+  const safeClanId = sanitizeInput(clanId);
   const userId = req.user?.id || req.session?.userId;
 
   if (!userId)
     return res.status(401).json({ error: 'Unauthorized: No session found' });
-  if (!fullName && !clanId)
+  if (!safeFullName && !safeClanId)
     return res.status(400).json({ error: 'At least one field required' });
+  if (safeFullName && !validateFullName(safeFullName)) {
+    return res.status(400).json({ error: 'Invalid full name.' });
+  }
 
   try {
     const sets = [];
     const vals = [];
-    if (fullName) {
+    if (safeFullName) {
       sets.push(`full_name = $${sets.length + 1}`);
-      vals.push(fullName);
+      vals.push(safeFullName);
     }
-    if (clanId) {
+    if (safeClanId) {
       sets.push(`clan = $${sets.length + 1}`);
-      vals.push(clanId);
+      vals.push(safeClanId);
     }
     vals.push(userId);
 

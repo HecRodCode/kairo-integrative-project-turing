@@ -4,8 +4,16 @@
 import { Resend } from 'resend';
 import { query } from '../config/database.js';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let resend = null;
 const FROM_EMAIL = process.env.SMTP_FROM || 'Kairo <onboarding@resend.dev>';
+
+function getResendClient() {
+  if (!process.env.RESEND_API_KEY) return null;
+  if (!resend) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resend;
+}
 
 if (!process.env.RESEND_API_KEY) {
   console.error(
@@ -18,12 +26,13 @@ export function generateOtpCode() {
 }
 
 export async function sendOtpEmail(toEmail, code, userName = '') {
-  if (!process.env.RESEND_API_KEY) {
+  const resendClient = getResendClient();
+  if (!resendClient) {
     throw new Error('RESEND_API_KEY not configured');
   }
 
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await resendClient.emails.send({
       from: FROM_EMAIL,
       to: [toEmail],
       subject: `${code} is your Kairo verification code`,

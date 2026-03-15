@@ -11,8 +11,6 @@
 import { query } from '../config/database.js';
 import { supabase } from '../config/supabase.js';
 import { notifyUser } from '../services/notificationService.js';
-
-const PYTHON_API = process.env.PYTHON_API_URL || 'http://localhost:8000';
 const BUCKET = 'activity-resources';
 
 /* ── Helper ── */
@@ -41,7 +39,12 @@ export async function uploadResource(req, res) {
   if (!title)
     return res.status(400).json({ error: 'El campo title es requerido.' });
 
-  const tlClan = await getUserClan(tlId);
+  const tlUserResult = await query(
+    'SELECT clan, full_name FROM users WHERE id = $1',
+    [tlId]
+  );
+  const tlClan = tlUserResult.rows[0]?.clan || null;
+  const tlName = tlUserResult.rows[0]?.full_name || 'Tu Leader';
   if (!tlClan)
     return res.status(400).json({ error: 'El TL no tiene un clan asignado.' });
 
@@ -80,23 +83,22 @@ export async function uploadResource(req, res) {
 
   // Send real-time notifications
   try {
-    const tlResult = await query('SELECT full_name FROM users WHERE id = $1', [tlId]);
-    const tlName = tlResult.rows[0]?.full_name || 'Tu Leader';
-
     const coderResult = await query(
       `SELECT id FROM users WHERE role = 'coder' AND clan = $1 AND is_active = true`,
       [tlClan]
     );
 
-    for (const coder of coderResult.rows) {
-      await notifyUser(
-        coder.id,
-        `Nuevo recurso: ${title}`,
-        `Tu TL ${tlName} publicó un recurso RAG.`,
-        'assignment',
-        null
-      );
-    }
+    await Promise.all(
+      coderResult.rows.map((coder) =>
+        notifyUser(
+          coder.id,
+          `Nuevo recurso: ${title}`,
+          `Tu TL ${tlName} publicó un recurso RAG.`,
+          'assignment',
+          null
+        )
+      )
+    );
     
     await notifyUser(
       tlId,

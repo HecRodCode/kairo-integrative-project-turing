@@ -6,6 +6,16 @@ import { query } from '../config/database.js';
 import { createClient } from '@supabase/supabase-js';
 import { notifyUser } from '../services/notificationService.js';
 
+function parsePagination(queryParams, defaultLimit = 30, maxLimit = 100) {
+  const page = Math.max(1, parseInt(queryParams.page, 10) || 1);
+  const limit = Math.min(
+    maxLimit,
+    Math.max(1, parseInt(queryParams.limit, 10) || defaultLimit)
+  );
+  const offset = (page - 1) * limit;
+  return { page, limit, offset };
+}
+
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_KEY
@@ -69,15 +79,17 @@ export async function createAssignment(req, res) {
       );
     }
 
-    for (const coder of coderResult.rows) {
-      await notifyUser(
-        coder.id,
-        `Nueva actividad: ${title}`,
-        `Tu TL ${tlName} publicó una nueva actividad.`,
-        'assignment',
-        assignmentId
-      );
-    }
+    await Promise.all(
+      coderResult.rows.map((coder) =>
+        notifyUser(
+          coder.id,
+          `Nueva actividad: ${title}`,
+          `Tu TL ${tlName} publicó una nueva actividad.`,
+          'assignment',
+          assignmentId
+        )
+      )
+    );
 
     await notifyUser(
       tl.id,
@@ -97,15 +109,34 @@ export async function createAssignment(req, res) {
 export async function listAssignmentsTL(req, res) {
   try {
     const tl = req.user;
+    const { page, limit, offset } = parsePagination(req.query, 30, 100);
+
+    const countResult = await query(
+      `SELECT COUNT(*)::int AS total
+       FROM assignments a
+       WHERE a.tl_id = $1 AND a.is_active = true`,
+      [tl.id]
+    );
+    const total = countResult.rows[0]?.total || 0;
+
     const result = await query(
       `SELECT a.*, a.clan_id AS clan, m.name AS module_name
        FROM assignments a
        LEFT JOIN modules m ON a.module_id = m.id
        WHERE a.tl_id = $1 AND a.is_active = true
-       ORDER BY a.created_at DESC`,
-      [tl.id]
+       ORDER BY a.created_at DESC
+       LIMIT $2 OFFSET $3`,
+      [tl.id, limit, offset]
     );
-    res.json({ assignments: result.rows });
+    res.json({
+      assignments: result.rows,
+      pagination: {
+        page,
+        limit,
+        total,
+        hasMore: offset + result.rows.length < total,
+      },
+    });
   } catch (err) {
     console.error('[listAssignmentsTL]', err);
     res.status(500).json({ error: 'Error al cargar actividades.' });
@@ -133,8 +164,18 @@ export async function deleteAssignment(req, res) {
 export async function listAssignmentsCoder(req, res) {
   try {
     const coder = req.user;
+    const { page, limit, offset } = parsePagination(req.query, 30, 100);
     const coderResult = await query('SELECT clan FROM users WHERE id = $1', [coder.id]);
     const clan = coderResult.rows[0]?.clan;
+
+    const countResult = await query(
+      `SELECT COUNT(*)::int AS total
+       FROM assignments a
+       WHERE a.is_active = true
+         AND (a.scope = 'all' OR (a.scope = 'clan' AND a.clan_id = $1))`,
+      [clan]
+    );
+    const total = countResult.rows[0]?.total || 0;
 
     const result = await query(
       `SELECT a.*, a.clan_id AS clan, m.name AS module_name, u.full_name AS tl_name
@@ -143,10 +184,19 @@ export async function listAssignmentsCoder(req, res) {
        LEFT JOIN users u ON a.tl_id = u.id
        WHERE a.is_active = true
          AND (a.scope = 'all' OR (a.scope = 'clan' AND a.clan_id = $1))
-       ORDER BY a.created_at DESC`,
-      [clan]
+       ORDER BY a.created_at DESC
+       LIMIT $2 OFFSET $3`,
+      [clan, limit, offset]
     );
-    res.json({ assignments: result.rows });
+    res.json({
+      assignments: result.rows,
+      pagination: {
+        page,
+        limit,
+        total,
+        hasMore: offset + result.rows.length < total,
+      },
+    });
   } catch (err) {
     console.error('[listAssignmentsCoder]', err);
     res.status(500).json({ error: 'Error al cargar actividades.' });
@@ -187,26 +237,3 @@ export async function getAssignmentDownload(req, res) {
   }
 }
 
-export async function getNotifications(req, res) {
-  try {
-    const result = await query(
-      `SELECT * FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 30`,
-      [req.user.id]
-    );
-    const unread = result.rows.filter((n) => !n.is_read).length;
-    res.json({ notifications: result.rows, unread });
-  } catch (err) {
-    console.error('[getNotifications]', err);
-    res.status(500).json({ error: 'Error al cargar notificaciones.' });
-  }
-}
-
-export async function markNotificationsRead(req, res) {
-  try {
-    await query(`UPDATE notifications SET is_read = true WHERE user_id = $1`, [req.user.id]);
-    res.json({ success: true });
-  } catch (err) {
-    console.error('[markNotificationsRead]', err);
-    res.status(500).json({ error: 'Error.' });
-  }
-}

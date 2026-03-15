@@ -17,8 +17,7 @@
 
 import { create, findByCoderId, getAll } from '../models/softSkills.js';
 import { findById } from '../models/user.js';
-
-const PYTHON_API = process.env.PYTHON_API_URL || 'http://localhost:8000';
+import { PYTHON_API_URL } from '../config/runtime.js';
 
 /**
  * Fire-and-forget: asks the Python microservice to generate the first
@@ -33,7 +32,7 @@ const PYTHON_API = process.env.PYTHON_API_URL || 'http://localhost:8000';
  */
 async function _triggerInterpretivePlan(coderId, moduleId, currentWeek = 1) {
   try {
-    const res = await fetch(`${PYTHON_API}/generate-plan`, {
+    const res = await fetch(`${PYTHON_API_URL}/generate-plan`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

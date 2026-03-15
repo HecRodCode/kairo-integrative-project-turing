@@ -14,8 +14,6 @@ import {
   deleteAssignment,
   listAssignmentsCoder,
   getAssignmentDownload,
-  getNotifications,
-  markNotificationsRead,
 } from '../controllers/assignmentControllers.js';
 
 const router = Router();
@@ -37,9 +35,5 @@ router.delete('/tl/assignment/:id', isAuthenticated, hasRole('tl'), deleteAssign
 /* ── Coder ── */
 router.get('/coder/assignments',              isAuthenticated, hasRole('coder'), listAssignmentsCoder);
 router.get('/coder/assignment/:id/download',  isAuthenticated, hasRole('coder'), getAssignmentDownload);
-
-/* ── Shared (TL + coder tienen notificaciones) ── */
-router.get('/notifications',        isAuthenticated, getNotifications);
-router.post('/notifications/read',  isAuthenticated, markNotificationsRead);
 
 export default router;

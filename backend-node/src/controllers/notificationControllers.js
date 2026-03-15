@@ -5,6 +5,16 @@
 import { query } from '../config/database.js';
 import { addClient, removeClient } from '../services/notificationService.js';
 
+function parsePagination(queryParams, defaultLimit = 30, maxLimit = 100) {
+  const page = Math.max(1, parseInt(queryParams.page, 10) || 1);
+  const limit = Math.min(
+    maxLimit,
+    Math.max(1, parseInt(queryParams.limit, 10) || defaultLimit)
+  );
+  const offset = (page - 1) * limit;
+  return { page, limit, offset };
+}
+
 /**
  * ESTABLISH SSE CONNECTION
  * GET /api/notifications/stream
@@ -46,12 +56,38 @@ export function streamNotifications(req, res) {
 export async function getNotifications(req, res) {
   try {
     const user = req.user;
-    const result = await query(
-      `SELECT * FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 30`,
+    const { page, limit, offset } = parsePagination(req.query, 30, 100);
+
+    const countResult = await query(
+      `SELECT COUNT(*)::int AS total,
+              COUNT(*) FILTER (WHERE is_read = false)::int AS unread
+       FROM notifications
+       WHERE user_id = $1`,
       [user.id]
     );
-    const unread = result.rows.filter((n) => !n.is_read).length;
-    res.json({ notifications: result.rows, unread });
+
+    const total = countResult.rows[0]?.total || 0;
+    const unread = countResult.rows[0]?.unread || 0;
+
+    const result = await query(
+      `SELECT *
+       FROM notifications
+       WHERE user_id = $1
+       ORDER BY created_at DESC
+       LIMIT $2 OFFSET $3`,
+      [user.id, limit, offset]
+    );
+
+    res.json({
+      notifications: result.rows,
+      unread,
+      pagination: {
+        page,
+        limit,
+        total,
+        hasMore: offset + result.rows.length < total,
+      },
+    });
   } catch (err) {
     console.error('[getNotifications]', err);
     res.status(500).json({ error: 'Error al cargar notificaciones.' });

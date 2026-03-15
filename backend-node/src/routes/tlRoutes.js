@@ -11,6 +11,10 @@ import multer from 'multer';
 import {
   getDashboardData,
   submitFeedback,
+  getAllCodersByClan,
+  getClanMetrics,
+  getCoderFullDetail,
+  getRiskReports,
 } from '../controllers/tlControllers.js';
 import {
   uploadResource,
@@ -31,6 +35,10 @@ const upload = multer({
 });
 
 router.get('/dashboard', getDashboardData);
+router.get('/coders/clan/:clan_id', getAllCodersByClan);
+router.get('/metrics/clan/:clan_id', getClanMetrics);
+router.get('/coder/:id/details', getCoderFullDetail);
+router.get('/risk-flags', getRiskReports);
 router.post('/feedback', submitFeedback);
 router.post('/resource/upload', upload.single('file'), uploadResource);
 router.get('/resource/list', listResources);

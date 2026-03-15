@@ -5,6 +5,7 @@
 
 import pkg from 'pg';
 import 'dotenv/config';
+import { IS_PRODUCTION } from './runtime.js';
 
 const { Pool } = pkg;
 
@@ -37,12 +38,12 @@ const pool = new Pool({
   ssl: process.env.DB_SSL === 'false' ? false : { rejectUnauthorized: false },
 
   // Resource Management
-  max: 10, // Maximum concurrent connections
+  max: IS_PRODUCTION ? 5 : 10, // Supabase pooler works better with fewer direct conns
   idleTimeoutMillis: 30000, // Close idle clients after 30s
-  connectionTimeoutMillis: 30000, // Fail fast if connection takes >30s
+  connectionTimeoutMillis: IS_PRODUCTION ? 10000 : 30000,
 
   // Query Performance
-  statement_timeout: 30000, // Terminate queries exceeding 30s
+  statement_timeout: IS_PRODUCTION ? 15000 : 30000,
 });
 
 
