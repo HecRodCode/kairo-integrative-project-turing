@@ -14,7 +14,7 @@
   --text-main: #ffffff;
   --text-muted: #94a3b8;
   /* Inputs */
-  --input-bg: rgba(196, 196, 196, 0.082);
+  --input-bg: rgb(34, 34, 34);
   --input-text: #f8fafc;
   /* Borders & Glass */
   --border-glass: rgba(65, 65, 65, 0.384);

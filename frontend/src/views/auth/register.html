@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Register - Riwi Learning Platform</title>
-    <link rel="icon" href="../../../assets/img/logo.png" type="image/png" />
     <link rel="stylesheet" href="./../../../assets/css/auth.css" />
     <link rel="stylesheet" href="./../../../assets/css/global.css" />
     <link
@@ -12,32 +11,13 @@
       rel="stylesheet"
     />
     <script src="../../../src/core/utils/theme.js" defer></script>
-
     <script src="https://unpkg.com/i18next@23.11.5/dist/umd/i18next.min.js"></script>
     <script src="./../../core/utils/i18n.js"></script>
+
+
   </head>
 
   <body class="body-content">
-    <a
-      href="../../../../index.html"
-      class="back-to-landing"
-      title="Volver al inicio"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <path d="m15 18-6-6 6-6" />
-      </svg>
-      <span data-i18n="auth.back_landing">Volver</span>
-    </a>
     <main class="card-content">
       <section class="content-logo change-logo">
         <div class="container">
@@ -52,62 +32,36 @@
         </header>
 
         <div class="social-auth-container">
-          <a href="#" data-provider="google" class="btn-social google">
-            <img
-              src="https://www.svgrepo.com/show/475656/google-color.svg"
-              alt="Google"
-              width="20"
-            />
+          <a href="http://localhost:3000/api/auth/google" class="btn-social google">
+            <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" width="20" />
             <span data-i18n="auth.google">Registrarse con Google</span>
           </a>
-
-          <a href="#" data-provider="github" class="btn-social github">
-            <img
-              src="https://www.svgrepo.com/show/512317/github-142.svg"
-              alt="GitHub"
-              width="20"
-            />
+          <a href="http://localhost:3000/api/auth/github" class="btn-social github">
+            <img src="https://www.svgrepo.com/show/512317/github-142.svg" alt="GitHub" width="20" />
             <span data-i18n="auth.github">Registrarse con GitHub</span>
           </a>
         </div>
 
         <div class="separator">
-          <span data-i18n="auth.or_mail"
-            >O REGÍSTRATE CON TU CORREO ELECTRÓNICO</span
-          >
+          <span data-i18n="auth.or_mail">O REGÍSTRATE CON TU CORREO ELECTRÓNICO</span>
         </div>
 
         <form class="form-1" id="register-form">
+
           <div class="inputs">
-            <label for="name" data-i18n="auth.label_name"
-              >Nombre Completo</label
-            >
+            <label for="name" data-i18n="auth.label_name">Nombre Completo</label>
             <input type="text" id="name" required placeholder="John Doe" />
           </div>
 
           <div class="inputs">
             <label for="email" data-i18n="auth.label_mail">Gmail</label>
-            <input
-              type="email"
-              id="email"
-              required
-              placeholder="example@riwi.io"
-            />
+            <input type="email" id="email" required placeholder="example@riwi.io" />
           </div>
 
           <div class="inputs">
-            <label for="clan-select" data-i18n="auth.label_clan"
-              >Selecciona tu Clan</label
-            >
+            <label for="clan-select" data-i18n="auth.label_clan">Selecciona tu Clan</label>
             <select id="clan-select" required class="custom-select">
-              <option
-                value=""
-                disabled
-                selected
-                data-i18n="auth.clan_placeholder"
-              >
-                Escoger clan...
-              </option>
+              <option value="" disabled selected data-i18n="auth.clan_placeholder">Escoger clan...</option>
               <option value="hamilton">Hamilton</option>
               <option value="thompson">Thompson</option>
               <option value="turing">Turing</option>
@@ -117,211 +71,100 @@
             </select>
           </div>
 
-          <!-- Password and Confirm -->
+          <!-- Password row -->
           <div class="password-row">
+
+            <!-- Contraseña + tooltip anclado aquí -->
             <div class="inputs">
-              <label for="password" data-i18n="auth.label_pass"
-                >Contraseña</label
-              >
+              <label for="password" data-i18n="auth.label_pass">Contraseña</label>
+              <div class="password-field-wrap">
+                <div class="password-wrapper">
+                  <input type="password" id="password" required placeholder="••••••••" />
+                  <button type="button" class="toggle-password" data-target="password" tabindex="-1">
+                    <svg class="eye-open" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" />
+                    </svg>
+                    <svg class="eye-closed" style="display:none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M9.88 9.88 1.5 1.5m10.27 10.27L22.5 22.5M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61M12 15a3 3 0 1 0-3-3" />
+                    </svg>
+                  </button>
+                </div>
+
+                <!-- Tooltip burbuja -->
+                <div class="pass-tooltip" id="pass-tooltip" role="tooltip" aria-live="polite">
+                  <p class="tooltip-title">Requisitos de contraseña</p>
+                  <ul class="req-list">
+                    <li class="req-item" id="req-length">
+                      <span class="req-icon"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polyline points="20 6 9 17 4 12"/></svg></span>
+                      Mínimo 9 caracteres
+                    </li>
+                    <li class="req-item" id="req-upper">
+                      <span class="req-icon"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polyline points="20 6 9 17 4 12"/></svg></span>
+                      Una letra mayúscula
+                    </li>
+                    <li class="req-item" id="req-special">
+                      <span class="req-icon"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polyline points="20 6 9 17 4 12"/></svg></span>
+                      Un carácter especial (!@#$%...)
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- Confirmar contraseña -->
+            <div class="inputs">
+              <label for="confirm-password" data-i18n="auth.label_confirm">Confirmar</label>
               <div class="password-wrapper">
-                <input
-                  type="password"
-                  id="password"
-                  required
-                  placeholder="••••••••"
-                />
-                <button
-                  type="button"
-                  class="toggle-password"
-                  data-target="password"
-                  tabindex="-1"
-                >
-                  <svg
-                    class="eye-open"
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                    <circle cx="12" cy="12" r="3" />
+                <input type="password" id="confirm-password" required placeholder="••••••••" />
+                <button type="button" class="toggle-password" data-target="confirm-password" tabindex="-1">
+                  <svg class="eye-open" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" />
                   </svg>
-                  <svg
-                    class="eye-closed"
-                    style="display: none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <path
-                      d="M9.88 9.88 1.5 1.5m10.27 10.27L22.5 22.5M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61M12 15a3 3 0 1 0-3-3"
-                    />
+                  <svg class="eye-closed" style="display:none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9.88 9.88 1.5 1.5m10.27 10.27L22.5 22.5M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61M12 15a3 3 0 1 0-3-3" />
                   </svg>
                 </button>
               </div>
             </div>
 
-            <div class="inputs">
-              <label for="confirm-password" data-i18n="auth.label_confirm"
-                >Confirmar</label
-              >
-              <div class="password-wrapper">
-                <input
-                  type="password"
-                  id="confirm-password"
-                  required
-                  placeholder="••••••••"
-                />
-                <button
-                  type="button"
-                  class="toggle-password"
-                  data-target="confirm-password"
-                  tabindex="-1"
-                >
-                  <svg
-                    class="eye-open"
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>
-                  <svg
-                    class="eye-closed"
-                    style="display: none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <path
-                      d="M9.88 9.88 1.5 1.5m10.27 10.27L22.5 22.5M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61M12 15a3 3 0 1 0-3-3"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
+          </div><!-- /.password-row -->
+
           <div class="strength-put">
             <div id="strength-bar" class="strength-bar"></div>
           </div>
 
           <input type="hidden" id="role-select" value="coder" />
 
-          <button
-            type="submit"
-            class="btn-auth btn-submit"
-            data-i18n="auth.btn_reg"
-          >
+          <button type="submit" class="btn-auth btn-submit" data-i18n="auth.btn_reg">
             Registrarse
           </button>
 
           <p class="link">
             <span data-i18n="auth.has_acc">¿Ya tienes una cuenta?</span>
-            <a href="./login.html" data-i18n="auth.link_login"
-              >Iniciar Sesión</a
-            >
+            <a href="./login.html" data-i18n="auth.link_login">Iniciar Sesión</a>
           </p>
         </form>
       </section>
     </main>
 
     <div class="theme-switch-wrapper">
-      <button
-        id="language-toggle"
-        class="theme-btn me-2"
-        title="Change Language"
-      >
-        <svg
-          id="lang-icon"
-          class="theme-icon"
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="m5 8 6 6" />
-          <path d="m4 14 6-6 2-3" />
-          <path d="M2 5h12" />
-          <path d="M7 2h1" />
-          <path d="m22 22-5-10-5 10" />
-          <path d="M14 18h6" />
+      <button id="language-toggle" class="theme-btn me-2" title="Change Language">
+        <svg id="lang-icon" class="theme-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/>
         </svg>
       </button>
-
       <button id="theme-toggle" class="theme-btn" title="Toggle Theme">
-        <svg
-          id="moon-icon"
-          class="theme-icon"
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
+        <svg id="moon-icon" class="theme-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
         </svg>
-
-        <svg
-          id="sun-icon"
-          class="theme-icon"
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          style="display: none"
-        >
-          <circle cx="12" cy="12" r="4" />
-          <path d="M12 2v2" />
-          <path d="M12 20v2" />
-          <path d="m4.93 4.93 1.41 1.41" />
-          <path d="m17.66 17.66 1.41 1.41" />
-          <path d="M2 12h2" />
-          <path d="M20 12h2" />
-          <path d="m6.34 17.66-1.41 1.41" />
-          <path d="m19.07 4.93-1.41 1.41" />
+        <svg id="sun-icon" class="theme-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+          <circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>
         </svg>
       </button>
     </div>
 
     <script src="../../../src/core/utils/transition.js"></script>
     <script type="module" src="../../../src/core/auth/auth-ui.js"></script>
+
   </body>
 </html>
