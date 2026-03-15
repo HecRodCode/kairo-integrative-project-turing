@@ -1,28 +1,28 @@
 /**
  * src/core/config.js
- * Shared runtime configuration for frontend API endpoints.
  */
 
-const DEFAULT_API_BASE =
-  'https://kairo-integrative-project-turing-production.up.railway.app/api';
+const PROD_URL =
+  'https://kairo-integrative-project-turing-production.up.railway.app';
 
 function computeApiBase() {
-  if (typeof window === 'undefined') return DEFAULT_API_BASE;
+  // Guard for non-browser environments (SSR, Node imports, etc.)
+  if (typeof window === 'undefined') return `${PROD_URL}/api`;
 
-  // Allow manual override for special deployments (e.g. GH Pages + separate API)
+  // Manual override takes highest priority
   if (window.KAIRO_API_BASE) return window.KAIRO_API_BASE;
 
-  const host = window.location.hostname;
-  const isLocal = host === 'localhost' || host === '127.0.0.1';
+  const { hostname, protocol } = window.location;
 
-  // When running the frontend locally, assume backend is on localhost:3000.
-  if (isLocal || window.location.protocol === 'file:') {
-    return 'http://localhost:3000/api';
-  }
+  const isLocal =
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname.startsWith('192.168.') ||
+    protocol === 'file:';
 
-  // Otherwise use production backend.
-  return DEFAULT_API_BASE;
+  return isLocal
+    ? `http://localhost:${window.__KAIRO_DEV_PORT__ || 3000}/api`
+    : `${PROD_URL}/api`;
 }
 
 export const API_BASE = computeApiBase();
-export const API_ROOT = API_BASE.replace(/\/api\/?$/, '');

@@ -6,7 +6,7 @@ import { cachedFetch } from '../utils/fetchCache.js';
 import { API_BASE } from '../config.js';
 
 const DEFAULT_FETCH_TIMEOUT = 60_000;
-const AUTH_CHECK_CACHE_TTL = 5_000; // ms
+const AUTH_CHECK_CACHE_TTL = 5_000; 
 let _cachedCheckAuth = null;
 let _cachedCheckAuthExpires = 0;
 

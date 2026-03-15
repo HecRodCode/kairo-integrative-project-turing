@@ -1,14 +1,11 @@
 /**
  * src/core/utils/onboarding-ui.js
- * Onboarding controller.
- * - Guards the page (must be logged in + firstLogin = true)
- * - Detects OAuth users (clan = null) and asks for clan before finishing
- * - POSTs results to the backend on completion
+ * Onboarding controller — Kairo Project
  */
 
 import { ONBOARDING_DATA } from '../../services/onboarding-data.js';
 import { authService } from '../auth/auth-service.js';
-import { guards } from '../auth/session.js';
+import { guards, sessionManager, PATHS } from '../auth/session.js';
 
 /* ── Language helpers ── */
 const getLang = () => localStorage.getItem('kairo-lang') || 'es';
@@ -24,42 +21,44 @@ const ALL_QUESTIONS = ONBOARDING_DATA.flatMap((block) =>
 );
 const TOTAL = ALL_QUESTIONS.length;
 
-/* CONTROLLER */
+/* ── Controller ── */
 const onboardingController = {
   currentIdx: 0,
   userAnswers: [],
   finished: false,
-  currentUser: null, // set by init() after guard
+  currentUser: null,
   inClanSelection: false,
   selectedClan: null,
 
   async init() {
-    /* Guard: must be authenticated and have firstLogin = true */
     const session = await guards.requireOnboarding();
-    if (!session) return; // redirected by guard
+    if (!session) return;
 
-    /* Fetch full user to check if clan is null (OAuth user) */
     try {
       const res = await authService.getMe();
       const data = await res.json();
-      this.currentUser = data.user || null;
-    } catch {
-      this.currentUser = null;
+      this.currentUser = data.user ?? null;
+    } catch (err) {
+      console.warn(
+        '[Onboarding] getMe failed, continuing without clan check:',
+        err.message
+      );
+      // Fallback: usamos lo que trajo el guard
+      this.currentUser = session.user ?? null;
     }
 
     this._render();
 
+    // Re-render cuando cambia el idioma
     window.addEventListener('kairo:langchange', () => {
       if (this.finished) {
         this._renderFinalSuccess();
         return;
       }
-
       if (this.inClanSelection) {
         this._showClanModal();
         return;
       }
-
       this._renderStepper(this._current().blockId);
       this._renderQuestion(this._current());
       this._updateProgress();
@@ -70,7 +69,7 @@ const onboardingController = {
     return ALL_QUESTIONS[this.currentIdx];
   },
 
-  /* ── Full render ── */
+  /* ── Stepper ── */
   _render() {
     const q = this._current();
     this._renderStepper(q.blockId);
@@ -80,7 +79,6 @@ const onboardingController = {
     if (btn) btn.disabled = this.currentIdx === 0;
   },
 
-  /* ── Stepper ── */
   _renderStepper(activeBlockId) {
     const el = document.getElementById('stepper');
     if (!el) return;
@@ -98,13 +96,13 @@ const onboardingController = {
         isActive ? 'active' : '',
         isCompleted ? 'completed' : '',
       ]
-        .join(' ')
-        .trim();
+        .filter(Boolean)
+        .join(' ');
       return `<div class="${cls}" title="${label}">${isCompleted ? '✓ ' : ''}${label}</div>`;
     }).join('');
   },
 
-  /* ── Question ── */
+  /* ── Question renderer ── */
   _renderQuestion(q) {
     const set = (id, val) => {
       const el = document.getElementById(id);
@@ -150,6 +148,7 @@ const onboardingController = {
       .forEach((b) =>
         b.classList.toggle('selected', b.dataset.optionId === optionId)
       );
+
     setTimeout(() => this._advance(), 320);
   },
 
@@ -157,6 +156,7 @@ const onboardingController = {
   _advance() {
     const card = document.getElementById('question-card');
     if (!card) return;
+
     card.classList.add('fade-out');
     setTimeout(() => {
       card.classList.remove('fade-out');
@@ -181,7 +181,7 @@ const onboardingController = {
     }, 220);
   },
 
-  /* ── Progress ── */
+  /* ── Progress bar ── */
   _updateProgress() {
     const q = this._current();
     const pct = Math.round(((this.currentIdx + 1) / TOTAL) * 100);
@@ -189,6 +189,7 @@ const onboardingController = {
     const fill = document.getElementById('progress-fill');
     const navPct = document.getElementById('navPct');
     const navStep = document.getElementById('navStep');
+
     if (fill) fill.style.width = `${pct}%`;
     if (navPct) navPct.textContent = `${pct}%`;
     if (navStep) {
@@ -198,12 +199,9 @@ const onboardingController = {
     }
   },
 
-  /* PRE-FINISH: ask clan if OAuth user (clan = null) */
   _beforeFinish() {
-    const existingClan = this.currentUser?.clanId;
-    const needsClan = !existingClan;
-
-    if (needsClan) {
+    const existingClan = this.currentUser?.clanId || this.currentUser?.clan;
+    if (!existingClan) {
       this.inClanSelection = true;
       this._showClanModal();
     } else {
@@ -215,8 +213,6 @@ const onboardingController = {
     const isEn = getLang() === 'en';
     const card = document.getElementById('question-card');
     if (!card) return;
-
-    const previousSelection = this.selectedClan;
 
     const clans = [
       'hamilton',
@@ -288,29 +284,28 @@ const onboardingController = {
 
     const isEn = getLang() === 'en';
     card.innerHTML = `
-    <div class="finish-screen">
-      <div class="finish-icon">✓</div>
-      <h2>${isEn ? 'Diagnostic complete' : 'Diagnóstico completado'}</h2>
-      <p>${
-        isEn
-          ? 'We have mapped your learning profile.<br>Kairo is setting up your personalized path.'
-          : 'Hemos mapeado tu perfil de aprendizaje.<br>Kairo está configurando tu ruta personalizada.'
-      }</p>
-      <button class="btn-dashboard" id="btnDash">
-        ${isEn ? 'Go to Dashboard →' : 'Ir al Dashboard →'}
-      </button>
-    </div>`;
+      <div class="finish-screen">
+        <div class="finish-icon">✓</div>
+        <h2>${isEn ? 'Diagnostic complete' : 'Diagnóstico completado'}</h2>
+        <p>${
+          isEn
+            ? 'We have mapped your learning profile.<br>Kairo is setting up your personalized path.'
+            : 'Hemos mapeado tu perfil de aprendizaje.<br>Kairo está configurando tu ruta personalizada.'
+        }</p>
+        <button class="btn-dashboard" id="btnDash">
+          ${isEn ? 'Go to Dashboard →' : 'Ir al Dashboard →'}
+        </button>
+      </div>`;
 
     document.getElementById('btnDash')?.addEventListener('click', () => {
-      window.location.href = './dashboard.html';
+      window.location.href = PATHS.coderDashboard;
     });
   },
 
-  /* FINISH: POST to backend */
+  /* ── Finish: POST al backend ── */
   async _finish(clan) {
     this.finished = true;
 
-    /* Update nav */
     const fill = document.getElementById('progress-fill');
     const navPct = document.getElementById('navPct');
     const navStep = document.getElementById('navStep');
@@ -319,14 +314,11 @@ const onboardingController = {
     if (navStep)
       navStep.textContent = getLang() === 'en' ? 'Completed' : 'Completado';
 
-    /* Mark all tabs completed */
     this._renderStepper(null);
 
-    /* Hide block header */
     const blockHeader = document.querySelector('.block-header');
     if (blockHeader) blockHeader.style.display = 'none';
 
-    /* Show loading state */
     const card = document.getElementById('question-card');
     if (card) {
       card.innerHTML = `
@@ -339,25 +331,37 @@ const onboardingController = {
     }
 
     try {
-      /* Complete onboarding (sets first_login = false, saves clanId) */
       const onboardRes = await authService.completeOnboarding({ clanId: clan });
-      if (!onboardRes.ok) throw new Error('completeOnboarding failed');
+      if (!onboardRes.ok) {
+        console.error(
+          '[Onboarding] completeOnboarding failed:',
+          onboardRes.status
+        );
+        throw new Error('completeOnboarding failed');
+      }
 
-      /* Save diagnostic answers */
+      const cached = sessionManager.getUser();
+      if (cached) {
+        sessionManager.saveUser({ ...cached, firstLogin: false, clanId: clan });
+      }
+
       const diagRes = await authService.saveDiagnostic({
         answers: this.userAnswers,
       });
-      if (!diagRes.ok)
-        console.warn('[Kairo] Diagnostic save failed — non-blocking');
+      if (!diagRes.ok) {
+        console.warn(
+          '[Onboarding] Diagnostic save failed — non-blocking, status:',
+          diagRes.status
+        );
+      }
     } catch (err) {
-      console.error('[Kairo] Finish error:', err);
+      console.error('[Onboarding] Finish error:', err.message);
     }
 
     this._renderFinalSuccess();
   },
 };
 
-/* ── Expose globally for onclick= attributes ── */
 window.onboardingController = onboardingController;
 
 /* ── Boot ── */

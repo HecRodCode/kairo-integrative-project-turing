@@ -11,6 +11,7 @@ import passport from './config/passport.js';
 import { pool, testConnection } from './config/database.js';
 import { connectMongo } from './config/mongodb.js';
 import connectPg from 'connect-pg-simple';
+import rateLimit from 'express-rate-limit';
 
 import authRoutes from './routes/authRoutes.js';
 import diagnosticRoutes from './routes/diagnosticRoutes.js';
@@ -66,6 +67,22 @@ const _corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization'],
   exposedHeaders: ['Set-Cookie'],
 };
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 20, // máximo 20 intentos por IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later.' },
+  // En local no queremos bloquearnos mientras desarrollamos
+  skip: (req) => (process.env.NODE_ENV !== 'production' ? false : false),
+});
+
+const otpLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 minutos
+  max: 5, // 5 intentos de OTP por IP
+  message: { error: 'Too many OTP attempts.' },
+});
 
 app.use(cors(_corsOptions));
 app.options('/{*path}', cors(_corsOptions));

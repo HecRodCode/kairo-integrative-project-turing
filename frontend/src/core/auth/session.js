@@ -1,32 +1,63 @@
 /**
  * src/core/auth/session.js
- * Session management and Role-Based routing — Kairo Project.
+ * Session manager + route guards — Kairo Project
  */
 
 import { authService } from './auth-service.js';
 import { notificationsClient } from '../notificationsSSE.js';
 
-/* ── Absolute paths from web root ──────────────────────────── */
-const PATHS = {
-  login: '/kairo-integrative-project-turing/frontend/src/views/auth/login.html',
-  onboarding:
-    '/kairo-integrative-project-turing/frontend/src/views/coder/onboarding.html',
-  coderDashboard:
-    '/kairo-integrative-project-turing/frontend/src/views/coder/dashboard.html',
-  tlDashboard:
-    '/kairo-integrative-project-turing/frontend/src/views/tl/dashboard.html',
+/* ── Path resolver robusto ───────────────────────────────── */
+const getRootPath = () => {
+  if (window.__KAIRO_VIEWS_BASE__) return window.__KAIRO_VIEWS_BASE__;
+
+  const { pathname, hostname } = window.location;
+
+  if (pathname.includes('/kairo-integrative-project-turing/')) {
+    return '/kairo-integrative-project-turing/frontend/src/views';
+  }
+
+  if (pathname.includes('/frontend/')) {
+    const match = pathname.match(/^(.*\/frontend)/);
+    return match ? `${match[1]}/src/views` : '/frontend/src/views';
+  }
+
+  return '/src/views';
 };
 
-/* SESSION MANAGER */
+const BASE = getRootPath();
+
+export const PATHS = {
+  login: `${BASE}/auth/login.html`,
+  onboarding: `${BASE}/coder/onboarding.html`,
+  coderDashboard: `${BASE}/coder/dashboard.html`,
+  tlDashboard: `${BASE}/tl/dashboard.html`,
+};
+
+/* ── Session Manager ─────────────────────────────────────── */
 export const sessionManager = {
   saveUser(user) {
-    localStorage.setItem('kairo_user', JSON.stringify(user));
+    if (!user) return;
+    const normalized = {
+      id: user.id,
+      fullName: user.fullName || user.full_name || '',
+      role: user.role || 'coder',
+      clanId: user.clanId || user.clan || null,
+      firstLogin:
+        user.firstLogin !== undefined
+          ? user.firstLogin
+          : user.first_login !== undefined
+            ? user.first_login
+            : true,
+    };
+    localStorage.setItem('kairo_user', JSON.stringify(normalized));
   },
 
   getUser() {
     try {
-      return JSON.parse(localStorage.getItem('kairo_user'));
-    } catch {
+      const raw = localStorage.getItem('kairo_user');
+      return raw ? JSON.parse(raw) : null;
+    } catch (err) {
+      console.warn('[Session] getUser parse error:', err.message);
       return null;
     }
   },
@@ -39,106 +70,155 @@ export const sessionManager = {
     try {
       await authService.logout();
     } catch (err) {
-      console.error('[Session] Logout failed:', err);
+      console.warn('[Session] Server logout failed:', err.message);
     }
-
-    authService.invalidateAuthCheckCache();
     this.clearUser();
-
-    // Replace history entry so Back button does not return to protected pages
     window.location.replace(PATHS.login);
   },
 
   redirectByRole(user) {
-    if (!user?.role) return;
-    const role = user.role.toLowerCase().trim();
+    if (!user) {
+      window.location.href = PATHS.login;
+      return;
+    }
+    const role = user.role?.toLowerCase().trim();
+    const isFirstLogin = user.firstLogin === true || user.first_login === true;
 
     if (role === 'tl' || role === 'admin') {
       window.location.href = PATHS.tlDashboard;
-      return;
+    } else {
+      window.location.href = isFirstLogin
+        ? PATHS.onboarding
+        : PATHS.coderDashboard;
     }
-
-    // Coder: first_login drives the split
-    window.location.href = user.firstLogin
-      ? PATHS.onboarding
-      : PATHS.coderDashboard;
   },
 };
 
+/* ── Guards ──────────────────────────────────────────────── */
 export const guards = {
   async requireAuth() {
     const cached = sessionManager.getUser();
     if (!cached) {
-      // If there is no cached user (e.g. after logout), avoid calling the server.
-      window.location.href = PATHS.login;
+      window.location.replace(PATHS.login);
       return null;
     }
+    try {
+      const res = await authService.checkAuth();
+      const data = await res.json();
+      if (!res.ok || !data.authenticated) {
+        sessionManager.clearUser();
+        window.location.replace(PATHS.login);
+        return null;
+      }
+      sessionManager.saveUser(data.user);
+      if (data.user?.role) notificationsClient.connect(data.user.role);
+      return data;
+    } catch (err) {
+      console.warn(
+        '[Guard] requireAuth network error, using cache:',
+        err.message
+      );
+      return { user: cached };
+    }
+  },
 
+  async requireCompleted() {
+    const cached = sessionManager.getUser();
+    if (!cached) {
+      window.location.replace(PATHS.login);
+      return null;
+    }
     try {
       const res = await authService.checkAuth();
       const data = await res.json();
 
       if (!res.ok || !data.authenticated) {
         sessionManager.clearUser();
-        window.location.href = PATHS.login;
+        window.location.replace(PATHS.login);
         return null;
       }
 
-      // Keep localStorage cache in sync
-      sessionManager.saveUser(data.user);
+      const user = data.user;
+      sessionManager.saveUser(user);
 
-      // GLOBALLY auto-connect the SSE Notification service for all validated users on any page
-      if (data.user.role) {
-        notificationsClient.connect(data.user.role);
+      const isFirstLogin =
+        user.firstLogin === true || user.first_login === true;
+      if (isFirstLogin) {
+        window.location.replace(PATHS.onboarding);
+        return null;
       }
 
+      if (data.user?.role) notificationsClient.connect(data.user.role);
       return data;
-    } catch {
-      sessionManager.clearUser();
-      window.location.href = PATHS.login;
+    } catch (err) {
+      console.warn(
+        '[Guard] requireCompleted network error, using cache:',
+        err.message
+      );
+      if (cached && cached.firstLogin === false) {
+        return { user: cached };
+      }
+      window.location.replace(PATHS.login);
       return null;
     }
-  },
-
-  async requireOnboarding() {
-    const session = await this.requireAuth();
-    if (!session) return null;
-
-    if (!session.user.firstLogin) {
-      window.location.href = PATHS.coderDashboard;
-      return null;
-    }
-
-    return session;
-  },
-
-  async requireCompleted() {
-    const session = await this.requireAuth();
-    if (!session) return null;
-
-    if (session.user.firstLogin) {
-      window.location.href = PATHS.onboarding;
-      return null;
-    }
-
-    return session;
   },
 
   async requireGuest() {
     const cached = sessionManager.getUser();
     if (!cached) return;
+    try {
+      const res = await authService.checkAuth();
+      const data = await res.json();
+      if (res.ok && data.authenticated) {
+        sessionManager.saveUser(data.user);
+        sessionManager.redirectByRole(data.user);
+      } else {
+        sessionManager.clearUser();
+      }
+    } catch (err) {
+      console.warn('[Guard] requireGuest network error:', err.message);
+    }
+  },
 
+  async requireOnboarding() {
+    const cached = sessionManager.getUser();
+    if (!cached) {
+      window.location.replace(PATHS.login);
+      return null;
+    }
     try {
       const res = await authService.checkAuth();
       const data = await res.json();
 
-      if (res.ok && data.authenticated && data.user) {
-        sessionManager.saveUser(data.user);
-        sessionManager.redirectByRole(data.user);
+      if (!res.ok || !data.authenticated) {
+        sessionManager.clearUser();
+        window.location.replace(PATHS.login);
+        return null;
       }
-      // Not authenticated → stay on login/register, no action needed
+
+      const user = data.user;
+      sessionManager.saveUser(user);
+      const role = user.role?.toLowerCase().trim();
+
+      if (role === 'tl' || role === 'admin') {
+        window.location.replace(PATHS.tlDashboard);
+        return null;
+      }
+
+      const isFirstLogin =
+        user.firstLogin === true || user.first_login === true;
+      if (!isFirstLogin) {
+        window.location.replace(PATHS.coderDashboard);
+        return null;
+      }
+
+      return data;
     } catch (err) {
-      console.warn('[requireGuest] checkAuth failed:', err?.message || err);
+      console.warn('[Guard] requireOnboarding network error:', err.message);
+      const isFirstLogin = cached.firstLogin === true;
+      if (cached && isFirstLogin) return { user: cached };
+      window.location.replace(PATHS.login);
+      return null;
     }
   },
 };
