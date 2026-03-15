@@ -32,7 +32,7 @@ let dashData = null;
   setDate();
 
   const session = await guards.requireCompleted();
-  if (!session) return; // guard ya redirigió
+  if (!session) return;
 
   if (session.user.role !== 'coder') {
     sessionManager.redirectByRole(session.user);
@@ -116,6 +116,10 @@ function renderUser(user, plan, riskFlags) {
         `Flag de riesgo activo (${activeRisks[0].level})`;
     }
   }
+
+  if (el('kairo-score-val')) {
+    el('kairo-score-val').textContent = `${user.kairoScore ?? 50} pts`;
+  }
 }
 
 /* ── Topbar ── */
@@ -151,6 +155,9 @@ function renderStats(user, progress) {
       progress?.weeksCompletedCount != null
         ? `${progress.weeksCompletedCount}`
         : '0';
+  // Kairo Score en stat card
+  if (el('st-kairo-score'))
+    el('st-kairo-score').textContent = `${user?.kairoScore ?? 50} pts`;
 }
 
 /* ── Module progress dots ── */
@@ -459,9 +466,7 @@ function wireTheme() {
   });
 }
 
-/* ══════════════════════════════════════
-   UTILS
-══════════════════════════════════════ */
+/* UTILS */
 const cap = (str) =>
   str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : '—';
 const truncate = (str, max) =>

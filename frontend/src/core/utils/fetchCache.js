@@ -1,10 +1,5 @@
 /**
  * Lightweight in-memory cache for GET requests.
- *
- * Useful to avoid multiple identical fetches in a short span of time
- * (e.g. /api/auth/check called by multiple guards, or /api/profile on concurrent renders).
- *
- * Note: This cache exists only per browser session (page load). It is NOT persisted.
  */
 
 const DEFAULT_TTL = 5_000; // ms

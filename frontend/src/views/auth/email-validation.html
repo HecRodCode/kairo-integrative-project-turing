@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Kairo | Verifica tu correo</title>
+    <link rel="icon" href="../../../assets/img/logo.png" type="image/png" />
     <link rel="stylesheet" href="./../../../assets/css/auth.css" />
     <link rel="stylesheet" href="./../../../assets/css/global.css" />
     <link
@@ -15,8 +16,7 @@
     <script src="./../../core/utils/i18n.js"></script>
 
     <style>
-      /* ── OTP-specific styles — usa los tokens de global.css ─── */
-
+      /* ── OTP-specific styles ─ */
       .otp-header-icon {
         width: 56px;
         height: 56px;
@@ -306,7 +306,9 @@
           </div>
           <p class="resend-wrap">
             ¿No llegó?
-            <button id="resend-btn" disabled data-i18n="auth.resend_code">Reenviar</button>
+            <button id="resend-btn" disabled data-i18n="auth.resend_code">
+              Reenviar
+            </button>
           </p>
         </div>
 
@@ -349,7 +351,11 @@
 
     <!-- Theme / Language toggles (idéntico a login) -->
     <div class="theme-switch-wrapper">
-      <button id="language-toggle" class="theme-btn me-2" title="Change Language">
+      <button
+        id="language-toggle"
+        class="theme-btn me-2"
+        title="Change Language"
+      >
         <svg
           id="lang-icon"
           class="theme-icon"

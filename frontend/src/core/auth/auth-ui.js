@@ -8,7 +8,7 @@ import { sessionManager, guards } from './session.js';
 import { validator } from './validation.js';
 import { API_BASE } from '../config.js';
 
-/* ── i18n helper — usa window.i18nT si está disponible, si no devuelve la clave ── */
+/* ── i18n helper ── */
 const t = (key, params = {}) => {
   let msg = typeof window.i18nT === 'function' ? window.i18nT(key) : key;
   Object.entries(params).forEach(([k, v]) => {
@@ -188,7 +188,7 @@ async function handleRegister(e) {
   const fullName = document.getElementById('name').value.trim();
   const clanId = document.getElementById('clan-select').value;
 
-  /* ── Validaciones en orden ── */
+  /* ── Validations ── */
   if (!validator.validateRequired(['name', 'email', 'clan-select'])) {
     ui.showMessage('auth.alerts.required_fields', 'error');
     return;

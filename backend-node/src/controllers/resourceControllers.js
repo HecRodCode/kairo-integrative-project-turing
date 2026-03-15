@@ -1,21 +1,14 @@
 /**
  * controllers/resourceControllers.js
- *
- * FIXES:
- *  - uploadResource: obtiene clan_id del TL → lo guarda en resources.clan_id
- *  - listResources:  filtra por clan_id del TL
- *  - deleteResource: verifica clan_id por seguridad
- *  - searchResources: pasa clan del coder a Python para filtrar vectores
  */
 
 import { query } from '../config/database.js';
 import { supabase } from '../config/supabase.js';
 import { notifyUser } from '../services/notificationService.js';
+import { callPythonApi } from '../services/pythonApiService.js';
 
-const PYTHON_API = process.env.PYTHON_API_URL || 'http://localhost:8000';
 const BUCKET = 'activity-resources';
 
-/* ── Helper ── */
 async function getUserClan(userId) {
   const r = await query('SELECT clan FROM users WHERE id = $1', [userId]);
   return r.rows[0]?.clan || null;
@@ -26,7 +19,7 @@ async function getUserClan(userId) {
    POST /api/tl/resource/upload
 ════════════════════════════════════════ */
 export async function uploadResource(req, res) {
-  const tlId = req.user?.id;
+  const tlId = req.user?.id || req.session?.userId;
 
   if (!req.file)
     return res.status(400).json({ error: 'No se recibió ningún archivo.' });
@@ -45,7 +38,6 @@ export async function uploadResource(req, res) {
   if (!tlClan)
     return res.status(400).json({ error: 'El TL no tiene un clan asignado.' });
 
-  // Storage path incluye el clan para organización
   const timestamp = Date.now();
   const safeName = req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
   const storagePath = `${tlClan}/module-${moduleId || '0'}/${timestamp}_${safeName}`;
@@ -74,55 +66,56 @@ export async function uploadResource(req, res) {
     );
     resourceId = insertRes.rows[0].id;
   } catch (dbErr) {
-    console.error('[uploadResource] Database insert failed:', dbErr.message);
-    // Non-fatal for the user response, but critical for the grid visibility.
+    console.error('[uploadResource] DB insert failed:', dbErr.message);
   }
 
-  // Send real-time notifications
+  // Notify all active coders in the clan
   try {
-    const tlResult = await query('SELECT full_name FROM users WHERE id = $1', [tlId]);
+    const tlResult = await query('SELECT full_name FROM users WHERE id = $1', [
+      tlId,
+    ]);
     const tlName = tlResult.rows[0]?.full_name || 'Tu Leader';
-
     const coderResult = await query(
       `SELECT id FROM users WHERE role = 'coder' AND clan = $1 AND is_active = true`,
       [tlClan]
     );
-
     for (const coder of coderResult.rows) {
       await notifyUser(
         coder.id,
         `Nuevo recurso: ${title}`,
-        `Tu TL ${tlName} publicó un recurso RAG.`,
+        `Tu TL ${tlName} publicó un nuevo recurso de estudio.`,
         'assignment',
-        null
+        resourceId
       );
     }
-    
     await notifyUser(
       tlId,
-      `Recurso RAG Publicado`,
-      `El recurso "${title}" ha sido enviado a la base de conocimiento de tu clan.`,
+      'Recurso publicado',
+      `"${title}" ha sido subido correctamente a la base de conocimiento de tu clan.`,
       'assignment',
-      null
+      resourceId
     );
-  } catch (err) {
-    console.error('[uploadResource] Failed to send notifications:', err);
+  } catch (notifyErr) {
+    console.warn(
+      '[uploadResource] Notification failed (non-blocking):',
+      notifyErr.message
+    );
   }
 
-  // Respuesta inmediata al TL
-  res.json({
+  return res.json({
     success: true,
     message: 'PDF subido correctamente.',
-    storagePath
+    resourceId,
+    storagePath,
   });
 }
 
 /* ════════════════════════════════════════
-   TL — LIST RESOURCES (solo del clan del TL)
+   TL — LIST RESOURCES
    GET /api/tl/resource/list?moduleId=4
 ════════════════════════════════════════ */
 export async function listResources(req, res) {
-  const tlId = req.user?.id;
+  const tlId = req.user?.id || req.session?.userId;
   const moduleId = parseInt(req.query.moduleId) || null;
 
   try {
@@ -143,29 +136,24 @@ export async function listResources(req, res) {
       params
     );
 
-    res.json({ resources: result.rows });
+    return res.json({ resources: result.rows });
   } catch (err) {
     console.error('[listResources]', err.message);
-    res.status(500).json({ error: 'Failed to list resources' });
+    return res.status(500).json({ error: 'Failed to list resources' });
   }
 }
 
 /* ════════════════════════════════════════
-   CODER — LIST RESOURCES (del clan del Coder)
+   CODER — LIST RESOURCES
    GET /api/coder/resources
-   (Opcional filtrado por módulo)
-   Usado en assignmentCoder.js para el Hub de Actividades
-   (Equivalente funcional al grid del TL)
 ════════════════════════════════════════ */
 export async function listResourcesCoder(req, res) {
-  const coderId = req.user?.id;
+  const coderId = req.user?.id || req.session?.userId;
   const moduleId = parseInt(req.query.moduleId) || null;
 
   try {
     const coderClan = await getUserClan(coderId);
-    if (!coderClan) {
-      return res.json({ resources: [] });
-    }
+    if (!coderClan) return res.json({ resources: [] });
 
     const params = [coderClan];
     let whereClause = 'r.clan_id = $1';
@@ -176,22 +164,22 @@ export async function listResourcesCoder(req, res) {
     }
 
     const result = await query(
-      `SELECT r.id, r.title, r.file_name, r.preview_text, r.uploaded_at, r.module_id,
-              r.clan_id AS clan,
-              m.name as module_name,
-              u.full_name as tl_name
+      `SELECT r.id, r.title, r.file_name, r.preview_text, r.uploaded_at,
+              r.module_id, r.clan_id AS clan,
+              m.name    AS module_name,
+              u.full_name AS tl_name
        FROM resources r
        LEFT JOIN modules m ON r.module_id = m.id
-       LEFT JOIN users u ON r.uploaded_by = u.id
+       LEFT JOIN users   u ON r.uploaded_by = u.id
        WHERE ${whereClause} AND r.is_active = true
        ORDER BY r.uploaded_at DESC`,
       params
     );
 
-    res.json({ resources: result.rows });
+    return res.json({ resources: result.rows });
   } catch (err) {
     console.error('[listResourcesCoder]', err.message);
-    res.status(500).json({ error: 'Failed to list resources' });
+    return res.status(500).json({ error: 'Failed to list resources' });
   }
 }
 
@@ -200,7 +188,7 @@ export async function listResourcesCoder(req, res) {
    DELETE /api/tl/resource/:resourceId
 ════════════════════════════════════════ */
 export async function deleteResource(req, res) {
-  const tlId = req.user?.id;
+  const tlId = req.user?.id || req.session?.userId;
   const resourceId = parseInt(req.params.resourceId);
 
   try {
@@ -224,21 +212,105 @@ export async function deleteResource(req, res) {
       .remove([storage_path])
       .catch(() => {});
 
-    res.json({ success: true });
+    return res.json({ success: true });
   } catch (err) {
     console.error('[deleteResource]', err.message);
-    res.status(500).json({ error: 'Failed to delete resource' });
+    return res.status(500).json({ error: 'Failed to delete resource' });
   }
 }
 
 /* ════════════════════════════════════════
-   CODER — SEARCH RESOURCES BY TOPIC
+   CODER — SEARCH RESOURCES BY TOPIC (RAG)
    POST /api/coder/resources/search
+   Called from aiTrainer.js searchAndRenderResources()
 ════════════════════════════════════════ */
 export async function searchResources(req, res) {
-  // Búsqueda semántica desactivada al eliminar dependencia de Python.
-  // Podríamos implementar una búsqueda básica por texto aquí en el futuro.
-  return res.json({ success: true, resources: [], reason: 'semantic_search_disabled' });
+  const coderId = req.user?.id || req.session?.userId;
+  const { topic, moduleId, limit = 3 } = req.body;
+
+  if (!topic) return res.json({ success: true, resources: [] });
+
+  try {
+    const coderClan = await getUserClan(coderId);
+    if (!coderClan) return res.json({ success: true, resources: [] });
+
+    let resources = [];
+
+    // 1. Try Python RAG (semantic search) — 3s timeout, non-blocking
+    try {
+      const pyData = await callPythonApi('/search-resources', {
+        topic,
+        clan_id: coderClan,
+        module_id: moduleId || null,
+        limit: parseInt(limit),
+        coder_id: coderId,
+      });
+      resources = pyData.resources || [];
+    } catch (pyErr) {
+      console.warn(
+        '[searchResources] Python RAG unavailable, using text fallback:',
+        pyErr.message
+      );
+    }
+
+    // 2. Fallback: pg full-text search
+    if (resources.length === 0) {
+      const params = [coderClan, `%${topic.toLowerCase()}%`];
+      let extra = '';
+      if (moduleId) {
+        extra = ' AND r.module_id = $3';
+        params.push(parseInt(moduleId));
+      }
+
+      const result = await query(
+        `SELECT r.id, r.title, r.file_name, r.preview_text,
+                r.storage_path, r.module_id, r.uploaded_at,
+                0.8 AS similarity
+         FROM resources r
+         WHERE r.clan_id = $1 AND r.is_active = true
+           AND (LOWER(r.title) LIKE $2 OR LOWER(r.preview_text) LIKE $2)
+           ${extra}
+         ORDER BY r.uploaded_at DESC
+         LIMIT ${parseInt(limit)}`,
+        params
+      );
+      resources = result.rows;
+    }
+
+    // 3. Last resort: any resource from clan for this module
+    if (resources.length === 0 && moduleId) {
+      const result = await query(
+        `SELECT r.id, r.title, r.file_name, r.preview_text,
+                r.storage_path, r.module_id, r.uploaded_at,
+                0.5 AS similarity
+         FROM resources r
+         WHERE r.clan_id = $1 AND r.is_active = true AND r.module_id = $2
+         ORDER BY r.uploaded_at DESC LIMIT $3`,
+        [coderClan, parseInt(moduleId), parseInt(limit)]
+      );
+      resources = result.rows;
+    }
+
+    // Generate signed download URLs for each resource
+    const withUrls = await Promise.all(
+      resources.map(async (r) => {
+        if (!r.storage_path) return { ...r, download_url: null };
+        try {
+          const { data } = await supabase.storage
+            .from(BUCKET)
+            .createSignedUrl(r.storage_path, 3600);
+          return { ...r, download_url: data?.signedUrl || null };
+        } catch {
+          return { ...r, download_url: null };
+        }
+      })
+    );
+
+    return res.json({ success: true, resources: withUrls });
+  } catch (err) {
+    console.error('[searchResources]', err.message);
+    return res.json({ success: true, resources: [] });
+  }
 }
 
 /* ════════════════════════════════════════
@@ -246,7 +318,7 @@ export async function searchResources(req, res) {
    GET /api/coder/resource/:id/download
 ════════════════════════════════════════ */
 export async function getResourceDownload(req, res) {
-  const coderId = req.user?.id;
+  const coderId = req.user?.id || req.session?.userId;
   const { id } = req.params;
 
   try {
@@ -258,9 +330,10 @@ export async function getResourceDownload(req, res) {
       [id, coderClan]
     );
 
-    if (!result.rows.length) {
-      return res.status(404).json({ error: 'Recurso no encontrado o no autorizado.' });
-    }
+    if (!result.rows.length)
+      return res
+        .status(404)
+        .json({ error: 'Recurso no encontrado o no autorizado.' });
 
     const resource = result.rows[0];
     const { data, error } = await supabase.storage
@@ -269,9 +342,11 @@ export async function getResourceDownload(req, res) {
 
     if (error) throw error;
 
-    res.json({ url: data.signedUrl, fileName: resource.file_name });
+    return res.json({ url: data.signedUrl, fileName: resource.file_name });
   } catch (err) {
     console.error('[getResourceDownload]', err.message);
-    res.status(500).json({ error: 'Error al generar enlace de descarga.' });
+    return res
+      .status(500)
+      .json({ error: 'Error al generar enlace de descarga.' });
   }
 }

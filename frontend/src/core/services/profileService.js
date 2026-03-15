@@ -1,15 +1,11 @@
 /**
  * src/core/services/profileService.js
- *
- * Provides a small cache layer for /api/profile requests so that
- * navigating between profile-related UI components doesn't repeatedly
- * trigger the same backend fetch.
  */
 
 import { cachedFetch, invalidateFetchCache } from '../utils/fetchCache.js';
 import { API_BASE } from '../config.js';
 
-const PROFILE_TTL = 10_000; // 10s
+const PROFILE_TTL = 10_000;
 
 const ProfileCacheKeys = {
   me: `${API_BASE}/profile`,

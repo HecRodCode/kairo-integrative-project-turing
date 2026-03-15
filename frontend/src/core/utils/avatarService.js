@@ -5,14 +5,8 @@
 
 import { API_BASE } from '../config.js';
 
-/* ── Cache en memoria para no re-fetchear en la misma sesión ── */
-const _cache = new Map(); // userId → avatarUrl | null
+const _cache = new Map();
 
-/**
- * Renderiza un avatar en un contenedor dado.
- * - Si hay foto: <img>
- * - Si no: inicial del nombre sobre fondo accent
- */
 function renderAvatarInto(container, avatarUrl, fullName = '') {
   if (!container) return;
   const initial = (fullName || '?').charAt(0).toUpperCase();

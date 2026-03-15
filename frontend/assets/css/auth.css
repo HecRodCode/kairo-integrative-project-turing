@@ -18,6 +18,26 @@
   background-color: var(--bg-card);
 }
 
+.back-to-landing {
+  position: absolute;
+  top: 2rem;
+  left: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: #94a3b8;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.back-to-landing:hover {
+  color: #a855f7;
+  transform: translateX(-5px);
+}
+
 .card-content {
   width: 75%;
   min-height: 650px;

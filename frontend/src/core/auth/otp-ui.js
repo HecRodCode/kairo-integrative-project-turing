@@ -4,7 +4,7 @@
  */
 
 import { sessionManager } from './session.js';
-import { API_BASE } from '../config.js'; // Use centralized API_BASE
+import { API_BASE } from '../config.js'; 
 
 /* ── DOM ELEMENTS ── */
 const inputs = document.querySelectorAll('#otp-inputs .otp-digit');
@@ -186,7 +186,6 @@ async function handleResend() {
 }
 
 /* ── UI HELPERS ── */
-
 function getCode() {
   return Array.from(inputs)
     .map((i) => i.value)

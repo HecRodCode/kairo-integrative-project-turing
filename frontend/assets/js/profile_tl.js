@@ -1,12 +1,5 @@
 /**
  * assets/js/profile_tl.js
- * FIXES:
- * - alert() → toast system
- * - removeSkill inline onclick → data-idx + addEventListener (ES module safe)
- * - Avatar auto-save inmediato al seleccionar
- * - loadTLMetrics → stats reales desde API
- * - Spinner de carga
- * - Tema usa theme.js global (no duplicar lógica)
  */
 import { guards } from '../../src/core/auth/session.js';
 import { profileService } from '../../src/core/services/profileService.js';
@@ -16,9 +9,7 @@ let isEditMode = false;
 
 const el = (id) => document.getElementById(id);
 
-/* ══════════════════════════════════════
-   TOAST SYSTEM
-══════════════════════════════════════ */
+/* TOAST SYSTEM */
 function toast(message, type = 'success') {
   let container = document.getElementById('toast-container');
   if (!container) {

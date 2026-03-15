@@ -1,7 +1,5 @@
 /**
  * src/core/utils/i18n.js
- * Responsabilidad ÚNICA: traducciones con i18next.
- * Requiere i18next CDN cargado ANTES que este archivo.
  */
 
 const resources = {

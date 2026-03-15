@@ -1,10 +1,9 @@
 /**
  * assets/js/activitiesTL.js
- * Página Actividades — vista TL.
- * Grid combinado: actividades (PDF/repo) + recursos RAG.
  */
 
 import { guards, sessionManager } from '../../src/core/auth/session.js';
+import { loadMyAvatar } from '../../src/core/utils/avatarService.js';
 import { API_BASE } from '../../src/core/config.js';
 
 const el = (id) => document.getElementById(id);
@@ -18,9 +17,7 @@ let selectedFile = null;
 let _ragFile = null;
 let _toastTimer = null;
 
-/* ══════════════════════════════════════
-   BOOTSTRAP
-══════════════════════════════════════ */
+/* BOOTSTRAP */
 (async function init() {
   try {
     const session = await guards.requireAuth();
@@ -37,8 +34,11 @@ let _toastTimer = null;
     return;
   }
 
-  // Wire UI before any fetches — buttons must work even if backend is slow
+  loadMyAvatar().catch((err) =>
+    console.warn('[Dashboard] Avatar load failed:', err.message)
+  );
 
+  // Wire UI before any fetches — buttons must work even if backend is slow
   wireLogout();
   setDate();
   wireAddModal();
@@ -48,9 +48,7 @@ let _toastTimer = null;
   await loadAll();
 })();
 
-/* ══════════════════════════════════════
-   LOAD — assignments + resources (independent fetches)
-══════════════════════════════════════ */
+/* LOAD — assignments + resources (independent fetches) */
 async function loadAll() {
   el('assignments-loading').style.display = 'grid';
   el('assignments-empty').classList.add('hidden');
@@ -107,9 +105,7 @@ async function loadAll() {
   renderGrid();
 }
 
-/* ══════════════════════════════════════
-   RENDER GRID (assignments + resources mezclados)
-══════════════════════════════════════ */
+/* RENDER GRID */
 function renderGrid() {
   el('assignments-loading').style.display = 'none';
 
@@ -263,9 +259,7 @@ function renderCard(item) {
     </div>`;
 }
 
-/* ══════════════════════════════════════
-   DELETE
-══════════════════════════════════════ */
+/* DELETE */
 async function deleteAssignment(id) {
   const confirmed = await confirmAction({
     title: '¿Eliminar actividad?',
@@ -312,9 +306,7 @@ async function deleteResource(id) {
   }
 }
 
-/* ══════════════════════════════════════
-   ADD ACTIVITY MODAL
-══════════════════════════════════════ */
+/* ADD ACTIVITY MODAL */
 function wireAddModal() {
   el('btn-open-add').addEventListener('click', openAddModal);
   el('btn-close-add').addEventListener('click', closeAddModal);
@@ -467,9 +459,7 @@ async function submitAssignment() {
   }
 }
 
-/* ══════════════════════════════════════
-   RAG MODAL
-══════════════════════════════════════ */
+/* RAG MODAL */
 function wireRagModal() {
   el('btn-open-rag').addEventListener('click', openRagModal);
   el('btn-close-rag').addEventListener('click', closeRagModal);
@@ -590,9 +580,7 @@ async function doUpload() {
   }
 }
 
-/* ══════════════════════════════════════
-   UTILS
-══════════════════════════════════════ */
+/* UTILS */
 function showToast(msg, type = 'success') {
   const icons = {
     success: 'fa-circle-check',

@@ -1,102 +1,114 @@
 /**
- * backend-node/src/controllers/notificationControllers.js
+ * controllers/notificationControllers.js
+ * Handles SSE stream + REST CRUD for notifications.
  */
 
 import { query } from '../config/database.js';
-import { addClient, removeClient } from '../services/notificationService.js';
+import { addClient } from '../services/notificationService.js';
 
-/**
- * ESTABLISH SSE CONNECTION
- * GET /api/notifications/stream
- */
+/* ════════════════════════════════════════
+   SSE STREAM
+   GET /api/notifications/stream
+════════════════════════════════════════ */
 export function streamNotifications(req, res) {
-  const userId = req.user.id;
+  const userId = req.user?.id || req.session?.userId;
+  if (!userId) return res.status(401).end();
 
-  // SSE Headers
+  // SSE headers — X-Accel-Buffering: no is critical for Railway/nginx proxies
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
     Connection: 'keep-alive',
+    'X-Accel-Buffering': 'no',
   });
 
-  // Keep-alive formatting (some proxies/hosts close idle SSE connections)
-  res.write(': connected\n\n');
+  // Confirm connection to client immediately
+  res.write('data: {"type":"CONNECTED"}\n\n');
 
-  // Send a ping message to keep the connection alive in case of network timeouts
-  const keepAlive = setInterval(() => {
-    res.write(': ping\n\n');
-  }, 15_000);
+  // Register client — addClient returns cleanup function
+  const cleanup = addClient(userId, res);
 
-  // Register client
-  addClient(userId, res);
-  // console.log(`[SSE] User ${userId} connected. Total active sessions: ${clients.get(userId).length}`);
-
-  // Handle client disconnect
-  req.on('close', () => {
-    clearInterval(keepAlive);
-    removeClient(userId, res);
-    // console.log(`[SSE] User ${userId} disconnected.`);
-  });
+  // Clean up when client disconnects (tab close, navigation, etc.)
+  req.on('close', cleanup);
 }
 
-/**
- * GET INITIAL NOTIFICATIONS AND UNREAD COUNT
- * GET /api/notifications
- */
+/* ════════════════════════════════════════
+   GET NOTIFICATIONS
+   GET /api/notifications
+════════════════════════════════════════ */
 export async function getNotifications(req, res) {
+  const userId = req.user?.id || req.session?.userId;
+  if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
   try {
-    const user = req.user;
     const result = await query(
-      `SELECT * FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 30`,
-      [user.id]
+      `SELECT id, title, message, type, is_read, related_id, created_at
+       FROM notifications
+       WHERE user_id = $1
+       ORDER BY created_at DESC
+       LIMIT 30`,
+      [userId]
     );
+
     const unread = result.rows.filter((n) => !n.is_read).length;
-    res.json({ notifications: result.rows, unread });
+
+    return res.json({
+      notifications: result.rows,
+      unread,
+    });
   } catch (err) {
-    console.error('[getNotifications]', err);
-    res.status(500).json({ error: 'Error al cargar notificaciones.' });
+    console.error('[getNotifications]', err.message);
+    return res.status(500).json({ error: 'Failed to fetch notifications' });
   }
 }
 
-/**
- * MARK ALL NOTIFICATIONS AS READ
- * POST /api/notifications/read
- */
+/* ════════════════════════════════════════
+   MARK ALL AS READ
+   POST /api/notifications/read
+════════════════════════════════════════ */
 export async function markNotificationsRead(req, res) {
+  const userId = req.user?.id || req.session?.userId;
+  if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
   try {
-    await query(`UPDATE notifications SET is_read = true WHERE user_id = $1`, [
-      req.user.id,
-    ]);
-    res.json({ success: true });
+    await query(
+      `UPDATE notifications SET is_read = true
+       WHERE user_id = $1 AND is_read = false`,
+      [userId]
+    );
+    return res.json({ success: true });
   } catch (err) {
-    console.error('[markNotificationsRead]', err);
-    res.status(500).json({ error: 'Error.' });
+    console.error('[markNotificationsRead]', err.message);
+    return res
+      .status(500)
+      .json({ error: 'Failed to mark notifications as read' });
   }
 }
 
-/**
- * DELETE A SPECIFIC NOTIFICATION
- * DELETE /api/notifications/:id
- */
+/* ════════════════════════════════════════
+   DELETE NOTIFICATION
+   DELETE /api/notifications/:id
+════════════════════════════════════════ */
 export async function deleteNotification(req, res) {
-  try {
-    const userId = req.user.id;
-    const { id } = req.params;
+  const userId = req.user?.id || req.session?.userId;
+  const { id } = req.params;
 
+  if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+  try {
     const result = await query(
-      `DELETE FROM notifications WHERE id = $1 AND user_id = $2 RETURNING id`,
+      `DELETE FROM notifications
+       WHERE id = $1 AND user_id = $2
+       RETURNING id`,
       [id, userId]
     );
 
-    if (result.rowCount === 0) {
-      return res
-        .status(404)
-        .json({ error: 'Notificación no encontrada o no tienes permisos.' });
-    }
+    if (result.rows.length === 0)
+      return res.status(404).json({ error: 'Notification not found' });
 
-    res.json({ success: true, deletedId: id });
+    return res.json({ success: true });
   } catch (err) {
-    console.error('[deleteNotification]', err);
-    res.status(500).json({ error: 'Error al eliminar la notificación.' });
+    console.error('[deleteNotification]', err.message);
+    return res.status(500).json({ error: 'Failed to delete notification' });
   }
 }

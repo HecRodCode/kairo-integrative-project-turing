@@ -1,17 +1,14 @@
 /**
- * middleware/authMiddlewares.js
+ * middlewares/authMiddlewares.js
  * Session validation and Role-Based Access Control — Kairo Project.
  */
-
 import { findById } from '../models/user.js';
+import { query } from '../config/database.js';
 
-/**
- * isAuthenticated
- * Verifies active session and loads the user into req.user.
- * Must run before hasRole — hasRole reads req.user.role set here.
- */
 export async function isAuthenticated(req, res, next) {
   try {
+    if (req.user) return next();
+
     if (!req.session?.userId) {
       return res.status(401).json({
         error: 'Unauthorized',
@@ -29,26 +26,19 @@ export async function isAuthenticated(req, res, next) {
       });
     }
 
-    req.user = user; // ← role lives here: req.user.role
+    req.user = user;
     next();
   } catch (error) {
-    console.error('[isAuthenticated]', error);
-    res.status(500).json({ error: 'Internal Server Error during authentication' });
+    console.error('[isAuthenticated]', error.message);
+    res
+      .status(500)
+      .json({ error: 'Internal Server Error during authentication' });
   }
 }
 
-/**
- * hasRole(...allowedRoles)
- * Must run AFTER isAuthenticated (depends on req.user set above).
- *
- * BUG WAS HERE: previous version read req.session.role — never populated.
- * FIX: reads req.user.role, which isAuthenticated always sets.
- */
 export function hasRole(...allowedRoles) {
   return (req, res, next) => {
-    // req.user is guaranteed by isAuthenticated running first
     const userRole = req.user?.role;
-
     if (!userRole) {
       return res.status(401).json({
         error: 'Unauthorized',
@@ -57,7 +47,9 @@ export function hasRole(...allowedRoles) {
     }
 
     const normalized = userRole.toLowerCase().trim();
-    const isAuthorized = allowedRoles.some((r) => r.toLowerCase() === normalized);
+    const isAuthorized = allowedRoles.some(
+      (r) => r.toLowerCase() === normalized
+    );
 
     if (!isAuthorized) {
       console.warn(
@@ -73,18 +65,46 @@ export function hasRole(...allowedRoles) {
   };
 }
 
-/**
- * checkOnboarding
- * Blocks dashboard access until first_login = false.
- * Use on protected coder routes that require completed onboarding.
- */
-export function checkOnboarding(req, res, next) {
-  if (req.user?.role === 'coder' && req.user?.first_login) {
-    return res.status(403).json({
-      error: 'Onboarding Required',
-      message: 'Complete the diagnostic assessment first.',
-      redirect: '/onboarding',
-    });
+export async function checkOnboarding(req, res, next) {
+  try {
+    const role = req.user?.role?.toLowerCase().trim();
+
+    // TL and admin bypass onboarding entirely
+    if (role === 'tl' || role === 'admin') return next();
+
+    // Use req.user.first_login if already loaded (most cases)
+    if (req.user?.first_login !== undefined) {
+      if (req.user.first_login === true) {
+        return res.status(403).json({
+          error: 'Onboarding Required',
+          message: 'Complete the diagnostic assessment first.',
+          requiresOnboarding: true,
+          redirect: '/onboarding',
+        });
+      }
+      return next();
+    }
+
+    // Fallback: first_login not in session object — query DB
+    const { rows } = await query(
+      'SELECT first_login FROM users WHERE id = $1',
+      [req.user.id]
+    );
+
+    if (rows[0]?.first_login === true) {
+      return res.status(403).json({
+        error: 'Onboarding Required',
+        message: 'Complete the diagnostic assessment first.',
+        requiresOnboarding: true,
+        redirect: '/onboarding',
+      });
+    }
+
+    next();
+  } catch (err) {
+    console.error('[checkOnboarding]', err.message);
+    return res
+      .status(500)
+      .json({ error: 'Server error checking onboarding status' });
   }
-  next();
 }

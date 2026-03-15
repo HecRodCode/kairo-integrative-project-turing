@@ -9,6 +9,7 @@
 import 'dotenv/config';
 import { query } from '../config/database.js';
 import { notifyUser } from '../services/notificationService.js';
+import { awardPoints } from '../services/scoringService.js';
 
 /* ════════════════════════════════════════
    DASHBOARD  —  GET /api/coder/dashboard
@@ -29,18 +30,16 @@ export async function getCoderDashboard(req, res) {
     ] = await Promise.all([
       /* 1 — User + current module info */
       query(
-        `
-        SELECT
-          u.full_name, u.email, u.clan AS clan_id, u.role,
-          u.current_module_id,
-          u.learning_style_cache,
-          m.name        AS module_name,
-          m.total_weeks AS module_total_weeks,
-          m.is_critical
-        FROM users u
-        LEFT JOIN modules m ON m.id = u.current_module_id
-        WHERE u.id = $1
-      `,
+        `SELECT
+     u.full_name, u.email, u.clan AS clan_id, u.role,
+     u.current_module_id, u.kairo_score,
+     u.learning_style_cache,
+     m.name        AS module_name,
+     m.total_weeks AS module_total_weeks,
+     m.is_critical
+   FROM users u
+   LEFT JOIN modules m ON m.id = u.current_module_id
+   WHERE u.id = $1`,
         [userId]
       ),
 
@@ -178,6 +177,7 @@ export async function getCoderDashboard(req, res) {
             email: user.email,
             clanId: user.clan_id,
             role: user.role,
+            kairoScore: user.kairo_score ?? 50,
             firstLogin: user.first_login,
             moduleId: user.current_module_id,
             moduleName: user.module_name,
@@ -204,10 +204,13 @@ export async function getCoderDashboard(req, res) {
       // averageScore null (no 0) para que el UI distinga "sin datos" de un 0 real.
       progress: {
         currentWeek: progress?.current_week ?? 1,
-        averageScore: progress ? parseFloat(progress.average_score) || null : null,
+        averageScore:
+          progress?.average_score != null
+            ? parseFloat(progress.average_score)
+            : null,
         strugglingTopics: progress?.struggling_topics || [],
         weeksCompleted: progress?.weeks_completed || [],
-        weeksCompletedCount: weeksCompletedCount,
+        weeksCompletedCount,
         updatedAt: progress?.updated_at || null,
       },
 
@@ -382,7 +385,7 @@ export async function getActivePlan(req, res) {
 
 export async function completeDay(req, res) {
   try {
-    const userId = req.session.userId;
+    const userId = req.session?.userId || req.user?.id;
     const planId = parseInt(req.params.planId);
     const dayNum = parseInt(req.params.day);
 
@@ -392,16 +395,11 @@ export async function completeDay(req, res) {
         .json({ error: 'Día inválido. Debe ser entre 1 y 20.' });
     }
 
-    // Verificar que el plan pertenece al coder
     const check = await query(
-      `
-      SELECT id, completed_days
-      FROM complementary_plans
-      WHERE id = $1 AND coder_id = $2 AND is_active = true
-    `,
+      `SELECT id, completed_days FROM complementary_plans
+       WHERE id = $1 AND coder_id = $2 AND is_active = true`,
       [planId, userId]
     );
-
     if (check.rows.length === 0) {
       return res.status(404).json({ error: 'Plan no encontrado o inactivo.' });
     }
@@ -410,17 +408,41 @@ export async function completeDay(req, res) {
     current[String(dayNum)] = { completedAt: new Date().toISOString() };
 
     await query(
-      `
-      UPDATE complementary_plans
-      SET completed_days = $1::jsonb
-      WHERE id = $2
-    `,
+      `UPDATE complementary_plans SET completed_days = $1::jsonb WHERE id = $2`,
       [JSON.stringify(current), planId]
     );
 
+    // Populate activity_progress from plan_activities
+    try {
+      const activitiesResult = await query(
+        `SELECT id FROM plan_activities WHERE plan_id = $1 AND day_number = $2`,
+        [planId, dayNum]
+      );
+      for (const activity of activitiesResult.rows) {
+        await query(
+          `INSERT INTO activity_progress (activity_id, coder_id, completed, completed_at)
+           VALUES ($1, $2, true, NOW())
+           ON CONFLICT (activity_id, coder_id) DO UPDATE SET completed = true, completed_at = NOW()`,
+          [activity.id, userId]
+        );
+      }
+    } catch (actErr) {
+      console.warn(
+        '[completeDay] activity_progress insert failed (non-blocking):',
+        actErr.message
+      );
+    }
+
     const completedCount = Object.keys(current).length;
 
-    // Siguiente día sin completar
+    // Award points for completing a day
+    await awardPoints(userId, 'day_complete', planId);
+
+    // Bonus for completing all 20 days
+    if (completedCount >= 20) {
+      await awardPoints(userId, 'plan_complete', planId);
+    }
+
     let nextDay = null;
     for (let d = dayNum + 1; d <= 20; d++) {
       if (!current[String(d)]) {
@@ -429,12 +451,19 @@ export async function completeDay(req, res) {
       }
     }
 
+    // Return updated kairo_score so frontend can display it
+    const scoreResult = await query(
+      'SELECT kairo_score FROM users WHERE id = $1',
+      [userId]
+    );
+
     res.json({
       success: true,
       completedDays: current,
       completedCount,
       nextDay,
       isComplete: completedCount >= 20,
+      kairoScore: scoreResult.rows[0]?.kairo_score ?? 0,
     });
   } catch (error) {
     console.error('[completeDay]', error);
@@ -533,7 +562,9 @@ export async function markFeedbackRead(req, res) {
     const feedback = result.rows[0];
 
     // 2. Notify TL in real-time
-    const coder = await query('SELECT full_name FROM users WHERE id = $1', [userId]);
+    const coder = await query('SELECT full_name FROM users WHERE id = $1', [
+      userId,
+    ]);
     const coderName = coder.rows[0]?.full_name || 'Un Coder';
 
     await notifyUser(
