@@ -31,7 +31,7 @@ def _get_clients():
 
 class ReportRequest(BaseModel):
     clan:                  str
-    tl_id:                 int
+    tl_id:         Optional[int] = None 
     total_coders:          int
     average_score:         float
     high_risk_count:       int
@@ -529,7 +529,7 @@ Responde SOLO con JSON válido, sin markdown, sin backticks:
         # ── Guardar en ai_reports ──
         supabase.table("ai_reports").insert({
             "target_type":     "coder",
-            "target_id":       req.coder_id,
+            "target_id":       req.tl_id or 0,
             "summary_text":    report.get("summary", ""),
             "risk_level":      report.get("risk_level", "medium"),
             "recommendations": report.get("recommendations", ""),
