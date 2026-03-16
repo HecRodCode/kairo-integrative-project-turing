@@ -113,8 +113,8 @@
   height: 38px;
   border-radius: 8px;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(241, 241, 241, 0.363);
+  color: rgba(216, 216, 216, 0.911);
   display: grid;
   place-items: center;
   font-size: 12px;
@@ -127,7 +127,7 @@
 }
 .btn-logout:hover {
   background: rgba(239, 68, 68, 0.15);
-  border-color: rgba(239, 68, 68, 0.4);
+  border-color: rgba(212, 15, 15, 0.904);
   color: var(--color-error);
 }
 
@@ -1096,8 +1096,9 @@
 
   /* Glass card */
   .glass-card {
+    margin-left: 20px;
     padding: 15px;
-    width: 500px;
+    width: 480px;
   }
 
   /* skill-item label más corto */
@@ -1147,6 +1148,7 @@
 
   .glass-card {
     padding: 14px 12px;
+    width: 350px;
   }
 
   .card-head {

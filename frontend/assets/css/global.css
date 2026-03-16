@@ -508,7 +508,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgb(169, 27, 235);
   text-decoration: none;
   font-size: 10px;
   font-weight: 600;
@@ -606,7 +606,7 @@ body {
 }
 @media (max-width: 768px) {
   .bottom-nav-item.btn-logout {
-    color: rgba(239, 68, 68, 0.6);
+    color: rgba(235, 35, 35, 0.952);
     background: transparent;
     border: none;
     font-family: inherit;

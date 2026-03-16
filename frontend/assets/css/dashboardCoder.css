@@ -84,7 +84,7 @@
 }
 
 .nav-link.active .nav-icon {
-  background: rgba(168, 85, 247, 0.3);
+  background: rgba(168, 85, 247, 0.3);  
 }
 
 .btn-logout {
@@ -92,8 +92,8 @@
   height: 40px;
   border-radius: 8px;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(241, 241, 241, 0.363);
+  color: rgba(216, 216, 216, 0.911);
   display: grid;
   place-items: center;
   font-size: 12px;
@@ -106,7 +106,7 @@
 }
 .btn-logout:hover {
   background: rgba(239, 68, 68, 0.15);
-  border-color: rgba(239, 68, 68, 0.35);
+  border-color: rgba(218, 15, 15, 0.788);
   color: var(--color-error);
 }
 
@@ -1024,7 +1024,9 @@
 
   /* Cards */
   .glass-card {
-    padding: 16px;
+    margin-left: 20px;
+    padding: 15px;
+    width: 480px;
   }
 
   /* Topbar module pill */
@@ -1063,7 +1065,8 @@
   }
 
   .glass-card {
-    padding: 14px;
+    padding: 14px 12px;
+    width: 350px;
   }
 
   .card-head {
