@@ -4,7 +4,7 @@ const PYTHON_API_URL = 'https://kairo-integrative-project-turing-production-b3f6
 // REPORTE INDIVIDUAL - CODER
 // ════════════════════════════════════════
 async function generateReportCoder(coderId)
-    event.stopPropagation();{
+    event.stopPropagation();
     const btn = event.target;
     const originalText = btn.textContent;
 
@@ -45,7 +45,7 @@ async function generateReportCoder(coderId)
 // REPORTE GRUPAL - CLAN
 // ════════════════════════════════════════
 async function generateReportClan(clan)
-    event.stopPropagation();{
+    event.stopPropagation();
     const btn = event.target;
     const originalText = btn.textContent;
 
