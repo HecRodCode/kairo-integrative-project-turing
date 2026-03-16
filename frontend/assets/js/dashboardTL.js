@@ -72,6 +72,7 @@ function renderAll(data) {
 
 function renderTLInfo(tl) {
   if (!tl) return;
+  sessionStorage.setItem('clanId', tl.clanId);
   el('clan-heading').textContent = cap(tl.clanId);
   el('topbar-name').textContent = tl.fullName;
 }
@@ -266,7 +267,7 @@ function renderDetail(c) {
   const body = el('detail-body');
   body.classList.remove('hidden');
   body.style.display = 'flex';
-
+  sessionStorage.setItem("idCoder", c.id);
   el('d-name').textContent = c.full_name;
   el('d-clan').textContent = cap(c.clan_id || '—');
 
