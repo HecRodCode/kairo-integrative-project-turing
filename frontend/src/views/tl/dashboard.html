@@ -209,7 +209,7 @@
               <div class="card-head">
                 <h2 class="card-title">Coders del Clan</h2>
                 <div class="filter-row" id="filter-row">
-                  <button class="btn-ghost" id="btn-report" onclick="generateReportClan(sessionStorage.getItem('idCoder'))">
+                  <button class="btn-ghost" id="btn-report" onclick="generateReportClan(sessionStorage.getItem('clanId'))">
                       <i class="fa-solid fa-file-pdf"></i> Reporte clan
                   </button>
                   <button class="chip active" data-filter="all">Todos</button>
@@ -471,6 +471,7 @@
         </div>
       </div>
     </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="../../core/auth/reports.js"></script
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script type="module" src="../../../assets/js/dashboardTL.js"></script>

@@ -40,9 +40,8 @@ async function generateReportClan(clan) {
 
     try {
         clan = (clan).toLowerCase();
-        
-        const response = await fetch(`${PYTHON_API_URL}/api/reports/generar-informe-clan-pdf?clan_name=${clan}`, {
-            method: 'POST'
+        const response = await fetch(`${PYTHON_API_URL}/generate-pdf/${clan}`, {
+            method: 'GET'
         });
         if (!response.ok) throw new Error(`Error ${response.status}`);
         

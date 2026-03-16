@@ -48,37 +48,37 @@ async def generate_report(req: ReportRequest):
 
     try:
         prompt = f"""
-You are an educational data analyst for Riwi coding bootcamp.
-Write a professional report for the Team Leader of clan '{req.clan}'.
+Eres un analista de datos educativo para el bootcamp de programación Riwi.
+Escribe un informe profesional para el Team Leader del clan '{req.clan}'.
 
-DATA:
-- Total coders: {req.total_coders}
-- Average score: {req.average_score:.1f}/100
-- High/critical risk coders: {req.high_risk_count}
-- Top struggling topics: {', '.join(req.top_struggling_topics) if req.top_struggling_topics else 'None reported'}
-- Soft skills averages: {json.dumps(req.soft_skills_summary) if req.soft_skills_summary else 'Not available'}
+DATOS:
+- Total de coders: {req.total_coders}
+- Puntaje promedio: {req.average_score:.1f}/100
+- Coders en riesgo alto/crítico: {req.high_risk_count}
+- Temas con más dificultad: {', '.join(req.top_struggling_topics) if req.top_struggling_topics else 'Ninguno reportado'}
+- Promedios de habilidades blandas: {json.dumps(req.soft_skills_summary) if req.soft_skills_summary else 'No disponible'}
 
-Write 3 sections:
-1. Current state summary
-2. Main risks and concerns
-3. Concrete recommendations (3-5 action items)
+Escribe 3 secciones:
+1. Resumen del estado actual
+2. Principales riesgos y preocupaciones
+3. Recomendaciones concretas (3-5 acciones)
 
-Return ONLY valid JSON with no markdown, no backticks:
+Responde SOLO con JSON válido, sin markdown, sin backticks:
 {{
-    "report_title": "Clan {req.clan} — Performance Report",
-    "generated_date": "{datetime.now().strftime('%B %d, %Y')}",
+    "report_title": "Clan {req.clan} - Informe de Rendimiento",
+    "generated_date": "{datetime.now().strftime('%d de %B de %Y')}",
     "risk_level": "low|medium|high|critical",
-    "summary": "paragraph about current state",
-    "risks": "paragraph about risks",
-    "recommendations": "paragraph about what the TL should do",
-    "action_items": ["item 1", "item 2", "item 3"]
+    "summary": "párrafo sobre el estado actual",
+    "risks": "párrafo sobre los riesgos",
+    "recommendations": "párrafo sobre lo que debe hacer el TL",
+    "action_items": ["acción 1", "acción 2", "acción 3"]
 }}
 """
 
         completion = groq_client.chat.completions.create(
             model=os.getenv("MODEL_NAME", "llama-3.3-70b-versatile"),
             messages=[
-                {"role": "system", "content": "You are an educational analyst. Respond only with valid JSON, no markdown."},
+                {"role": "system", "content": "Eres un analista educativo. Responde solo con JSON válido, sin markdown."},
                 {"role": "user",   "content": prompt},
             ],
             max_tokens=1000,
@@ -130,7 +130,7 @@ Return ONLY valid JSON with no markdown, no backticks:
 async def generate_clan_pdf(clan: str):
     """
     Called by Node.js: GET /generate-pdf/{clan}
-    No AI needed here — pure data + PDF build.
+    No AI needed here - pure data + PDF build.
     """
     _, supabase = _get_clients()
 
@@ -159,7 +159,16 @@ async def generate_clan_pdf(clan: str):
             .execute()
         progress_map = {p["coder_id"]: p for p in (progress_result.data or [])}
 
-        pdf_bytes = _build_pdf(clan, coders, skills_map, progress_map)
+        ai_report_result = supabase.table("ai_reports") \
+            .select("summary_text, risk_level, recommendations") \
+            .eq("clan_id", clan) \
+            .order("generated_at", desc=True) \
+            .limit(1) \
+            .execute()
+        ai_report = ai_report_result.data[0] if ai_report_result.data else None
+
+
+        pdf_bytes = _build_pdf(clan, coders, skills_map, progress_map,ai_report)
 
         return StreamingResponse(
             io.BytesIO(pdf_bytes),
@@ -174,72 +183,227 @@ async def generate_clan_pdf(clan: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-def _build_pdf(clan: str, coders: list, skills_map: dict, progress_map: dict) -> bytes:
+# ════════════════════════════════════════
+# PDF GENERATION
+# ════════════════════════════════════════
+
+def _sanitize(text: str) -> str:
+    return (str(text)
+        .replace('\u2014', '-')   # em dash -
+        .replace('\u2013', '-')   # en dash -
+        .replace('\u201c', '"')   # "
+        .replace('\u201d', '"')   # "
+        .replace('\u2018', "'")   # '
+        .replace('\u2019', "'")   # '
+        .replace('\u2026', '...')  # ellipsis …
+    )
+
+
+def _build_pdf(clan: str, coders: list, skills_map: dict, progress_map: dict, ai_report: dict = None) -> bytes:
     pdf = FPDF()
-    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_auto_page_break(auto=True, margin=20)
     pdf.add_page()
 
-    pdf.set_font("Helvetica", "B", 20)
-    pdf.set_fill_color(109, 40, 217)
-    pdf.set_text_color(255, 255, 255)
-    pdf.cell(0, 14, f"  Clan {clan.upper()} — Performance Report", fill=True, ln=True)
+    # ── PALETA DE COLORES ──
+    PURPLE_DARK  = (69, 10, 150)
+    PURPLE_MID   = (109, 40, 217)
+    PURPLE_LIGHT = (237, 233, 254)
+    GRAY_DARK    = (30, 30, 30)
+    GRAY_MID     = (80, 80, 80)
+    GRAY_LIGHT   = (245, 245, 247)
+    WHITE        = (255, 255, 255)
+    RED_SOFT     = (185, 28, 28)
+    GREEN_SOFT   = (21, 128, 61)
 
-    pdf.set_text_color(100, 100, 100)
+    # ══════════════════════════════
+    # HEADER PRINCIPAL
+    # ══════════════════════════════
+    pdf.set_fill_color(*PURPLE_DARK)
+    pdf.rect(0, 0, 210, 38, 'F')
+
+    pdf.set_xy(10, 8)
+    pdf.set_font("Helvetica", "B", 22)
+    pdf.set_text_color(*WHITE)
+    pdf.cell(0, 10, "KAIRO", ln=False)
+
     pdf.set_font("Helvetica", "", 10)
-    pdf.cell(0, 8, f"  Generated by Kairo AI · {datetime.now().strftime('%B %d, %Y')}", ln=True)
+    pdf.set_text_color(200, 180, 255)
+    pdf.set_xy(10, 20)
+    pdf.cell(0, 6, "Intelligent Learning Analytics Platform", ln=True)
+
+    # Línea decorativa morada
+    pdf.set_fill_color(*PURPLE_MID)
+    pdf.rect(0, 38, 210, 3, 'F')
+
+    # Título del reporte
+    pdf.set_xy(10, 46)
+    pdf.set_font("Helvetica", "B", 15)
+    pdf.set_text_color(*GRAY_DARK)
+    pdf.cell(0, 9, _sanitize(f"Performance Report - Clan {clan.upper()}"), ln=True)
+
+    pdf.set_font("Helvetica", "", 9)
+    pdf.set_text_color(*GRAY_MID)
+    pdf.cell(0, 5, f"Generated by Kairo AI   |   {datetime.now().strftime('%B %d, %Y  %H:%M')}", ln=True)
     pdf.ln(6)
 
-    scores = [progress_map.get(c["id"], {}).get("average_score", 0) for c in coders]
-    avg    = sum(scores) / len(scores) if scores else 0
+    # ══════════════════════════════
+    # RESUMEN GENERAL (tarjetas)
+    # ══════════════════════════════
+    scores   = [progress_map.get(c["id"], {}).get("average_score", 0) for c in coders]
+    avg      = sum(scores) / len(scores) if scores else 0
     assessed = sum(1 for c in coders if c["id"] in skills_map)
+    at_risk  = sum(1 for s in scores if s < 50)
 
-    pdf.set_font("Helvetica", "B", 12)
-    pdf.set_text_color(30, 30, 30)
-    pdf.cell(0, 8, "Overview", ln=True)
-    pdf.set_font("Helvetica", "", 11)
-    pdf.cell(0, 7, f"Total coders: {len(coders)}", ln=True)
-    pdf.cell(0, 7, f"Average score: {avg:.1f}/100", ln=True)
-    pdf.cell(0, 7, f"Diagnostics completed: {assessed}/{len(coders)}", ln=True)
-    pdf.ln(6)
+    def _stat_card(x, y, label, value, color):
+        pdf.set_fill_color(*color)
+        pdf.rect(x, y, 57, 22, 'F')
+        pdf.set_xy(x + 3, y + 3)
+        pdf.set_font("Helvetica", "B", 14)
+        pdf.set_text_color(*WHITE)
+        pdf.cell(51, 8, str(value), ln=True)
+        pdf.set_xy(x + 3, y + 12)
+        pdf.set_font("Helvetica", "", 8)
+        pdf.set_text_color(220, 210, 255)
+        pdf.cell(51, 6, label)
 
-    pdf.set_font("Helvetica", "B", 12)
-    pdf.cell(0, 8, "Coder Profiles", ln=True)
-    pdf.ln(2)
+    y_cards = pdf.get_y()
+    _stat_card(10,  y_cards, "Total Coders",          len(coders),        PURPLE_MID)
+    _stat_card(70,  y_cards, "Average Score",          f"{avg:.1f}/100",   (79, 70, 229))
+    _stat_card(130, y_cards, "Diagnostics Completed",  f"{assessed}/{len(coders)}", (124, 58, 237))
 
-    for coder in coders:
+    pdf.ln(28)
+
+    # ══════════════════════════════
+    # SECCIÓN: PERFILES DE CODERS
+    # ══════════════════════════════
+    pdf.set_fill_color(*PURPLE_LIGHT)
+    pdf.set_draw_color(*PURPLE_MID)
+    pdf.rect(10, pdf.get_y(), 190, 10, 'F')
+    pdf.set_xy(13, pdf.get_y() + 2)
+    pdf.set_font("Helvetica", "B", 11)
+    pdf.set_text_color(*PURPLE_DARK)
+    pdf.cell(0, 6, "PERFILES DE CODERS", ln=True)
+    pdf.ln(4)
+
+    for i, coder in enumerate(coders):
         cid      = coder["id"]
         ss       = skills_map.get(cid, {})
         progress = progress_map.get(cid, {})
+        score    = progress.get("average_score", None)
 
+        # Fondo alterno
+        if i % 2 == 0:
+            pdf.set_fill_color(*GRAY_LIGHT)
+            pdf.rect(10, pdf.get_y(), 190, 36 if ss else 26, 'F')
+
+        # Barra lateral morada
+        pdf.set_fill_color(*PURPLE_MID)
+        pdf.rect(10, pdf.get_y(), 3, 36 if ss else 26, 'F')
+
+        start_y = pdf.get_y()
+
+        # Nombre
+        pdf.set_xy(16, start_y + 3)
         pdf.set_font("Helvetica", "B", 11)
-        pdf.set_text_color(109, 40, 217)
-        pdf.cell(0, 8, coder["full_name"], ln=True)
+        pdf.set_text_color(*PURPLE_DARK)
+        pdf.cell(100, 6, _sanitize(coder["full_name"]), ln=False)
 
-        pdf.set_font("Helvetica", "", 10)
-        pdf.set_text_color(60, 60, 60)
-        pdf.cell(0, 6, f"Email: {coder['email']}", ln=True)
-        pdf.cell(0, 6,
-            f"Avg score: {progress.get('average_score', 'N/A')}  |  "
-            f"Week: {progress.get('current_week', 'N/A')}", ln=True)
+        # Score badge
+        if score is not None:
+            badge_color = GREEN_SOFT if score >= 70 else (202, 138, 4) if score >= 50 else RED_SOFT
+            pdf.set_fill_color(*badge_color)
+            pdf.set_text_color(*WHITE)
+            pdf.set_font("Helvetica", "B", 9)
+            pdf.set_xy(160, start_y + 3)
+            pdf.cell(38, 6, f"Score: {score}/100", fill=True, align='C', ln=True)
+        else:
+            pdf.ln(6)
 
+        # Email y semana
+        pdf.set_xy(16, start_y + 11)
+        pdf.set_font("Helvetica", "", 9)
+        pdf.set_text_color(*GRAY_MID)
+        pdf.cell(0, 5, _sanitize(f"Email: {coder['email']}   |   Week: {progress.get('current_week', 'N/A')}"), ln=True)
+
+        # Soft skills
         if ss:
-            pdf.cell(0, 6,
-                f"Soft skills — Autonomy: {ss.get('autonomy','?')}  "
+            pdf.set_xy(16, start_y + 18)
+            pdf.set_font("Helvetica", "B", 8)
+            pdf.set_text_color(*PURPLE_DARK)
+            pdf.cell(0, 5, "Soft Skills:", ln=False)
+            pdf.set_font("Helvetica", "", 8)
+            pdf.set_text_color(*GRAY_MID)
+            skills_text = (
+                f"  Autonomy: {ss.get('autonomy','?')}  "
                 f"Time Mgmt: {ss.get('time_management','?')}  "
                 f"Problem Solving: {ss.get('problem_solving','?')}  "
                 f"Communication: {ss.get('communication','?')}  "
-                f"Teamwork: {ss.get('teamwork','?')}",
-                ln=True
+                f"Teamwork: {ss.get('teamwork','?')}"
             )
-            pdf.cell(0, 6, f"Learning style: {ss.get('learning_style', 'N/A')}", ln=True)
-        else:
-            pdf.set_text_color(200, 50, 50)
-            pdf.cell(0, 6, "Diagnostic not completed.", ln=True)
-            pdf.set_text_color(60, 60, 60)
+            pdf.cell(0, 5, _sanitize(skills_text), ln=True)
 
+            pdf.set_xy(16, start_y + 25)
+            pdf.set_font("Helvetica", "I", 8)
+            pdf.set_text_color(124, 58, 237)
+            pdf.cell(0, 5, _sanitize(f"Learning style: {ss.get('learning_style', 'N/A')}"), ln=True)
+        else:
+            pdf.set_xy(16, start_y + 18)
+            pdf.set_font("Helvetica", "I", 9)
+            pdf.set_text_color(*RED_SOFT)
+            pdf.cell(0, 5, "Diagnostic not completed.", ln=True)
+
+        pdf.ln(6)
+
+    # ══════════════════════════════
+    # SECCIÓN: AI ANALYSIS
+    # ══════════════════════════════
+    if ai_report:
+        pdf.set_fill_color(*PURPLE_LIGHT)
+        pdf.rect(10, pdf.get_y(), 190, 10, 'F')
+        pdf.set_xy(13, pdf.get_y() + 2)
+        pdf.set_font("Helvetica", "B", 11)
+        pdf.set_text_color(*PURPLE_DARK)
+        pdf.cell(0, 6, "ANALISIS IA", ln=True)   
         pdf.ln(4)
-        pdf.set_draw_color(220, 220, 220)
-        pdf.line(10, pdf.get_y(), 200, pdf.get_y())
-        pdf.ln(4)
+
+        risk_colors = {
+            "low":      (21, 128, 61),
+            "medium":   (202, 138, 4),
+            "high":     (185, 28, 28),
+            "critical": (109, 10, 10)
+        }
+        risk = ai_report.get("risk_level", "medium")
+        pdf.set_fill_color(*risk_colors.get(risk, (80, 80, 80)))
+        pdf.set_text_color(*WHITE)
+        pdf.set_font("Helvetica", "B", 9)
+        pdf.cell(50, 7, f"Risk Level: {risk.upper()}", fill=True, align='C', ln=True)
+        pdf.ln(3)
+
+        pdf.set_font("Helvetica", "B", 10)
+        pdf.set_text_color(*GRAY_DARK)
+        pdf.cell(0, 6, "Resumen:", ln=True)  
+        pdf.set_font("Helvetica", "", 9)
+        pdf.set_text_color(*GRAY_MID)
+        pdf.multi_cell(190, 5, _sanitize(ai_report.get("summary_text", "")))
+        pdf.ln(3)
+
+        pdf.set_font("Helvetica", "B", 10)
+        pdf.set_text_color(*GRAY_DARK)
+        pdf.cell(0, 6, "Recomendaciones:", ln=True)
+        pdf.set_font("Helvetica", "", 9)
+        pdf.set_text_color(*GRAY_MID)
+        pdf.multi_cell(190, 5, _sanitize(ai_report.get("recommendations", "")))
+        pdf.ln(6)
+
+
+    # ══════════════════════════════
+    # FOOTER
+    # ══════════════════════════════
+    pdf.set_y(-18)
+    pdf.set_fill_color(*PURPLE_DARK)
+    pdf.rect(0, pdf.get_y(), 210, 18, 'F')
+    pdf.set_font("Helvetica", "", 8)
+    pdf.set_text_color(180, 160, 230)
+    pdf.cell(0, 18, f"  Kairo AI Platform  |  Confidential Report  |  {datetime.now().strftime('%Y')}  |  Clan {clan.upper()}", align='C')
 
     return bytes(pdf.output())
