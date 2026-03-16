@@ -96,7 +96,7 @@ Responde SOLO con JSON válido, sin markdown, sin backticks:
         # Save to ai_reports
         supabase.table("ai_reports").insert({
             "target_type":     "clan",
-            "target_id":       req.coder_id, 
+            "target_id":       req.tl_id, 
             "summary_text":    report.get("summary", ""),
             "risk_level":      report.get("risk_level", "medium"),
             "recommendations": report.get("recommendations", ""),
@@ -530,7 +530,7 @@ Responde SOLO con JSON válido, sin markdown, sin backticks:
         # ── Guardar en ai_reports ──
         supabase.table("ai_reports").insert({
             "target_type":     "coder",
-            "target_id":       req.tl_id or 0,
+            "target_id":       req.coder_id,
             "summary_text":    report.get("summary", ""),
             "risk_level":      report.get("risk_level", "medium"),
             "recommendations": report.get("recommendations", ""),
