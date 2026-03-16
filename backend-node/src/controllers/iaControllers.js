@@ -1,22 +1,16 @@
 /**
  * backend-node/controllers/iaControllers.js
-
  */
 
 import { supabase } from '../config/supabase.js';
 import { callPythonApi } from '../services/pythonApiService.js';
 
-// ════════════════════════════════════════
-// GENERATE PLAN
-// POST /api/ia/generate-plan
-// ════════════════════════════════════════
 
+// GENERATE PLAN
 export const generatePlan = async (req, res) => {
   const user = req.user;
 
   try {
-    // Node only needs to know which module the coder is in
-    // Python will fetch everything else (soft skills, module details, weeks)
     const { data: moodleProgress } = await supabase
       .from('moodle_progress')
       .select('module_id, current_week, struggling_topics')
@@ -80,11 +74,8 @@ export const generatePlan = async (req, res) => {
   }
 };
 
-// ════════════════════════════════════════
-// GENERATE FOCUS CARDS
-// POST /api/ia/generate-focus-cards
-// ════════════════════════════════════════
 
+// GENERATE FOCUS CARDS
 export const generateFocusCards = async (req, res) => {
   const user = req.user;
 
@@ -123,11 +114,8 @@ export const generateFocusCards = async (req, res) => {
   }
 };
 
-// ════════════════════════════════════════
-// GENERATE TL REPORT
-// POST /api/ia/generate-report
-// ════════════════════════════════════════
 
+// GENERATE TL REPORT
 export const generateReport = async (req, res) => {
   const user = req.user;
 
@@ -178,11 +166,7 @@ export const generateReport = async (req, res) => {
   }
 };
 
-// ════════════════════════════════════════
 // HEALTH CHECK
-// GET /api/ia/health
-// ════════════════════════════════════════
-
 export const checkAiHealth = async (req, res) => {
   try {
     const response = await fetch(`${process.env.PYTHON_API_URL || 'http://localhost:8000'}/health`);

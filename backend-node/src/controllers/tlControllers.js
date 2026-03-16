@@ -1,12 +1,6 @@
 /**
  * controllers/tlControllers.js
  * Team Leader Controller.
- *
- * FIXES:
- *  - u.clan_id (verified in schema)
- *  - mp.completed_activities → removed (column does not exist in schema)
- *  - getCoderFullDetail: u.clan_id → u.clan
- *  - Risk level ORDER BY: added 'critical' tier
  */
 
 import { query } from '../config/database.js';
@@ -15,9 +9,7 @@ import { sanitizeInput } from '../utils/validators.js';
 import { notifyUser } from '../services/notificationService.js';
 import { awardPoints } from '../services/scoringService.js';
 
-/* ════════════════════════════════════════
-   CLAN OVERVIEW
-════════════════════════════════════════ */
+/* CLAN OVERVIEW */
 
 /**
  * GET /api/tl/coders/clan/:clan_id
@@ -61,10 +53,7 @@ export async function getAllCodersByClan(req, res) {
   }
 }
 
-/* ════════════════════════════════════════
-   CLAN METRICS
-════════════════════════════════════════ */
-
+/* CLAN METRICS */
 /**
  * GET /api/tl/metrics/clan/:clan_id
  * FIX: u.clan_id → u.clan
@@ -107,9 +96,7 @@ export async function getClanMetrics(req, res) {
   }
 }
 
-/* ════════════════════════════════════════
-   CODER FULL DETAIL
-════════════════════════════════════════ */
+/* CODER FULL DETAIL */
 
 /**
  * GET /api/tl/coder/:id/details
@@ -163,10 +150,7 @@ export async function getCoderFullDetail(req, res) {
   }
 }
 
-/* ════════════════════════════════════════
-   FEEDBACK
-════════════════════════════════════════ */
-
+/* FEEDBACK */
 /**
  * POST /api/tl/feedback
  */
@@ -214,9 +198,7 @@ export async function submitFeedback(req, res) {
   }
 }
 
-/* ════════════════════════════════════════
-   RISK REPORTS
-════════════════════════════════════════ */
+/*  RISK REPORTS */
 
 /**
  * GET /api/tl/risk-flags
@@ -245,9 +227,7 @@ export async function getRiskReports(req, res) {
   }
 }
 
-/* ════════════════════════════════════════
-   DASHBOARD DATA (MAIN)
-   ════════════════════════════════════════ */
+/* DASHBOARD DATA (MAIN) */
 export async function getDashboardData(req, res) {
   const tlId = req.user?.id || req.session?.userId;
 
@@ -390,11 +370,7 @@ export async function getSubmissions(req, res) {
   }
 }
 
-/* ════════════════════════════════════════
-   REVIEW SUBMISSION — POST /api/tl/submissions/:id/review
-   TL da feedback sobre una submission
-   Body: { feedbackText: string }
-════════════════════════════════════════ */
+/* REVIEW SUBMISSION */
 export async function reviewSubmission(req, res) {
   const tlId = req.user?.id || req.session?.userId;
   const submissionId = parseInt(req.params.id);
@@ -461,10 +437,7 @@ export async function reviewSubmission(req, res) {
   }
 }
 
-/* ════════════════════════════════════════
-   SCORE HISTORY — GET /api/tl/coder/:id/score
-   TL ve el historial de puntos de un coder
-════════════════════════════════════════ */
+/* SCORE HISTORY */
 export async function getCoderScoreHistory(req, res) {
   const { id } = req.params;
 

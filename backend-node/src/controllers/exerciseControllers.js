@@ -6,7 +6,7 @@ import { query } from '../config/database.js';
 
 const PYTHON_API = process.env.PYTHON_API_URL || 'http://localhost:8000';
 
-/* ══ GET/GENERATE EXERCISE POST /api/coder/exercise/generate ══ */
+/* ══ GET/GENERATE EXERCISE ══ */
 export async function generateExercise(req, res) {
   const userId = req.session.userId;
   const {
@@ -74,7 +74,7 @@ export async function generateExercise(req, res) {
   }
 }
 
-/* === SUBMIT SOLUTION POST /api/coder/exercise/:exerciseId/submit === */
+/* === SUBMIT SOLUTION POST === */
 export async function submitExercise(req, res) {
   const userId = req.session.userId;
   const exerciseId = parseInt(req.params.exerciseId);

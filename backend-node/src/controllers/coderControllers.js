@@ -1,9 +1,5 @@
 /**
  * controllers/coderControllers.js
- *
- * GET /api/coder/dashboard  → single call that returns everything the
- *   coder dashboard needs: user profile, soft skills, moodle progress,
- *   module info, TL feedback (notifications), active plan status.
  */
 
 import 'dotenv/config';
@@ -11,10 +7,7 @@ import { query } from '../config/database.js';
 import { notifyUser } from '../services/notificationService.js';
 import { awardPoints } from '../services/scoringService.js';
 
-/* ════════════════════════════════════════
-   DASHBOARD  —  GET /api/coder/dashboard
-════════════════════════════════════════ */
-
+/* DASHBOARD */
 export async function getCoderDashboard(req, res) {
   try {
     const userId = req.session.userId;
@@ -254,10 +247,7 @@ export async function getCoderDashboard(req, res) {
   }
 }
 
-/* ════════════════════════════════════════
-   PLAN DETAILS  —  GET /api/coder/plans/:planId
-════════════════════════════════════════ */
-
+/* PLAN DETAILS */
 export async function getPlanDetails(req, res) {
   const { planId } = req.params;
   try {
@@ -288,9 +278,7 @@ export async function getPlanDetails(req, res) {
   }
 }
 
-/* ════════════════════════════════════════
-   ACTIVITY PROGRESS  —  PATCH /api/coder/activities/:id/complete
-════════════════════════════════════════ */
+/* ACTIVITY PROGRESS */
 
 export async function updateActivityProgress(req, res) {
   const { id } = req.params;
@@ -320,7 +308,7 @@ export async function updateActivityProgress(req, res) {
   }
 }
 
-/* ══ GET ACTIVE PLAN  —  GET /api/coder/plan ═══ */
+/* ══ GET ACTIVE PLAN  ═══ */
 export async function getActivePlan(req, res) {
   try {
     const userId = req.session.userId;
@@ -348,7 +336,7 @@ export async function getActivePlan(req, res) {
     const completedDays = row.completed_days || {};
     const completedCount = Object.keys(completedDays).length;
 
-    // Primer día sin completar entre 1 y 20
+    // First day without completing between 1 and 20
     let currentDay = 1;
     for (let d = 1; d <= 20; d++) {
       if (!completedDays[String(d)]) {
@@ -379,10 +367,7 @@ export async function getActivePlan(req, res) {
   }
 }
 
-/* ════════════════════════════════════════
-   COMPLETE DAY  —  POST /api/coder/plan/:planId/day/:day/complete
-════════════════════════════════════════ */
-
+/* COMPLETE DAY */
 export async function completeDay(req, res) {
   try {
     const userId = req.session?.userId || req.user?.id;
@@ -477,8 +462,6 @@ const PYTHON_API = process.env.PYTHON_API_URL || 'http://localhost:8000';
 export async function requestPlan(req, res) {
   try {
     const userId = req.session.userId;
-
-    // Obtener module_id del coder
     const userResult = await query(
       `
       SELECT current_module_id FROM users WHERE id = $1
@@ -490,13 +473,11 @@ export async function requestPlan(req, res) {
     const planType = req.body.plan_type || 'interpretive';
     const currentWeek = req.body.current_week || 1;
 
-    // Responder inmediatamente
     res.json({
       requested: true,
       message: 'Plan en generación. Reintenta en unos segundos.',
     });
 
-    // Fire-and-forget hacia Python
     fetch(`${PYTHON_API}/generate-plan`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
