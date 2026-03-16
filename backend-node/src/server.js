@@ -43,7 +43,7 @@ function toOrigin(url) {
 
 const ALLOWED_ORIGINS = isProduction
   ? [toOrigin(process.env.FRONTEND_URL)].filter(Boolean)
-  : ['http://localhost:5500', 'http://localhost:5173'];
+  : ['http://localhost:5500', 'http://localhost:5173','https://kairoriwi.com','http://kairoriwi.com'];
 
 const ALLOW_ALL_ORIGINS = isProduction && ALLOWED_ORIGINS.length === 0;
 
