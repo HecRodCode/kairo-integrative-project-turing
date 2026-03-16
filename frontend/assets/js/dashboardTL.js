@@ -645,23 +645,26 @@ function renderRanking(data) {
   if (!section) return;
 
   const MEDALS = ['🥇', '🥈', '🥉'];
+  const emptyMsg = '<p style="color:var(--text-muted);font-size:13px;padding:8px 0">Sin datos aún</p>';
 
   const renderList = (coders) =>
-    coders
-      .map(
-        (c, i) => `
-    <div class="ranking-row ${i < 3 ? 'top-' + (i + 1) : ''}">
-      <span class="ranking-pos">${MEDALS[i] || `#${c.rank}`}</span>
-      <span class="ranking-name">${escapeHtml(c.full_name)}</span>
-      ${
-        c.clan !== data.clan
-          ? `<span class="ranking-clan">${escapeHtml(c.clan)}</span>`
-          : ''
-      }
-      <span class="ranking-score">${c.kairo_score} pts</span>
-    </div>
-  `
-      )
+    [...coders]
+      .sort((a, b) => b.kairo_score - a.kairo_score)  // ordena por score, rank del API no es confiable
+      .map((c, i) => {
+        const pos = i + 1;                             // ← posición real: 1, 2, 3, 4, 5...
+        const topClass = i < 3 ? `top-${pos}` : '';
+        const label = MEDALS[i] ?? `#${pos}`;          // ← usa pos, NO c.rank
+        const clan = c.clan ? escapeHtml(c.clan) : '—';
+
+        return `
+          <div class="ranking-row ${topClass}">
+            <span class="ranking-pos">${label}</span>
+            <span class="ranking-name">${escapeHtml(c.full_name)}</span>
+            <span class="ranking-clan">${clan}</span>
+            <span class="ranking-score">${c.kairo_score} pts</span>
+          </div>
+        `;
+      })
       .join('');
 
   section.innerHTML = `
@@ -672,11 +675,7 @@ function renderRanking(data) {
           <span class="card-meta">${escapeHtml(data.clan)}</span>
         </div>
         <div class="ranking-list">
-          ${
-            data.clanRanking?.length
-              ? renderList(data.clanRanking)
-              : '<p style="color:var(--text-muted);font-size:13px;padding:8px 0">Sin datos aún</p>'
-          }
+          ${data.clanRanking?.length ? renderList(data.clanRanking) : emptyMsg}
         </div>
       </div>
       <div class="glass-card ranking-card">
@@ -685,11 +684,7 @@ function renderRanking(data) {
           <span class="card-meta">Todos los clanes</span>
         </div>
         <div class="ranking-list">
-          ${
-            data.globalRanking?.length
-              ? renderList(data.globalRanking)
-              : '<p style="color:var(--text-muted);font-size:13px;padding:8px 0">Sin datos aún</p>'
-          }
+          ${data.globalRanking?.length ? renderList(data.globalRanking) : emptyMsg}
         </div>
       </div>
     </div>`;

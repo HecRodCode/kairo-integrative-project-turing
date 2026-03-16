@@ -24,7 +24,7 @@ const resources = {
 
       /* ── Hero ── */
       hero: {
-        badge: 'Powered by Open-IA',
+        badge: 'Powered by Kairo-IA',
         title:
           "The future of learning is <br><span class='gradient-text'>Hyper-personalized</span>",
         text: 'Stop following generic plans. Kairo uses AI to bridge the gap between your current skills and your dream job at Riwi.',
@@ -150,7 +150,7 @@ const resources = {
 
       /* ── Hero ── */
       hero: {
-        badge: 'Desarrollado con Open-IA',
+        badge: 'Desarrollado con Kairo-IA',
         title:
           "El futuro del aprendizaje es <br><span class='gradient-text'>Hiperpersonalizado</span>",
         text: 'Deja de seguir planes genéricos. Kairo utiliza la inteligencia artificial para salvar la distancia entre tus habilidades actuales y el trabajo de tus sueños en Riwi.',
