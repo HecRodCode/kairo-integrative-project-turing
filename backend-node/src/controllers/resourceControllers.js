@@ -14,10 +14,7 @@ async function getUserClan(userId) {
   return r.rows[0]?.clan || null;
 }
 
-/* ════════════════════════════════════════
-   TL — UPLOAD PDF
-   POST /api/tl/resource/upload
-════════════════════════════════════════ */
+/* TL — UPLOAD PDF */
 export async function uploadResource(req, res) {
   const tlId = req.user?.id || req.session?.userId;
 
@@ -110,10 +107,7 @@ export async function uploadResource(req, res) {
   });
 }
 
-/* ════════════════════════════════════════
-   TL — LIST RESOURCES
-   GET /api/tl/resource/list?moduleId=4
-════════════════════════════════════════ */
+/* TL — LIST RESOURCES */
 export async function listResources(req, res) {
   const tlId = req.user?.id || req.session?.userId;
   const moduleId = parseInt(req.query.moduleId) || null;
@@ -143,10 +137,7 @@ export async function listResources(req, res) {
   }
 }
 
-/* ════════════════════════════════════════
-   CODER — LIST RESOURCES
-   GET /api/coder/resources
-════════════════════════════════════════ */
+/* CODER — LIST RESOURCES */
 export async function listResourcesCoder(req, res) {
   const coderId = req.user?.id || req.session?.userId;
   const moduleId = parseInt(req.query.moduleId) || null;
@@ -183,10 +174,7 @@ export async function listResourcesCoder(req, res) {
   }
 }
 
-/* ════════════════════════════════════════
-   TL — DELETE RESOURCE
-   DELETE /api/tl/resource/:resourceId
-════════════════════════════════════════ */
+/* TL — DELETE RESOURCE */
 export async function deleteResource(req, res) {
   const tlId = req.user?.id || req.session?.userId;
   const resourceId = parseInt(req.params.resourceId);
@@ -219,11 +207,7 @@ export async function deleteResource(req, res) {
   }
 }
 
-/* ════════════════════════════════════════
-   CODER — SEARCH RESOURCES BY TOPIC (RAG)
-   POST /api/coder/resources/search
-   Called from aiTrainer.js searchAndRenderResources()
-════════════════════════════════════════ */
+/* CODER — SEARCH RESOURCES BY TOPIC (RAG)  */
 export async function searchResources(req, res) {
   const coderId = req.user?.id || req.session?.userId;
   const { topic, moduleId, limit = 3 } = req.body;
@@ -313,10 +297,7 @@ export async function searchResources(req, res) {
   }
 }
 
-/* ════════════════════════════════════════
-   CODER — DOWNLOAD RESOURCE
-   GET /api/coder/resource/:id/download
-════════════════════════════════════════ */
+/* CODER — DOWNLOAD RESOURCE */
 export async function getResourceDownload(req, res) {
   const coderId = req.user?.id || req.session?.userId;
   const { id } = req.params;

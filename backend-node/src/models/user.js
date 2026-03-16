@@ -24,12 +24,7 @@ export async function create({
   return result.rows[0];
 }
 
-/**
- * Para OAuth: no necesita password real ni OTP.
- * Se marca otp_verified = true directamente.
- */
 export async function createOAuth({ email, fullName, provider, providerId }) {
-  // Password placeholder no hasheable — nunca se usa para login con contraseña
   const placeholderPassword = `oauth_${provider}_${providerId}_${Date.now()}`;
   const result = await query(
     `INSERT INTO users (email, password, full_name, role, clan, first_login, otp_verified)
@@ -60,7 +55,6 @@ export async function findById(id) {
 
 export async function verifyPassword(plainPassword, hashedPassword) {
   if (!plainPassword || !hashedPassword) return false;
-  // Los passwords de OAuth no son hasheados con bcrypt válido — esto los rechaza correctamente
   if (hashedPassword.startsWith('oauth_')) return false;
   return await bcrypt.compare(plainPassword, hashedPassword);
 }

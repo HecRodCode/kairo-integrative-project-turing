@@ -1,18 +1,5 @@
 /**
  * controllers/diagnosticControllers.js
- *
- * FIX: The controller now accepts raw onboarding answers { answers: [] }
- * and derives both the learning_style and the soft-skill scores internally.
- * The frontend never calculates scores — that logic lives here.
- *
- * Score derivation:
- *  Learning style  → dominant VARK score from blocks 1-2
- *  Soft skills     → approximated from ILS + Kolb patterns (blocks 3-7)
- *    · autonomy        ← REF (reflective) + AC (abstract conceptualization)
- *    · time_management ← SEQ (sequential) + AE (active experimentation)
- *    · problem_solving ← GLO (global) + AC
- *    · communication   ← ACT (active) + CE (concrete experience)
- *    · teamwork        ← ACT + CE
  */
 
 import { create, findByCoderId, getAll } from '../models/softSkills.js';
@@ -59,10 +46,7 @@ async function _triggerInterpretivePlan(coderId, moduleId, currentWeek = 1) {
   }
 }
 
-/* ════════════════════════════════════════
-   SCORING ENGINE
-════════════════════════════════════════ */
-
+/* SCORING ENGINE */
 /**
  * Tallies all score tags from the raw answers array.
  * Returns a map like { V: 3, A: 1, R: 2, K: 2, REF: 4, ACT: 2, ... }
@@ -81,9 +65,6 @@ function tallyScores(answers) {
  * Returns one of: 'visual' | 'auditory' | 'reading' | 'kinesthetic' | 'mixed'
  */
 function deriveLearningStyle(tally) {
-  // VARK pure tags + ILS equivalents:
-  //   VIS (ILS visual)  reinforces V
-  //   VRB (ILS verbal)  reinforces A (auditory/verbal learners)
   const vark = {
     visual: (tally['V'] || 0) + (tally['VIS'] || 0),
     auditory: (tally['A'] || 0) + (tally['VRB'] || 0),
@@ -130,9 +111,7 @@ function deriveSoftSkillScores(tally) {
   };
 }
 
-/* ════════════════════════════════════════
-   CONTROLLERS
-════════════════════════════════════════ */
+/* CONTROLLERS */
 
 /**
  * POST /api/diagnostics
@@ -168,7 +147,7 @@ export async function saveDiagnostic(req, res) {
     // ── Respond immediately — don't block on plan generation ──────────────
     res.status(201).json({
       message: 'Diagnostic saved successfully',
-      planRequested: true, // lets the frontend show "tu plan está siendo generado..."
+      planRequested: true,
       diagnostic: {
         coderId: diagnostic.coder_id,
         autonomy: diagnostic.autonomy,
@@ -181,8 +160,6 @@ export async function saveDiagnostic(req, res) {
       },
     });
 
-    // ── Fire-and-forget: generate first interpretive plan in background ────
-    // Fetch the user to get current_module_id (default 4 = Base de Datos)
     const user = await findById(req.session.userId).catch(() => null);
     const moduleId = user?.current_module_id ?? 4;
     const currentWeek = 1; // onboarding → always week 1 of the module

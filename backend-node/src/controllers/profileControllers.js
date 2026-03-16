@@ -1,20 +1,13 @@
 /**
  * backend-node/controllers/profileControllers.js
- * PostgreSQL: datos personales + skills + moodle stats
- * MongoDB (ProfileMetadata): avatar, experience, education — non-fatal
+
  */
 import { query } from '../config/database.js';
 import { ensureMongoConnected } from '../config/mongodb.js';
 import ProfileMetadata from '../models/ProfileMetadata.js';
 
-/* ══════════════════════════════════════════════════════════════
-   HELPERS
-══════════════════════════════════════════════════════════════ */
+/* HELPERS */
 
-/**
- * Lee metadata de MongoDB de forma segura.
- * Si Mongo no está disponible retorna el objeto vacío por defecto.
- */
 async function getMongoMetadata(userId) {
   const available = await ensureMongoConnected();
   if (!available) return { avatar_url: null, experience: [], education: [] };
@@ -32,10 +25,6 @@ async function getMongoMetadata(userId) {
   }
 }
 
-/**
- * Guarda metadata en MongoDB de forma segura.
- * Retorna true si guardó, false si no disponible.
- */
 async function saveMongoMetadata(userId, update) {
   if (!Object.keys(update).length) return true;
 
@@ -60,15 +49,12 @@ async function saveMongoMetadata(userId, update) {
   }
 }
 
-/* ══════════════════════════════════════════════════════════════
-   GET PROFILE
-══════════════════════════════════════════════════════════════ */
+/* GET PROFILE */
 export const getProfile = async (req, res) => {
   const userId = req.params.id || req.user?.id;
   if (!userId) return res.status(400).json({ error: 'User ID requerido' });
 
   try {
-    // Autorización
     if (req.params.id && req.params.id !== String(req.user?.id)) {
       if (req.user?.role === 'coder') {
         return res
@@ -94,7 +80,6 @@ export const getProfile = async (req, res) => {
       }
     }
 
-    // Queries en paralelo: Postgres + Mongo simultáneos
     const [[profileResult, statsResult, moodleResult], mongoData] =
       await Promise.all([
         Promise.all([
@@ -177,9 +162,7 @@ export const getProfile = async (req, res) => {
   }
 };
 
-/* ══════════════════════════════════════════════════════════════
-   UPDATE PROFILE
-══════════════════════════════════════════════════════════════ */
+/* UPDATE PROFILE */
 export const updateProfile = async (req, res) => {
   const userId = req.user?.id;
   if (!userId) return res.status(401).json({ error: 'No autenticado.' });
@@ -188,11 +171,9 @@ export const updateProfile = async (req, res) => {
   const skills = Array.isArray(metadata.skills) ? metadata.skills : undefined;
 
   try {
-    // 1. Postgres — solo si viene personalInfo, socials o skills
     const hasPostgresData = personalInfo || socials || skills !== undefined;
 
     if (hasPostgresData) {
-      // Lee valores actuales para no sobreescribir con nulls en auto-save de avatar
       const current = await query(
         `SELECT phone, location, birth_date, bio,
                 github_url, linkedin_url, twitter_url, portfolio_url,
@@ -234,7 +215,6 @@ export const updateProfile = async (req, res) => {
       );
     }
 
-    // 2. MongoDB — avatar, experience, education
     const mongoUpdate = {};
     if (metadata.avatarUrl !== undefined)
       mongoUpdate.avatar_url = metadata.avatarUrl;
@@ -248,7 +228,7 @@ export const updateProfile = async (req, res) => {
     return res.json({
       success: true,
       message: 'Perfil actualizado.',
-      mongoSaved, // true si el avatar persistió, false si Mongo no estaba disponible
+      mongoSaved,
     });
   } catch (err) {
     console.error('[updateProfile]', err.message);
