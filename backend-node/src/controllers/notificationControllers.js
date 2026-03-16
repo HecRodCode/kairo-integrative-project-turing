@@ -1,15 +1,11 @@
 /**
  * controllers/notificationControllers.js
- * Handles SSE stream + REST CRUD for notifications.
  */
 
 import { query } from '../config/database.js';
 import { addClient } from '../services/notificationService.js';
 
-/* ════════════════════════════════════════
-   SSE STREAM
-   GET /api/notifications/stream
-════════════════════════════════════════ */
+/*  SE STREAM */
 export function streamNotifications(req, res) {
   const userId = req.user?.id || req.session?.userId;
   if (!userId) return res.status(401).end();
@@ -32,10 +28,7 @@ export function streamNotifications(req, res) {
   req.on('close', cleanup);
 }
 
-/* ════════════════════════════════════════
-   GET NOTIFICATIONS
-   GET /api/notifications
-════════════════════════════════════════ */
+/* GET NOTIFICATIONS */
 export async function getNotifications(req, res) {
   const userId = req.user?.id || req.session?.userId;
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
@@ -62,10 +55,7 @@ export async function getNotifications(req, res) {
   }
 }
 
-/* ════════════════════════════════════════
-   MARK ALL AS READ
-   POST /api/notifications/read
-════════════════════════════════════════ */
+/* MARK ALL AS READ */
 export async function markNotificationsRead(req, res) {
   const userId = req.user?.id || req.session?.userId;
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
@@ -85,10 +75,7 @@ export async function markNotificationsRead(req, res) {
   }
 }
 
-/* ════════════════════════════════════════
-   DELETE NOTIFICATION
-   DELETE /api/notifications/:id
-════════════════════════════════════════ */
+/* DELETE NOTIFICATION */
 export async function deleteNotification(req, res) {
   const userId = req.user?.id || req.session?.userId;
   const { id } = req.params;

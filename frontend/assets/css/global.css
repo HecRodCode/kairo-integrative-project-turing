@@ -1,10 +1,5 @@
-/* =====================================================
-   GLOBAL.CSS — Kairo Design System
-   Single source of truth. Imported by every page.
-   ===================================================== */
-/* ─────────────────────────────────────────────────────
-   1. DESIGN TOKENS
-   ───────────────────────────────────────────────────── */
+/* LOBAL.CSS — Kairo Design System */
+
 :root {
   /* Backgrounds */
   --bg-body: #050505;
@@ -14,7 +9,7 @@
   --text-main: #ffffff;
   --text-muted: #94a3b8;
   /* Inputs */
-  --input-bg: rgba(196, 196, 196, 0.082);
+  --input-bg: rgb(34, 34, 34);
   --input-text: #f8fafc;
   /* Borders & Glass */
   --border-glass: rgba(65, 65, 65, 0.384);
@@ -508,7 +503,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgb(169, 27, 235);
   text-decoration: none;
   font-size: 10px;
   font-weight: 600;
@@ -606,7 +601,7 @@ body {
 }
 @media (max-width: 768px) {
   .bottom-nav-item.btn-logout {
-    color: rgba(239, 68, 68, 0.6);
+    color: rgba(235, 35, 35, 0.952);
     background: transparent;
     border: none;
     font-family: inherit;

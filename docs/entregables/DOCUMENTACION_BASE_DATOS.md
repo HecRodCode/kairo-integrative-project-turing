@@ -1,797 +1,586 @@
-# DOCUMENTACIÓN DEL MODELO DE BASE DE DATOS
+# Database Model Documentation — Kairo
 
-## Proyecto: Ruta Formativa Personalizada con IA
+## AI-Powered Personalized Learning Platform
 
----
-
-## 📋 TABLA DE CONTENIDO
-
-1. [Descripción General](#descripción-general)
-2. [Arquitectura del Modelo](#arquitectura-del-modelo)
-3. [Entidades Principales](#entidades-principales)
-4. [Relaciones entre Entidades](#relaciones-entre-entidades)
-5. [Diccionario de Datos](#diccionario-de-datos)
-6. [Índices y Optimizaciones](#índices-y-optimizaciones)
-7. [Diagramas ER](#diagramas-er)
-8. [Scripts de Creación](#scripts-de-creación)
+### Integrative Project · RIWI · Clan Turing · March 2026
 
 ---
 
-## DESCRIPCIÓN GENERAL
+## Table of Contents
 
-### Contexto del Proyecto
-
-Este modelo de base de datos soporta una aplicación web educativa que genera
-rutas formativas personalizadas mediante inteligencia artificial. El sistema
-permite:
-
-- Diagnóstico de habilidades blandas de estudiantes (coders)
-- Seguimiento del progreso académico en Moodle
-- Generación automática de planes complementarios personalizados
-- Seguimiento de actividades y reflexiones
-- Retroalimentación de Team Leaders (TL)
-
-### Tecnología
-
-- **Motor de Base de Datos:** PostgreSQL 14+
-- **Justificación:** Soporte nativo para JSONB, arrays, y consultas complejas
-  necesarias para el sistema de IA
+1. [General Description](#1-general-description)
+2. [Model Architecture](#2-model-architecture)
+3. [Main Entities](#3-main-entities)
+4. [Entity Relationships](#4-entity-relationships)
+5. [Indexes and Optimizations](#5-indexes-and-optimizations)
+6. [Triggers and Functions](#6-triggers-and-functions)
+7. [Recommended Views](#7-recommended-views)
+8. [Useful Queries](#8-useful-queries)
 
 ---
 
-## ARQUITECTURA DEL MODELO
+## 1. General Description
 
-El modelo se organiza en **5 grupos funcionales:**
+### Project Context
 
-### 1. **Gestión de Usuarios**
+Kairo's database supports an AI-powered educational web application that generates personalized learning paths for Riwi bootcamp students. The system enables:
 
-- `users`
-- `soft_skills_assessment`
-- `activity_progress`
+- **Soft skills diagnosis** via a 30-question VARK + ILS + Kolb assessment
+- **Academic progress tracking** from Moodle (scores, weeks completed, struggling topics)
+- **AI plan generation** — 20-day personalized plans via Groq's `llama-3.3-70b-versatile`
+- **Exercise system** — daily code exercises with Monaco editor, TL review, and cached generation
+- **Engagement scoring** — Kairo Score tracks platform activity independent of academic grades
+- **TL analytics** — risk detection, clan rankings, submission review dashboard
+- **Real-time notifications** — SSE-based delivery with persistent storage
 
-### 2. **Estructura de Contenidos**
+### Technology
 
-- `modules`
-- `weeks`
-- `topics`
-
-### 3. **Seguimiento Académico**
-
-- `moodle_progress`
-- `coder_struggling_topics`
-
-### 4. **Planes Complementarios**
-
-- `complementary_plans`
-- `plan_activities`
-
-### 5. **Feedback y Mentoría**
-
-- `tl_feedback`
+- **Database Engine:** PostgreSQL 14+ on Supabase
+- **Justification:** Native JSONB support for flexible AI-generated content, TEXT arrays for topic lists, GIN indexes for full-text search, custom ENUM types for data integrity
+- **Access Pattern:** Node.js uses `pg.Pool` with connection strings. Python uses the Supabase client with `SERVICE_ROLE` key (bypasses RLS for plan generation)
 
 ---
 
-## ENTIDADES PRINCIPALES
+## 2. Model Architecture
 
-### 1. USERS (Usuarios del Sistema)
+The 22 tables are organized into 6 functional groups:
 
-**Propósito:** Almacenar información de autenticación y perfil básico de
-usuarios.
+```mermaid
+graph TD
+    subgraph G1["🔐 Identity (5 tables)"]
+        U[users] --- CL[clans]
+        U --- UP[user_profiles]
+        U --- OTP[otp_verifications]
+        U --- SS[session]
+    end
 
-**Roles soportados:**
+    subgraph G2["📚 Academic (4 tables)"]
+        M[modules] --- W[weeks]
+        M --- T[topics]
+        M --- MP[moodle_progress]
+    end
 
-- `coder`: Estudiantes que reciben rutas formativas
-- `tl`: Team Leaders que supervisan y dan feedback
+    subgraph G3["🧠 AI Plans (4 tables)"]
+        CP[complementary_plans] --- PA[plan_activities]
+        PA --- AP[activity_progress]
+        PA --- EV[evidence_submissions]
+    end
 
-| Campo       | Tipo         | Descripción                   |
-| ----------- | ------------ | ----------------------------- |
-| id          | SERIAL       | Identificador único (PK)      |
-| email       | VARCHAR(100) | Email único del usuario (UK)  |
-| password    | VARCHAR(255) | Contraseña hasheada           |
-| role        | VARCHAR(20)  | Rol del usuario (coder/tl)    |
-| first_login | BOOLEAN      | Indica si es el primer acceso |
-| created_at  | TIMESTAMP    | Fecha de creación             |
-| updated_at  | TIMESTAMP    | Última actualización          |
+    subgraph G4["💻 Exercises (2 tables)"]
+        EX[exercises] --- ES[exercise_submissions]
+    end
 
-**Relaciones:**
+    subgraph G5["📁 Resources & Feedback (4 tables)"]
+        R[resources]
+        TLF[tl_feedback]
+        ASG[assignments]
+        N[notifications]
+    end
 
-- 1:N con `soft_skills_assessment`
-- 1:N con `moodle_progress`
-- 1:N con `complementary_plans`
-- 1:N con `coder_struggling_topics`
-- 1:N con `tl_feedback` (como coder y como tl)
-- 1:N con `activity_progress`
+    subgraph G6["📊 Analytics (6 tables)"]
+        SSA[soft_skills_assessment]
+        RF[risk_flags]
+        SE[score_events]
+        PT[performance_tests]
+        AL[ai_generation_log]
+        AR[ai_reports]
+    end
 
----
-
-### 2. SOFT_SKILLS_ASSESSMENT (Evaluación de Habilidades Blandas)
-
-**Propósito:** Almacenar el diagnóstico inicial de habilidades blandas del
-coder.
-
-| Campo           | Tipo        | Descripción                   |
-| --------------- | ----------- | ----------------------------- |
-| id              | SERIAL      | Identificador único (PK)      |
-| coder_id        | INT         | Referencia a users (FK)       |
-| autonomy        | INT         | Nivel de autonomía (1-5)      |
-| time_management | INT         | Gestión del tiempo (1-5)      |
-| problem_solving | INT         | Resolución de problemas (1-5) |
-| communication   | INT         | Comunicación (1-5)            |
-| teamwork        | INT         | Trabajo en equipo (1-5)       |
-| learning_style  | VARCHAR(50) | Estilo de aprendizaje         |
-| assessed_at     | TIMESTAMP   | Fecha de evaluación           |
-
-**Valores válidos para learning_style:**
-
-- `visual`
-- `auditory`
-- `kinesthetic`
-
-**Relaciones:**
-
-- N:1 con `users` (coder)
-
----
-
-### 3. MODULES (Módulos del Programa Formativo)
-
-**Propósito:** Catálogo de módulos del programa educativo.
-
-| Campo         | Tipo         | Descripción                    |
-| ------------- | ------------ | ------------------------------ |
-| id            | SERIAL       | Identificador único (PK)       |
-| module_number | INT          | Número del módulo (1, 2, 3...) |
-| name          | VARCHAR(100) | Nombre del módulo              |
-| description   | TEXT         | Descripción detallada          |
-| total_weeks   | INT          | Total de semanas del módulo    |
-| order_index   | INT          | Orden de presentación          |
-
-**Ejemplo de datos:**
-
-```sql
--- Módulo 1: Fundamentos Python
--- Módulo 2: HTML y CSS
--- Módulo 3: JavaScript
--- Módulo 4: Bases de Datos
+    U -->|1:N| MP
+    U -->|1:1| SSA
+    U -->|1:N| CP
+    U -->|1:N| AP
+    U -->|1:N| EX
+    U -->|1:N| ES
+    U -->|1:N| SE
+    U -->|1:N| RF
+    U -->|1:N| N
+    CP -->|1:N| EX
+    CP -->|1:N| PA
 ```
 
-**Relaciones:**
+---
 
-- 1:N con `weeks`
-- 1:N con `topics`
-- 1:N con `moodle_progress`
-- 1:N con `complementary_plans`
-- 1:N con `coder_struggling_topics`
+## 3. Main Entities
+
+### 3.1 `users` — System Users
+
+**Purpose:** Central table for authentication and profile data. The only table referenced by almost every other table via FK.
+
+| Column                 | Type                  | Description                                       |
+| ---------------------- | --------------------- | ------------------------------------------------- |
+| `id`                   | SERIAL PK             | Auto-increment                                    |
+| `email`                | VARCHAR UNIQUE        | Institutional email                               |
+| `password`             | VARCHAR(255)          | bcrypt hash. OAuth users: `oauth_<provider>_<id>` |
+| `full_name`            | VARCHAR               | Display name                                      |
+| `role`                 | role_enum             | `coder` or `tl`                                   |
+| `clan`                 | VARCHAR FK → clans    | `'turing'`, `'tesla'`, `'mccarthy'`               |
+| `first_login`          | BOOLEAN DEFAULT true  | Onboarding gate                                   |
+| `otp_verified`         | BOOLEAN DEFAULT false | Email verification                                |
+| `current_module_id`    | INT FK → modules      | Active module (default: 4)                        |
+| `learning_style_cache` | VARCHAR               | Cached from soft_skills_assessment                |
+| `is_active`            | BOOLEAN DEFAULT true  | Soft-delete                                       |
+| `kairo_score`          | INT DEFAULT 50        | Platform engagement score                         |
+| `created_at`           | TIMESTAMP             |                                                   |
+
+**Relationships:** 1:N with `soft_skills_assessment`, `moodle_progress`, `complementary_plans`, `activity_progress`, `exercises`, `exercise_submissions`, `score_events`, `risk_flags`, `notifications`, `tl_feedback` (as both sender and receiver)
 
 ---
 
-### 4. WEEKS (Semanas dentro de cada Módulo)
+### 3.2 `soft_skills_assessment` — Onboarding Diagnostic
 
-**Propósito:** Detallar el contenido de cada semana dentro de un módulo.
+**Purpose:** Stores the results of the 30-question soft skills assessment completed during onboarding. The Python AI reads this table to personalize every plan it generates.
 
-| Campo       | Tipo         | Descripción                       |
-| ----------- | ------------ | --------------------------------- |
-| id          | SERIAL       | Identificador único (PK)          |
-| module_id   | INT          | Referencia a modules (FK)         |
-| week_number | INT          | Número de semana (1, 2, 3...)     |
-| name        | VARCHAR(100) | Nombre de la semana               |
-| description | TEXT         | Descripción del contenido         |
-| user_story  | TEXT         | Historia de usuario a desarrollar |
-| topics      | JSONB        | Temas cubiertos en formato JSON   |
+| Column            | Type                | Description                                          |
+| ----------------- | ------------------- | ---------------------------------------------------- |
+| `coder_id`        | INT UNIQUE FK       | One assessment per coder                             |
+| `autonomy`        | SMALLINT(1-5)       | VARK + ILS derived score                             |
+| `time_management` | SMALLINT(1-5)       |                                                      |
+| `problem_solving` | SMALLINT(1-5)       |                                                      |
+| `communication`   | SMALLINT(1-5)       |                                                      |
+| `teamwork`        | SMALLINT(1-5)       |                                                      |
+| `learning_style`  | learning_style_enum | visual / auditory / kinesthetic / read_write / mixed |
+| `raw_answers`     | JSONB               | Original quiz responses for audit/replay             |
+| `assessed_at`     | TIMESTAMP           |                                                      |
 
-**Ejemplo de topics (JSONB):**
+---
+
+### 3.3 `complementary_plans` — AI-Generated Plans
+
+**Purpose:** The heart of the system. Stores the full 20-day learning plan as JSONB, along with coder state snapshots and daily completion tracking.
+
+| Column                   | Type               | Description                                              |
+| ------------------------ | ------------------ | -------------------------------------------------------- |
+| `plan_content`           | JSONB              | Full plan structure with 4 weeks × 5 days × 2 activities |
+| `soft_skills_snapshot`   | JSONB              | Coder's skill profile at generation time                 |
+| `moodle_status_snapshot` | JSONB              | Moodle progress at generation time                       |
+| `targeted_soft_skill`    | VARCHAR            | Weakest skill the plan targets                           |
+| `is_active`              | BOOLEAN            | Only one active plan per coder                           |
+| `completed_days`         | JSONB DEFAULT '{}' | `{"1": {"completedAt": "..."}, ...}`                     |
+
+**`plan_content` structure:**
 
 ```json
 {
-  "main_topics": [
-    "Relaciones uno a muchos",
-    "Relaciones muchos a muchos",
-    "Joins en SQL"
-  ],
-  "secondary_topics": ["Subconsultas", "Índices"]
+  "plan_type": "interpretive",
+  "targeted_soft_skill": "problem_solving",
+  "learning_style_applied": "mixed",
+  "summary": "...",
+  "weeks": [
+    {
+      "week_number": 1,
+      "focus": "Week theme",
+      "days": [
+        {
+          "day": 1,
+          "technical_activity": {
+            "title": "...",
+            "description": "...",
+            "duration_minutes": 45,
+            "difficulty": "intermediate",
+            "resources": ["https://..."]
+          },
+          "soft_skill_activity": {
+            "title": "...",
+            "description": "...",
+            "duration_minutes": 20,
+            "skill": "problem_solving",
+            "reflection_prompt": "..."
+          }
+        }
+      ]
+    }
+  ]
 }
 ```
 
-**Relaciones:**
-
-- N:1 con `modules`
-
 ---
 
-### 5. MOODLE_PROGRESS (Progreso en Moodle)
+### 3.4 `exercises` — Daily Code Exercises
 
-**Propósito:** Seguimiento del avance del coder en la plataforma Moodle.
+**Purpose:** Cached AI-generated exercises per plan day. The `UNIQUE(plan_id, day_number)` constraint ensures the LLM is called only once per day — subsequent requests return the cached version.
 
-| Campo             | Tipo         | Descripción                    |
-| ----------------- | ------------ | ------------------------------ |
-| id                | SERIAL       | Identificador único (PK)       |
-| coder_id          | INT          | Referencia a users (FK)        |
-| module_id         | INT          | Referencia a modules (FK)      |
-| current_week      | INT          | Semana actual del coder        |
-| weeks_completed   | JSONB        | Detalle de semanas completadas |
-| struggling_topics | TEXT[]       | Array de temas con dificultad  |
-| average_score     | DECIMAL(5,2) | Promedio general (0-100)       |
-| updated_at        | TIMESTAMP    | Última actualización           |
+**Supported languages:** `sql`, `python`, `javascript`, `html`
 
-**Ejemplo de weeks_completed (JSONB):**
-
-```json
-{
-  "week_1": {
-    "score": 75,
-    "completed": true,
-    "completion_date": "2026-02-10"
-  },
-  "week_2": {
-    "score": 82,
-    "completed": true,
-    "completion_date": "2026-02-17"
-  },
-  "week_3": {
-    "score": null,
-    "completed": false,
-    "completion_date": null
-  }
-}
-```
-
-**Relaciones:**
-
-- N:1 con `users` (coder)
-- N:1 con `modules`
-
----
-
-### 6. TOPICS (Catálogo de Temas)
-
-**Propósito:** Catálogo de temas específicos que pueden causar dificultad.
-
-| Campo       | Tipo         | Descripción               |
-| ----------- | ------------ | ------------------------- |
-| id          | SERIAL       | Identificador único (PK)  |
-| module_id   | INT          | Referencia a modules (FK) |
-| name        | VARCHAR(200) | Nombre del tema           |
-| description | TEXT         | Descripción del tema      |
-| category    | VARCHAR(100) | Categoría del tema        |
-
-**Ejemplos de categorías:**
-
-- `SQL`
-- `HTML/CSS`
-- `JavaScript`
-- `Python`
-- `Git`
-
-**Relaciones:**
-
-- N:1 con `modules`
-- N:M con `users` (a través de `coder_struggling_topics`)
-
----
-
-### 7. CODER_STRUGGLING_TOPICS (Temas de Dificultad del Coder)
-
-**Propósito:** Tabla intermedia que relaciona coders con temas donde tienen
-dificultad.
-
-| Campo       | Tipo      | Descripción               |
-| ----------- | --------- | ------------------------- |
-| id          | SERIAL    | Identificador único (PK)  |
-| coder_id    | INT       | Referencia a users (FK)   |
-| topic_id    | INT       | Referencia a topics (FK)  |
-| module_id   | INT       | Referencia a modules (FK) |
-| reported_at | TIMESTAMP | Fecha del reporte         |
-
-**Relaciones:**
-
-- N:1 con `users` (coder)
-- N:1 con `topics`
-- N:1 con `modules`
-
----
-
-### 8. COMPLEMENTARY_PLANS (Planes Complementarios)
-
-**Propósito:** Planes de aprendizaje personalizados generados por IA.
-
-| Campo                  | Tipo      | Descripción                                   |
-| ---------------------- | --------- | --------------------------------------------- |
-| id                     | SERIAL    | Identificador único (PK)                      |
-| coder_id               | INT       | Referencia a users (FK)                       |
-| module_id              | INT       | Referencia a modules (FK)                     |
-| week_number            | INT       | Semana del plan                               |
-| plan_content           | TEXT      | Contenido completo del plan (generado por IA) |
-| soft_skills_snapshot   | JSONB     | Estado de habilidades al momento de generar   |
-| moodle_status_snapshot | JSONB     | Estado de Moodle al momento de generar        |
-| generated_at           | TIMESTAMP | Fecha de generación                           |
-| is_active              | BOOLEAN   | Indica si es el plan activo actual            |
-
-**Ejemplo de soft_skills_snapshot (JSONB):**
-
-```json
-{
-  "autonomy": 2,
-  "time_management": 3,
-  "problem_solving": 3,
-  "communication": 4,
-  "teamwork": 3,
-  "learning_style": "kinesthetic"
-}
-```
-
-**Ejemplo de moodle_status_snapshot (JSONB):**
-
-```json
-{
-  "current_week": 2,
-  "average_score": 75.5,
-  "struggling_topics": ["Relaciones entre tablas", "Consultas SQL complejas"]
-}
-```
-
-**Relaciones:**
-
-- N:1 con `users` (coder)
-- N:1 con `modules`
-- 1:N con `plan_activities`
-- 1:N con `tl_feedback`
-
----
-
-### 9. PLAN_ACTIVITIES (Actividades del Plan)
-
-**Propósito:** Actividades diarias dentro de un plan complementario.
-
-| Campo                  | Tipo         | Descripción                           |
-| ---------------------- | ------------ | ------------------------------------- |
-| id                     | SERIAL       | Identificador único (PK)              |
-| plan_id                | INT          | Referencia a complementary_plans (FK) |
-| day_number             | INT          | Número de día (1-5)                   |
-| title                  | VARCHAR(200) | Título de la actividad                |
-| description            | TEXT         | Descripción detallada                 |
-| estimated_time_minutes | INT          | Tiempo estimado en minutos            |
-| activity_type          | VARCHAR(50)  | Tipo de actividad                     |
-| resources              | JSONB        | Recursos sugeridos                    |
-| order_index            | INT          | Orden dentro del día                  |
-
-**Valores válidos para activity_type:**
-
-- `guided`: Actividad guiada paso a paso
-- `semi_guided`: Actividad con orientación parcial
-- `autonomous`: Actividad autónoma
-
-**Ejemplo de resources (JSONB):**
+**`hints` JSONB structure:**
 
 ```json
 [
-  {
-    "type": "video",
-    "url": "https://youtube.com/watch?v=...",
-    "duration": "5min",
-    "title": "Intro a Relaciones SQL"
-  },
-  {
-    "type": "article",
-    "url": "https://...",
-    "title": "Documentación oficial"
-  }
+  "Consider using a LEFT JOIN to include rows without matches",
+  "The GROUP BY clause must include all non-aggregated columns",
+  "Check the WHERE clause — it filters before grouping"
 ]
 ```
 
-**Relaciones:**
+---
 
-- N:1 con `complementary_plans`
-- 1:1 con `activity_progress`
+### 3.5 `score_events` — Kairo Score Audit Log
+
+**Purpose:** Immutable append-only log of every point change. `users.kairo_score` is the denormalized aggregate kept in sync after every INSERT.
+
+| Event             | Points | Triggered by                        |
+| ----------------- | ------ | ----------------------------------- |
+| `day_complete`    | +5     | Coder marks plan day complete       |
+| `exercise_submit` | +8     | Coder submits code exercise         |
+| `tl_approved`     | +15    | TL reviews and provides feedback    |
+| `plan_complete`   | +50    | All 20 days completed               |
+| `inactivity`      | -3/day | Automated: 3+ days without activity |
+
+Score floors at 0 via `GREATEST(0, kairo_score + points)`. Auto risk flag created if score drops below 20.
 
 ---
 
-### 10. ACTIVITY_PROGRESS (Progreso de Actividades)
+### 3.6 `resources` — TL-Uploaded PDFs
 
-**Propósito:** Seguimiento del progreso en cada actividad del plan.
+**Purpose:** Stores metadata for PDFs uploaded by TLs to Supabase Storage. Used by the RAG system to surface relevant resources in the AI Trainer for each day's topic.
 
-| Campo              | Tipo         | Descripción                       |
-| ------------------ | ------------ | --------------------------------- |
-| id                 | SERIAL       | Identificador único (PK)          |
-| activity_id        | INT          | Referencia a plan_activities (FK) |
-| coder_id           | INT          | Referencia a users (FK)           |
-| completed          | BOOLEAN      | Estado de completitud             |
-| reflection_text    | TEXT         | Reflexión escrita por el coder    |
-| evidence_url       | VARCHAR(500) | URL de evidencia                  |
-| evidence_type      | VARCHAR(50)  | Tipo de evidencia                 |
-| completed_at       | TIMESTAMP    | Fecha de completitud              |
-| time_spent_minutes | INT          | Tiempo real invertido             |
+`clan_id` FK ensures strict isolation — coders only see resources uploaded by their own TL.
 
-**Valores válidos para evidence_type:**
-
-- `text`: Texto escrito
-- `link`: Enlace externo (GitHub, etc.)
-- `file`: Archivo adjunto
-
-**Relaciones:**
-
-- N:1 con `plan_activities`
-- N:1 con `users` (coder)
+`preview_text` stores extracted text from the PDF for ILIKE-based search (semantic search via pgvector is implemented but optional).
 
 ---
 
-### 11. TL_FEEDBACK (Feedback de Team Leader)
+## 4. Entity Relationships
 
-**Propósito:** Retroalimentación de los Team Leaders a los coders.
+### 4.1 One-to-Many (1:N)
 
-| Campo         | Tipo        | Descripción                           |
-| ------------- | ----------- | ------------------------------------- |
-| id            | SERIAL      | Identificador único (PK)              |
-| coder_id      | INT         | Referencia a users (FK) - receptor    |
-| tl_id         | INT         | Referencia a users (FK) - autor       |
-| plan_id       | INT         | Referencia a complementary_plans (FK) |
-| feedback_text | TEXT        | Contenido del feedback                |
-| feedback_type | VARCHAR(50) | Tipo de feedback                      |
-| created_at    | TIMESTAMP   | Fecha de creación                     |
+| Parent                | Child                    | Description                                   |
+| --------------------- | ------------------------ | --------------------------------------------- |
+| `users`               | `soft_skills_assessment` | One assessment per coder (enforced UNIQUE)    |
+| `users`               | `moodle_progress`        | Progress per module (UNIQUE per coder+module) |
+| `users`               | `complementary_plans`    | Multiple plans over time, one active          |
+| `users`               | `activity_progress`      | Completion records per activity               |
+| `users`               | `exercises`              | Exercises generated for their plans           |
+| `users`               | `exercise_submissions`   | Code submissions                              |
+| `users`               | `score_events`           | Point history                                 |
+| `users`               | `risk_flags`             | Risk alerts                                   |
+| `users`               | `notifications`          | SSE notification queue                        |
+| `modules`             | `weeks`                  | Module structure                              |
+| `modules`             | `topics`                 | Topic catalog                                 |
+| `complementary_plans` | `plan_activities`        | Up to 40 parsed activity rows                 |
+| `complementary_plans` | `exercises`              | One exercise cached per day                   |
+| `plan_activities`     | `activity_progress`      | Completion tracking                           |
+| `exercises`           | `exercise_submissions`   | Code submissions for TL review                |
 
-**Valores válidos para feedback_type:**
+### 4.2 Self-referential Relationships
 
-- `weekly`: Feedback semanal general
-- `activity`: Feedback sobre actividad específica
-- `general`: Comentario general de mentoría
+**`tl_feedback`** has two FKs to `users`:
 
-**Relaciones:**
+- `coder_id` → coder who **receives** the feedback
+- `tl_id` → TL who **sends** the feedback
 
-- N:1 con `users` (coder - receptor)
-- N:1 con `users` (tl - autor)
-- N:1 con `complementary_plans`
+**`exercise_submissions`** has:
 
----
+- `coder_id` → coder who **submitted** the code
+- `reviewed_by` → TL who **reviewed** the submission
 
-## RELACIONES ENTRE ENTIDADES
+### 4.3 Many-to-Many (N:M)
 
-### Relaciones 1:N (Uno a Muchos)
-
-| Tabla Padre         | Tabla Hija              | Descripción                                              |
-| ------------------- | ----------------------- | -------------------------------------------------------- |
-| users               | soft_skills_assessment  | Un usuario puede tener múltiples evaluaciones            |
-| users               | moodle_progress         | Un usuario tiene progreso en múltiples módulos           |
-| users               | complementary_plans     | Un usuario puede tener múltiples planes                  |
-| users               | coder_struggling_topics | Un usuario reporta múltiples temas de dificultad         |
-| users               | activity_progress       | Un usuario registra progreso en múltiples actividades    |
-| modules             | weeks                   | Un módulo contiene múltiples semanas                     |
-| modules             | topics                  | Un módulo tiene múltiples temas                          |
-| modules             | moodle_progress         | Un módulo es seguido por múltiples usuarios              |
-| modules             | complementary_plans     | Un módulo genera múltiples planes                        |
-| complementary_plans | plan_activities         | Un plan tiene múltiples actividades                      |
-| complementary_plans | tl_feedback             | Un plan recibe múltiples feedbacks                       |
-| plan_activities     | activity_progress       | Una actividad puede ser realizada por múltiples usuarios |
-
-### Relaciones N:M (Muchos a Muchos)
-
-| Tabla 1        | Tabla Intermedia        | Tabla 2 | Descripción                                                                                              |
-| -------------- | ----------------------- | ------- | -------------------------------------------------------------------------------------------------------- |
-| users (coders) | coder_struggling_topics | topics  | Los coders pueden tener dificultad en múltiples temas, y un tema puede ser difícil para múltiples coders |
-
-### Relaciones Especiales
-
-**TL_FEEDBACK - Doble Relación con USERS:**
-
-- `coder_id` → Usuario que RECIBE el feedback (role = 'coder')
-- `tl_id` → Usuario que DA el feedback (role = 'tl')
+| Entity 1         | Junction Table         | Entity 2          | Description                             |
+| ---------------- | ---------------------- | ----------------- | --------------------------------------- |
+| `users` (coders) | `exercise_submissions` | `exercises`       | Each coder can submit for each exercise |
+| `users` (coders) | `activity_progress`    | `plan_activities` | Each coder tracks progress per activity |
 
 ---
 
-## ÍNDICES Y OPTIMIZACIONES
+## 5. Indexes and Optimizations
 
-### Índices Únicos (UK)
+### Unique Constraints
 
 ```sql
-CREATE UNIQUE INDEX idx_users_email ON users(email);
+-- Ensures no duplicate email registrations
+ALTER TABLE users ADD CONSTRAINT uk_email UNIQUE (email);
+
+-- One soft skills assessment per coder
+ALTER TABLE soft_skills_assessment ADD CONSTRAINT uk_ssa_coder UNIQUE (coder_id);
+
+-- One Moodle progress row per coder per module
+ALTER TABLE moodle_progress ADD CONSTRAINT uk_moodle UNIQUE (coder_id, module_id);
+
+-- One progress record per activity per coder
+ALTER TABLE activity_progress ADD CONSTRAINT uk_progress UNIQUE (activity_id, coder_id);
+
+-- Exercise cache key — LLM called only once per plan day
+ALTER TABLE exercises ADD CONSTRAINT uk_exercise_cache UNIQUE (plan_id, day_number);
 ```
 
-### Índices de Búsqueda
+### Performance Indexes
 
 ```sql
--- Búsquedas por coder
-CREATE INDEX idx_soft_skills_coder ON soft_skills_assessment(coder_id);
-CREATE INDEX idx_moodle_progress_coder ON moodle_progress(coder_id);
-CREATE INDEX idx_complementary_plans_coder ON complementary_plans(coder_id);
-CREATE INDEX idx_activity_progress_coder ON activity_progress(coder_id);
-CREATE INDEX idx_tl_feedback_coder ON tl_feedback(coder_id);
+-- Most frequent: find coder's active plan
+CREATE INDEX idx_plans_coder_active  ON complementary_plans(coder_id, is_active);
 
--- Búsquedas por estado
-CREATE INDEX idx_complementary_plans_active ON complementary_plans(is_active);
-CREATE INDEX idx_activity_progress_completed ON activity_progress(completed);
+-- TL: find all submissions from their clan
+CREATE INDEX idx_submissions_coder   ON exercise_submissions(coder_id);
+CREATE INDEX idx_submissions_review  ON exercise_submissions(reviewed_at) WHERE reviewed_at IS NULL;
 
--- Búsquedas por relaciones
-CREATE INDEX idx_plan_activities_plan ON plan_activities(plan_id);
-CREATE INDEX idx_activity_progress_activity ON activity_progress(activity_id);
-CREATE INDEX idx_tl_feedback_tl ON tl_feedback(tl_id);
+-- Score: fast lookup for ranking
+CREATE INDEX idx_score_events_coder  ON score_events(coder_id);
+CREATE INDEX idx_users_kairo_score   ON users(kairo_score DESC) WHERE role = 'coder';
 
--- Búsquedas compuestas
-CREATE INDEX idx_moodle_progress_coder_module ON moodle_progress(coder_id, module_id);
-CREATE INDEX idx_complementary_plans_coder_active ON complementary_plans(coder_id, is_active);
+-- Notifications: unread count
+CREATE INDEX idx_notif_user_unread   ON notifications(user_id, is_read) WHERE is_read = false;
+
+-- Resources: clan-filtered search
+CREATE INDEX idx_resources_clan      ON resources(clan_id, is_active) WHERE is_active = true;
+
+-- Risk flags: active flags per coder
+CREATE INDEX idx_risk_active         ON risk_flags(coder_id, resolved) WHERE resolved = false;
 ```
 
-### Índices JSONB
+### JSONB Indexes
 
 ```sql
--- Para búsquedas dentro de campos JSONB
-CREATE INDEX idx_moodle_weeks_completed ON moodle_progress USING GIN (weeks_completed);
-CREATE INDEX idx_complementary_plans_skills ON complementary_plans USING GIN (soft_skills_snapshot);
-CREATE INDEX idx_plan_activities_resources ON plan_activities USING GIN (resources);
+-- Full-text search on resource preview text (Spanish stemming)
+CREATE INDEX idx_resources_fts ON resources
+    USING GIN (to_tsvector('spanish', COALESCE(preview_text, '')));
+
+-- Plan content search (for analytics)
+CREATE INDEX idx_plans_content ON complementary_plans USING GIN (plan_content);
 ```
 
 ---
 
-## TRIGGERS Y FUNCIONES
+## 6. Triggers and Functions
 
-### Trigger para Updated_at
+### 6.1 Auto-deactivate Previous Plans
+
+The Python service handles this explicitly in `supabase_service.py → deactivate_plans()`, but a trigger provides a safety net:
 
 ```sql
--- Función genérica para actualizar timestamp
-CREATE OR REPLACE FUNCTION update_updated_at_column()
+CREATE OR REPLACE FUNCTION deactivate_old_plans()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE complementary_plans
+    SET is_active = false
+    WHERE coder_id = NEW.coder_id
+      AND id != NEW.id
+      AND is_active = true;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_deactivate_old_plans
+    AFTER INSERT ON complementary_plans
+    FOR EACH ROW
+    WHEN (NEW.is_active = true)
+    EXECUTE FUNCTION deactivate_old_plans();
+```
+
+### 6.2 Auto Risk Flag on Low Score
+
+Handled in `scoringService.js → _autoRiskFlag()` after every score update. The database trigger provides a backup:
+
+```sql
+CREATE OR REPLACE FUNCTION check_risk_threshold()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.kairo_score < 20 AND OLD.kairo_score >= 20 THEN
+        INSERT INTO risk_flags (coder_id, risk_level, reason, auto_detected)
+        VALUES (
+            NEW.id,
+            CASE WHEN NEW.kairo_score < 10 THEN 'critical' ELSE 'high' END,
+            'Kairo score dropped below threshold: ' || NEW.kairo_score || ' pts',
+            true
+        )
+        ON CONFLICT DO NOTHING;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_auto_risk_flag
+    AFTER UPDATE OF kairo_score ON users
+    FOR EACH ROW
+    EXECUTE FUNCTION check_risk_threshold();
+```
+
+### 6.3 Update `updated_at` Timestamps
+
+```sql
+CREATE OR REPLACE FUNCTION update_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = CURRENT_TIMESTAMP;
     RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$ LANGUAGE plpgsql;
 
--- Aplicar a tablas relevantes
-CREATE TRIGGER update_users_updated_at
-    BEFORE UPDATE ON users
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_moodle_progress_updated_at
+CREATE TRIGGER trg_moodle_updated_at
     BEFORE UPDATE ON moodle_progress
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-```
-
-### Trigger para Calcular Average Score
-
-```sql
--- Función para calcular promedio automáticamente
-CREATE OR REPLACE FUNCTION calculate_average_score()
-RETURNS TRIGGER AS $$
-DECLARE
-    total_score NUMERIC := 0;
-    week_count INTEGER := 0;
-    week_data JSONB;
-BEGIN
-    -- Iterar sobre weeks_completed
-    FOR week_data IN SELECT value FROM jsonb_each(NEW.weeks_completed)
-    LOOP
-        IF (week_data->>'completed')::BOOLEAN = TRUE THEN
-            total_score := total_score + (week_data->>'score')::NUMERIC;
-            week_count := week_count + 1;
-        END IF;
-    END LOOP;
-
-    -- Calcular promedio
-    IF week_count > 0 THEN
-        NEW.average_score := total_score / week_count;
-    ELSE
-        NEW.average_score := 0;
-    END IF;
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER update_moodle_average_score
-    BEFORE INSERT OR UPDATE ON moodle_progress
-    FOR EACH ROW EXECUTE FUNCTION calculate_average_score();
-```
-
-### Trigger para Desactivar Planes Antiguos
-
-```sql
--- Función para desactivar planes anteriores al crear uno nuevo
-CREATE OR REPLACE FUNCTION deactivate_old_plans()
-RETURNS TRIGGER AS $$
-BEGIN
-    -- Desactivar planes anteriores del mismo coder y módulo
-    UPDATE complementary_plans
-    SET is_active = FALSE
-    WHERE coder_id = NEW.coder_id
-      AND module_id = NEW.module_id
-      AND id != NEW.id;
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER deactivate_previous_plans
-    AFTER INSERT ON complementary_plans
-    FOR EACH ROW EXECUTE FUNCTION deactivate_old_plans();
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 ```
 
 ---
 
-## VISTAS RECOMENDADAS
+## 7. Recommended Views
 
-### Vista: Coder Dashboard
+### 7.1 Coder Dashboard View
 
 ```sql
-CREATE VIEW v_coder_dashboard AS
+CREATE OR REPLACE VIEW v_coder_dashboard AS
 SELECT
-    u.id AS coder_id,
+    u.id              AS coder_id,
     u.email,
-    ssa.autonomy,
-    ssa.time_management,
-    ssa.learning_style,
-    mp.module_id,
-    m.name AS module_name,
+    u.full_name,
+    u.clan,
+    u.kairo_score,
+    m.name            AS module_name,
+    m.total_weeks,
     mp.current_week,
-    mp.average_score,
-    cp.id AS active_plan_id,
-    cp.week_number AS plan_week,
-    COUNT(DISTINCT pa.id) AS total_activities,
-    COUNT(DISTINCT CASE WHEN ap.completed = TRUE THEN ap.id END) AS completed_activities,
+    mp.average_score  AS moodle_score,
+    ssa.autonomy, ssa.time_management, ssa.problem_solving,
+    ssa.communication, ssa.teamwork, ssa.learning_style,
+    cp.id             AS active_plan_id,
+    cp.targeted_soft_skill,
+    COUNT(DISTINCT pa.id)                                      AS total_activities,
+    COUNT(DISTINCT ap.id) FILTER (WHERE ap.completed = true)   AS completed_activities,
     ROUND(
-        (COUNT(DISTINCT CASE WHEN ap.completed = TRUE THEN ap.id END)::NUMERIC /
-         NULLIF(COUNT(DISTINCT pa.id), 0)) * 100, 2
-    ) AS completion_percentage
+        COUNT(DISTINCT ap.id) FILTER (WHERE ap.completed = true)::NUMERIC
+        / NULLIF(COUNT(DISTINCT pa.id), 0) * 100, 2
+    )                 AS completion_pct
 FROM users u
-LEFT JOIN soft_skills_assessment ssa ON u.id = ssa.coder_id
-LEFT JOIN moodle_progress mp ON u.id = mp.coder_id
-LEFT JOIN modules m ON mp.module_id = m.id
-LEFT JOIN complementary_plans cp ON u.id = cp.coder_id AND cp.is_active = TRUE
-LEFT JOIN plan_activities pa ON cp.id = pa.plan_id
-LEFT JOIN activity_progress ap ON pa.id = ap.activity_id
+LEFT JOIN modules m                  ON m.id  = u.current_module_id
+LEFT JOIN moodle_progress mp         ON mp.coder_id  = u.id
+LEFT JOIN soft_skills_assessment ssa ON ssa.coder_id = u.id
+LEFT JOIN complementary_plans cp     ON cp.coder_id  = u.id AND cp.is_active = true
+LEFT JOIN plan_activities pa         ON pa.plan_id   = cp.id
+LEFT JOIN activity_progress ap       ON ap.activity_id = pa.id AND ap.coder_id = u.id
 WHERE u.role = 'coder'
-GROUP BY u.id, u.email, ssa.autonomy, ssa.time_management, ssa.learning_style,
-         mp.module_id, m.name, mp.current_week, mp.average_score, cp.id, cp.week_number;
+GROUP BY u.id, u.email, u.full_name, u.clan, u.kairo_score,
+         m.name, m.total_weeks, mp.current_week, mp.average_score,
+         ssa.autonomy, ssa.time_management, ssa.problem_solving,
+         ssa.communication, ssa.teamwork, ssa.learning_style,
+         cp.id, cp.targeted_soft_skill;
 ```
 
-### Vista: TL Overview
+### 7.2 Risk Analysis View
 
 ```sql
-CREATE VIEW v_tl_coders_overview AS
+CREATE OR REPLACE VIEW v_coder_risk_analysis AS
 SELECT
-    u.id AS coder_id,
-    u.email,
-    ssa.autonomy,
-    ssa.time_management,
-    CASE
-        WHEN ssa.autonomy = (SELECT MIN(autonomy) FROM soft_skills_assessment WHERE coder_id = u.id)
-        THEN 'autonomy'
-        WHEN ssa.time_management = (SELECT MIN(time_management) FROM soft_skills_assessment WHERE coder_id = u.id)
-        THEN 'time_management'
-        ELSE 'other'
-    END AS weakest_skill,
+    u.id, u.full_name, u.clan, u.kairo_score,
+    ssa.autonomy, ssa.problem_solving,
     mp.average_score,
-    COUNT(DISTINCT ap.id) FILTER (WHERE ap.completed = TRUE) AS activities_completed,
-    COUNT(DISTINCT ap.id) AS total_activities,
-    MAX(ap.completed_at) AS last_activity_date
+    rf.risk_level            AS current_flag,
+    CASE
+        WHEN u.kairo_score < 20                              THEN 'critical'
+        WHEN u.kairo_score < 35                              THEN 'high'
+        WHEN ssa.autonomy <= 2 AND mp.average_score < 70     THEN 'high'
+        WHEN ssa.autonomy <= 2 OR  mp.average_score < 70     THEN 'medium'
+        ELSE 'low'
+    END                      AS calculated_risk,
+    MAX(ap.completed_at)     AS last_activity
 FROM users u
-LEFT JOIN soft_skills_assessment ssa ON u.id = ssa.coder_id
-LEFT JOIN moodle_progress mp ON u.id = mp.coder_id
-LEFT JOIN complementary_plans cp ON u.id = cp.coder_id AND cp.is_active = TRUE
-LEFT JOIN plan_activities pa ON cp.id = pa.plan_id
-LEFT JOIN activity_progress ap ON pa.id = ap.activity_id
+LEFT JOIN soft_skills_assessment ssa ON ssa.coder_id = u.id
+LEFT JOIN moodle_progress mp         ON mp.coder_id  = u.id
+LEFT JOIN risk_flags rf              ON rf.coder_id  = u.id AND rf.resolved = false
+LEFT JOIN activity_progress ap       ON ap.coder_id  = u.id AND ap.completed = true
 WHERE u.role = 'coder'
-GROUP BY u.id, u.email, ssa.autonomy, ssa.time_management, mp.average_score;
+GROUP BY u.id, u.full_name, u.clan, u.kairo_score,
+         ssa.autonomy, ssa.problem_solving, mp.average_score, rf.risk_level
+ORDER BY u.kairo_score ASC;
 ```
 
-### Vista: Coders en Riesgo
+---
+
+## 8. Useful Queries
+
+### Get coder's full dashboard data
 
 ```sql
-CREATE VIEW v_coder_risk_analysis AS
+SELECT * FROM v_coder_dashboard WHERE coder_id = $1;
+```
+
+### Get TL's clan overview with scores
+
+```sql
 SELECT
-    u.id AS coder_id,
-    u.email,
-    ssa.autonomy,
-    ssa.time_management,
-    mp.average_score,
-    CASE
-        WHEN ssa.autonomy <= 2 AND mp.average_score < 70 THEN 'HIGH_RISK'
-        WHEN ssa.autonomy <= 2 OR mp.average_score < 70 THEN 'MEDIUM_RISK'
-        ELSE 'LOW_RISK'
-    END AS risk_level,
-    COUNT(DISTINCT cst.id) AS struggling_topics_count
+    u.id, u.full_name, u.kairo_score, u.first_login,
+    mp.average_score, mp.current_week,
+    ssa.autonomy, ssa.time_management, ssa.problem_solving,
+    ssa.communication, ssa.teamwork, ssa.learning_style,
+    rf.risk_level
 FROM users u
-LEFT JOIN soft_skills_assessment ssa ON u.id = ssa.coder_id
-LEFT JOIN moodle_progress mp ON u.id = mp.coder_id
-LEFT JOIN coder_struggling_topics cst ON u.id = cst.coder_id
-WHERE u.role = 'coder'
-GROUP BY u.id, u.email, ssa.autonomy, ssa.time_management, mp.average_score
-ORDER BY risk_level DESC, mp.average_score ASC;
+LEFT JOIN moodle_progress        mp  ON mp.coder_id = u.id
+LEFT JOIN soft_skills_assessment ssa ON ssa.coder_id = u.id
+LEFT JOIN risk_flags             rf  ON rf.coder_id  = u.id AND rf.resolved = false
+WHERE u.role = 'coder' AND u.clan = $1
+ORDER BY u.full_name ASC;
 ```
 
----
-
-## SCRIPTS DE CREACIÓN
-
-### Script Completo de Creación de Tablas
-
-Ver archivo: `create_tables.sql`
-
-### Script de Datos de Prueba
-
-Ver archivo: `seed_data.sql`
-
----
-
-## NOTAS ADICIONALES
-
-### Consideraciones de Seguridad
-
-1. **Contraseñas:** Siempre hasheadas con bcrypt (cost factor 10+)
-2. **Validación de Roles:** Validar rol en backend antes de operaciones
-3. **Sanitización:** Escapar inputs antes de JSONB para evitar inyección
-
-### Consideraciones de Rendimiento
-
-1. **JSONB vs Tablas:** JSONB se usa para datos flexibles y no frecuentemente
-   consultados
-2. **Paginación:** Implementar LIMIT/OFFSET en queries grandes
-3. **Caché:** Considerar Redis para vistas frecuentes como dashboards
-
-### Escalabilidad Futura
-
-Posibles extensiones del modelo:
-
-- Tabla `notifications` para sistema de alertas
-- Tabla `achievements` para gamificación
-- Tabla `messages` para chat TL-Coder
-- Tabla `resources` para biblioteca de materiales
-- Particionamiento de `activity_progress` por fecha
-
----
-
-## INFORMACIÓN DEL PROYECTO
-
-**Versión del Modelo:** 1.0  
-**Última Actualización:** Febrero 2026  
-**Desarrollado por:** Equipo Riwi - Proyecto Integrador  
-**Contacto:** [miguel.montoya@riwi.io](mailto:miguel.montoya@riwi.io)
-
----
-
-## APÉNDICE: CONSULTAS ÚTILES
-
-### Obtener Coder con Menor Autonomía
+### Get clan + global Kairo Score ranking
 
 ```sql
-SELECT u.email, ssa.autonomy
+-- Clan ranking
+SELECT full_name, kairo_score,
+       RANK() OVER (ORDER BY kairo_score DESC) AS rank
+FROM users
+WHERE role = 'coder' AND clan = $1 AND is_active = true;
+
+-- Global top 10
+SELECT full_name, clan, kairo_score,
+       RANK() OVER (ORDER BY kairo_score DESC) AS rank
+FROM users
+WHERE role = 'coder' AND is_active = true
+ORDER BY kairo_score DESC LIMIT 10;
+```
+
+### Get pending code submissions for TL
+
+```sql
+SELECT
+    es.id, es.code_submitted, es.submitted_at,
+    e.title, e.language, e.difficulty, e.day_number, e.expected_output,
+    u.full_name AS coder_name
+FROM exercise_submissions es
+JOIN exercises e ON es.exercise_id = e.id
+JOIN users u     ON es.coder_id   = u.id
+JOIN users tl    ON tl.id         = $1
+WHERE u.clan = tl.clan
+  AND es.reviewed_at IS NULL
+ORDER BY es.submitted_at DESC;
+```
+
+### Get coders at risk (ordered by severity)
+
+```sql
+SELECT
+    u.full_name, u.kairo_score, u.clan,
+    rf.risk_level, rf.reason, rf.detected_at,
+    ssa.autonomy, mp.average_score
 FROM users u
-JOIN soft_skills_assessment ssa ON u.id = ssa.coder_id
-WHERE u.role = 'coder'
-ORDER BY ssa.autonomy ASC
-LIMIT 10;
+JOIN risk_flags rf            ON rf.coder_id = u.id AND rf.resolved = false
+LEFT JOIN soft_skills_assessment ssa ON ssa.coder_id = u.id
+LEFT JOIN moodle_progress mp  ON mp.coder_id = u.id
+WHERE u.clan = $1
+ORDER BY
+    CASE rf.risk_level
+        WHEN 'critical' THEN 1
+        WHEN 'high'     THEN 2
+        WHEN 'medium'   THEN 3
+        ELSE 4
+    END;
 ```
 
-### Obtener Plan Activo de un Coder
+### Get score history for a specific coder
 
 ```sql
-SELECT cp.*, m.name AS module_name
-FROM complementary_plans cp
-JOIN modules m ON cp.module_id = m.id
-WHERE cp.coder_id = 1 AND cp.is_active = TRUE;
-```
-
-### Obtener Actividades Pendientes
-
-```sql
-SELECT pa.title, pa.day_number, pa.estimated_time_minutes
-FROM plan_activities pa
-LEFT JOIN activity_progress ap ON pa.id = ap.activity_id AND ap.coder_id = 1
-WHERE ap.id IS NULL
-ORDER BY pa.day_number, pa.order_index;
-```
-
-### Coders con Progreso Lento
-
-```sql
-SELECT u.email, mp.average_score, COUNT(ap.id) as activities_completed
-FROM users u
-JOIN moodle_progress mp ON u.id = mp.coder_id
-LEFT JOIN complementary_plans cp ON u.id = cp.coder_id AND cp.is_active = TRUE
-LEFT JOIN plan_activities pa ON cp.id = pa.plan_id
-LEFT JOIN activity_progress ap ON pa.id = ap.activity_id AND ap.completed = TRUE
-WHERE u.role = 'coder'
-GROUP BY u.id, u.email, mp.average_score
-HAVING COUNT(ap.id) < 3
-ORDER BY mp.average_score ASC;
+SELECT
+    event_type,
+    points,
+    reference_id,
+    created_at,
+    SUM(points) OVER (ORDER BY created_at ROWS UNBOUNDED PRECEDING) AS running_total
+FROM score_events
+WHERE coder_id = $1
+ORDER BY created_at DESC
+LIMIT 20;
 ```
 
 ---
 
-**FIN DE LA DOCUMENTACIÓN**
+> **Document version:** 2.0 — Updated March 2026  
+> **Authors:** Miguel Calle (Database Architect), Héctor Rios (Backend Lead)  
+> **Project:** Kairo · Riwi Bootcamp · Clan Turing  
+> **Database:** PostgreSQL 14+ on Supabase | 22 tables | 8 ENUM types | 2 views
