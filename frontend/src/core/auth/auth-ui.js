@@ -36,7 +36,6 @@ function setupStrengthBar() {
     const pass = passwordInput.value;
     const { score } = validator.checkPasswordStrength(pass);
 
-    // Removemos todas las clases de estado anteriores
     bar.className = 'strength-bar';
 
     if (pass.length === 0) {
@@ -45,7 +44,6 @@ function setupStrengthBar() {
       return;
     }
 
-    // score 1 = débil, 2 = media, 3 = fuerte
     const stateMap = {
       1: { cls: 'strength-weak', width: '33%', color: '#ef4444' },
       2: { cls: 'strength-medium', width: '66%', color: '#f59e0b' },
@@ -188,7 +186,6 @@ async function handleRegister(e) {
   const fullName = document.getElementById('name').value.trim();
   const clanId = document.getElementById('clan-select').value;
 
-  /* ── Validations ── */
   if (!validator.validateRequired(['name', 'email', 'clan-select'])) {
     ui.showMessage('auth.alerts.required_fields', 'error');
     return;
@@ -247,6 +244,26 @@ async function handleRegister(e) {
 
 /* ── INIT ─────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', async () => {
+  // ── OAuth callback handler ──────────────────────────────
+  const params = new URLSearchParams(window.location.search);
+  const oauthSuccess = params.get('oauth') === 'success';
+  const dest = params.get('dest');
+
+  if (oauthSuccess && dest) {
+    try {
+      const res = await authService.checkAuth();
+      const data = await res.json();
+      if (res.ok && data.authenticated) {
+        sessionManager.saveUser(data.user);
+        window.location.replace(decodeURIComponent(dest));
+        return; // ← no ejecuta nada más
+      }
+    } catch (err) {
+      console.warn('[OAuth redirect] checkAuth failed:', err.message);
+    }
+  }
+  // ───────────────────────────────────────────────────────
+
   await guards.requireGuest();
 
   // OAuth buttons
@@ -258,7 +275,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     .forEach((a) => (a.href = `${API_BASE}/auth/github`));
 
   ui.setupPasswordToggles();
-
   setupStrengthBar();
 
   const loginForm = document.getElementById('login-form');
@@ -267,5 +283,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (registerForm) registerForm.addEventListener('submit', handleRegister);
 });
 
+// information about password
+const input   = document.getElementById('password');
+const tooltip = document.getElementById('pass-tooltip');
 
-
+input.addEventListener('focus', () => tooltip.classList.add('visible'));
+input.addEventListener('blur',  () => tooltip.classList.remove('visible'));
