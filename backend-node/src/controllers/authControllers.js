@@ -257,7 +257,9 @@ export const socialAuthSuccess = async (req, res) => {
       ? `${base}${views}/coder/onboarding.html`
       : `${base}${views}/coder/dashboard.html`;
 
-    return res.redirect(dest);
+    return res.redirect(
+      `${base}${views}/auth/login.html?oauth=success&dest=${encodeURIComponent(dest)}`
+    );
   } catch (err) {
     console.error('[SocialAuthSuccess Error]:', err);
     return res.redirect(
