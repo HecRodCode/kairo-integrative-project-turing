@@ -492,8 +492,9 @@ body {
   display: flex;
   align-items: stretch;
   height: 100%;
-  max-width: 480px;
+  width: 100%;
   margin: 0 auto;
+
 }
 
 .bottom-nav-item {
