@@ -15,6 +15,7 @@ from pydantic import BaseModel
 from groq import Groq
 from supabase import create_client
 from fpdf import FPDF
+from typing import Optional
 
 logger = logging.getLogger("kairo-reports")
 router = APIRouter(tags=["TL Reports"])
@@ -31,7 +32,7 @@ def _get_clients():
 
 class ReportRequest(BaseModel):
     clan:                  str
-    tl_id:                 int
+    tl_id:         Optional[int] = None 
     total_coders:          int
     average_score:         float
     high_risk_count:       int
@@ -95,7 +96,7 @@ Responde SOLO con JSON válido, sin markdown, sin backticks:
         # Save to ai_reports
         supabase.table("ai_reports").insert({
             "target_type":     "clan",
-            "target_id":       req.tl_id,
+            "target_id":       req.tl_id, 
             "summary_text":    report.get("summary", ""),
             "risk_level":      report.get("risk_level", "medium"),
             "recommendations": report.get("recommendations", ""),

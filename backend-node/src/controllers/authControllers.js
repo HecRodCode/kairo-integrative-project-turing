@@ -261,7 +261,7 @@ export const socialAuthSuccess = async (req, res) => {
   } catch (err) {
     console.error('[SocialAuthSuccess Error]:', err);
     return res.redirect(
-      `${process.env.FRONTEND_URL}${process.env.FRONTEND_VIEWS_PATH || ''}/auth/login.html?error=session_error`
+      `${base}${views}/auth/login.html?oauth=success&dest=${encodeURIComponent(dest)}`
     );
   }
 };

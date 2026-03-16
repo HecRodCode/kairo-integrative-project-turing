@@ -60,7 +60,6 @@ async function generateReportClan(clan) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 clan: clan,
-                tl_id: parseInt(sessionStorage.getItem('idCoder')),
                 total_coders: 0,
                 average_score: 0.0,
                 high_risk_count: 0,
