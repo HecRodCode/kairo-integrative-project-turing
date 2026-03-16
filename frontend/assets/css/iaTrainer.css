@@ -671,6 +671,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  margin: 15px 0;
   gap: 20px;
 }
 .nav-arrow {
@@ -717,6 +718,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
+  margin-bottom: 16px;
 }
 
 .activity-card {
