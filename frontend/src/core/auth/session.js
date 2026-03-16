@@ -163,22 +163,24 @@ export const guards = {
     }
   },
 
-  async requireGuest() {
-    const cached = sessionManager.getUser();
-    if (!cached) return;
-    try {
-      const res = await authService.checkAuth();
-      const data = await res.json();
-      if (res.ok && data.authenticated) {
-        sessionManager.saveUser(data.user);
-        sessionManager.redirectByRole(data.user);
-      } else {
-        sessionManager.clearUser();
-      }
-    } catch (err) {
-      console.warn('[Guard] requireGuest network error:', err.message);
+async requireGuest() {
+  try {
+    const res = await authService.checkAuth();
+    const data = await res.json();
+
+    if (res.ok && data.authenticated) {
+      sessionManager.saveUser(data.user);       // guarda el usuario OAuth
+      sessionManager.redirectByRole(data.user); // redirige correctamente
+    } else {
+      sessionManager.clearUser();
     }
-  },
+  } catch (err) {
+    console.warn('[Guard] requireGuest network error:', err.message);
+    // Solo en error de red usamos caché como fallback
+    const cached = sessionManager.getUser();
+    if (cached) sessionManager.redirectByRole(cached);
+  }
+},
 
   async requireOnboarding() {
     const cached = sessionManager.getUser();
