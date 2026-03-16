@@ -15,6 +15,7 @@ from pydantic import BaseModel
 from groq import Groq
 from supabase import create_client
 from fpdf import FPDF
+from typing import Optional
 
 logger = logging.getLogger("kairo-reports")
 router = APIRouter(tags=["TL Reports"])
