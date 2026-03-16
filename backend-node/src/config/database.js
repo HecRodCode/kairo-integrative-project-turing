@@ -1,16 +1,12 @@
 /**
  * Database Infrastructure Module
-
  */
-
 import pkg from 'pg';
 import 'dotenv/config';
 
 const { Pool } = pkg;
 
-/**
- * Pool Configuration
- */
+// POOL CONFIGURATION
 function buildConnectionString() {
   if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
 
@@ -33,16 +29,15 @@ const pool = new Pool({
   connectionString: buildConnectionString(),
 
   // Mandatory for Supabase cloud connections
-  // Set SSL to false if running against local Postgres.
   ssl: process.env.DB_SSL === 'false' ? false : { rejectUnauthorized: false },
 
   // Resource Management
-  max: 10, // Maximum concurrent connections
-  idleTimeoutMillis: 30000, // Close idle clients after 30s
-  connectionTimeoutMillis: 30000, // Fail fast if connection takes >30s
+  max: 10,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 30000,
 
   // Query Performance
-  statement_timeout: 30000, // Terminate queries exceeding 30s
+  statement_timeout: 30000,
 });
 
 
@@ -59,11 +54,7 @@ pool.on('error', (err) => {
   console.error(`   Code: ${err.code} | Detail: ${err.detail || 'None'}`);
 });
 
-// QUERY HELPERS
-/**
- * Global Query Wrapper
- * Executes SQL commands and monitors execution time.
- */
+/* Global Query Wrapper Executes SQL commands and monitors execution time */
 export const query = async (text, params) => {
   const start = Date.now();
   try {
@@ -80,10 +71,7 @@ export const query = async (text, params) => {
   }
 };
 
-/**
- * Connectivity Handshake
- * Performs a comprehensive check of credentials and cluster status.
- */
+/* Connectivity Handshake. Performs a comprehensive check of credentials and cluster status */
 export async function testConnection() {
   try {
     const result = await pool.query(

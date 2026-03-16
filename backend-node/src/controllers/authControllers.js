@@ -7,10 +7,10 @@ import { generateOtpCode, sendOtpEmail } from '../services/email.service.js';
 
 const OTP_EXPIRY_MS = 15 * 60 * 1000;
 
-/* ── OTP helpers (pg directo, sin supabase-js) ── */
+/* ── OTP helpers ── */
 async function createOtpRecord(email, code) {
   const expiresAt = new Date(Date.now() + OTP_EXPIRY_MS).toISOString();
-  // Invalida códigos anteriores
+  // Overrides previous codes
   await query(
     `UPDATE otp_verifications SET is_used = true WHERE user_email = $1 AND is_used = false`,
     [email]
@@ -88,7 +88,7 @@ export const verifyOtp = async (req, res) => {
     const user = userRows[0];
     if (!user) throw new Error('User not found after OTP update');
 
-    // req.login espera el mismo objeto que findById devuelve
+    // req.login expects the same object that findById returns
     req.login(user, (err) => {
       if (err)
         return res
@@ -152,7 +152,7 @@ export const login = async (req, res) => {
     ]);
     const user = rows[0];
 
-    // Usuarios OAuth no tienen password hasheable
+    // OAuth users do not have a hashable password
     const isOAuthUser = user?.password?.startsWith('oauth_');
     const passwordValid =
       !isOAuthUser && user && (await bcrypt.compare(password, user.password));
@@ -231,7 +231,7 @@ export const logout = (req, res) => {
   });
 };
 
-/* ── Social Auth Callback — async/await con manejo de error ── */
+/* ── Social Auth Callback  ── */
 export const socialAuthSuccess = async (req, res) => {
   if (!req.user) {
     return res.redirect(
@@ -246,7 +246,7 @@ export const socialAuthSuccess = async (req, res) => {
       req.session.save((err) => (err ? reject(err) : resolve()));
     });
 
-    // Marcar otp_verified para usuarios OAuth
+    // Set otp_verified for OAuth users
     await query(`UPDATE users SET otp_verified = true WHERE id = $1`, [
       req.user.id,
     ]);

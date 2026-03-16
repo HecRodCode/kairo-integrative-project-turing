@@ -12,7 +12,7 @@ export async function create({
   communication,
   teamwork,
   learningStyle,
-  rawAnswers = null, // FIX: was missing — raw_answers JSONB column
+  rawAnswers = null,
 }) {
   const queryText = `
     INSERT INTO soft_skills_assessment (

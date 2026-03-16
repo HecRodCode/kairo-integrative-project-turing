@@ -6,6 +6,7 @@ import { query } from '../config/database.js';
 import { createClient } from '@supabase/supabase-js';
 import { notifyUser } from '../services/notificationService.js';
 
+// INITIALIZE Supabase client for storage management
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_KEY
@@ -13,37 +14,48 @@ const supabase = createClient(
 
 const BUCKET = 'assignment-files';
 
+// VALIDATE required fields and specific content type requirements
 export async function createAssignment(req, res) {
   try {
     const tl = req.user;
     const { title, moduleId, scope, deadline, repoUrl, contentType } = req.body;
 
     if (!title || !contentType || !scope) {
-      return res.status(400).json({ error: 'Faltan campos requeridos: título, tipo y alcance.' });
+      return res
+        .status(400)
+        .json({ error: 'Faltan campos requeridos: título, tipo y alcance.' });
     }
     if (contentType === 'repo' && !repoUrl) {
-      return res.status(400).json({ error: 'Se requiere la URL del repositorio.' });
+      return res
+        .status(400)
+        .json({ error: 'Se requiere la URL del repositorio.' });
     }
     if (contentType === 'pdf' && !req.file) {
       return res.status(400).json({ error: 'Se requiere un archivo PDF.' });
     }
 
-    const tlResult = await query('SELECT clan, full_name FROM users WHERE id = $1', [tl.id]);
-    const clan   = tlResult.rows[0]?.clan;
+    const tlResult = await query(
+      'SELECT clan, full_name FROM users WHERE id = $1',
+      [tl.id]
+    );
+    const clan = tlResult.rows[0]?.clan;
     const tlName = tlResult.rows[0]?.full_name;
 
     let storagePath = null;
-    let fileName    = null;
+    let fileName = null;
 
     if (contentType === 'pdf' && req.file) {
       const timestamp = Date.now();
-      const safeName  = req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const safeName = req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
       storagePath = `${clan}/module-${moduleId || 0}/${timestamp}_${safeName}`;
-      fileName    = req.file.originalname;
+      fileName = req.file.originalname;
 
       const { error: uploadError } = await supabase.storage
         .from(BUCKET)
-        .upload(storagePath, req.file.buffer, { contentType: 'application/pdf', upsert: false });
+        .upload(storagePath, req.file.buffer, {
+          contentType: 'application/pdf',
+          upsert: false,
+        });
 
       if (uploadError) throw new Error(`Storage error: ${uploadError.message}`);
     }
@@ -54,14 +66,27 @@ export async function createAssignment(req, res) {
          (tl_id, clan_id, scope, title, module_id, content_type, storage_path, repo_url, file_name, deadline)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
        RETURNING id`,
-      [tl.id, clanId, scope, title, moduleId || null, contentType, storagePath, repoUrl || null, fileName, deadline || null]
+      [
+        tl.id,
+        clanId,
+        scope,
+        title,
+        moduleId || null,
+        contentType,
+        storagePath,
+        repoUrl || null,
+        fileName,
+        deadline || null,
+      ]
     );
 
     const assignmentId = result.rows[0].id;
 
     let coderResult;
     if (scope === 'all') {
-      coderResult = await query(`SELECT id FROM users WHERE role = 'coder' AND is_active = true`);
+      coderResult = await query(
+        `SELECT id FROM users WHERE role = 'coder' AND is_active = true`
+      );
     } else {
       coderResult = await query(
         `SELECT id FROM users WHERE role = 'coder' AND clan = $1 AND is_active = true`,
@@ -87,15 +112,22 @@ export async function createAssignment(req, res) {
       assignmentId
     );
 
-    res.json({ success: true, assignmentId, notified: coderResult.rows.length });
+    res.json({
+      success: true,
+      assignmentId,
+      notified: coderResult.rows.length,
+    });
   } catch (err) {
     console.error('[createAssignment]', err);
-    res.status(500).json({ error: err.message || 'Error al crear la actividad.' });
+    res
+      .status(500)
+      .json({ error: err.message || 'Error al crear la actividad.' });
   }
 }
 
 export async function listAssignmentsTL(req, res) {
   try {
+    // FETCH all active assignments created by the current TL
     const tl = req.user;
     const result = await query(
       `SELECT a.*, a.clan_id AS clan, m.name AS module_name
@@ -114,6 +146,7 @@ export async function listAssignmentsTL(req, res) {
 
 export async function deleteAssignment(req, res) {
   try {
+    // PERFORM logical delete by setting is_active to false
     const tl = req.user;
     const { id } = req.params;
     const result = await query(
@@ -121,7 +154,9 @@ export async function deleteAssignment(req, res) {
       [id, tl.id]
     );
     if (!result.rows.length) {
-      return res.status(404).json({ error: 'Actividad no encontrada o sin permisos.' });
+      return res
+        .status(404)
+        .json({ error: 'Actividad no encontrada o sin permisos.' });
     }
     res.json({ success: true });
   } catch (err) {
@@ -132,8 +167,11 @@ export async function deleteAssignment(req, res) {
 
 export async function listAssignmentsCoder(req, res) {
   try {
+    // RETRIEVE visible assignments based on Coder's clan or global scope
     const coder = req.user;
-    const coderResult = await query('SELECT clan FROM users WHERE id = $1', [coder.id]);
+    const coderResult = await query('SELECT clan FROM users WHERE id = $1', [
+      coder.id,
+    ]);
     const clan = coderResult.rows[0]?.clan;
 
     const result = await query(
@@ -155,10 +193,13 @@ export async function listAssignmentsCoder(req, res) {
 
 export async function getAssignmentDownload(req, res) {
   try {
+    // GENERATE signed temporary URL for secure PDF download from Supabase
     const coder = req.user;
     const { id } = req.params;
 
-    const coderResult = await query('SELECT clan FROM users WHERE id = $1', [coder.id]);
+    const coderResult = await query('SELECT clan FROM users WHERE id = $1', [
+      coder.id,
+    ]);
     const clan = coderResult.rows[0]?.clan;
 
     const result = await query(
@@ -168,7 +209,8 @@ export async function getAssignmentDownload(req, res) {
       [id, clan]
     );
 
-    if (!result.rows.length) return res.status(404).json({ error: 'No encontrado.' });
+    if (!result.rows.length)
+      return res.status(404).json({ error: 'No encontrado.' });
 
     const assignment = result.rows[0];
     if (!assignment.storage_path) {
@@ -189,6 +231,7 @@ export async function getAssignmentDownload(req, res) {
 
 export async function getNotifications(req, res) {
   try {
+    // FETCH last 30 notifications and calculate unread count
     const result = await query(
       `SELECT * FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 30`,
       [req.user.id]
@@ -203,7 +246,10 @@ export async function getNotifications(req, res) {
 
 export async function markNotificationsRead(req, res) {
   try {
-    await query(`UPDATE notifications SET is_read = true WHERE user_id = $1`, [req.user.id]);
+    // UPDATE all user notifications to read status in one operation
+    await query(`UPDATE notifications SET is_read = true WHERE user_id = $1`, [
+      req.user.id,
+    ]);
     res.json({ success: true });
   } catch (err) {
     console.error('[markNotificationsRead]', err);
