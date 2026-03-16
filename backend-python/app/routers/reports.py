@@ -48,37 +48,37 @@ async def generate_report(req: ReportRequest):
 
     try:
         prompt = f"""
-You are an educational data analyst for Riwi coding bootcamp.
-Write a professional report for the Team Leader of clan '{req.clan}'.
+Eres un analista de datos educativo para el bootcamp de programación Riwi.
+Escribe un informe profesional para el Team Leader del clan '{req.clan}'.
 
-DATA:
-- Total coders: {req.total_coders}
-- Average score: {req.average_score:.1f}/100
-- High/critical risk coders: {req.high_risk_count}
-- Top struggling topics: {', '.join(req.top_struggling_topics) if req.top_struggling_topics else 'None reported'}
-- Soft skills averages: {json.dumps(req.soft_skills_summary) if req.soft_skills_summary else 'Not available'}
+DATOS:
+- Total de coders: {req.total_coders}
+- Puntaje promedio: {req.average_score:.1f}/100
+- Coders en riesgo alto/crítico: {req.high_risk_count}
+- Temas con más dificultad: {', '.join(req.top_struggling_topics) if req.top_struggling_topics else 'Ninguno reportado'}
+- Promedios de habilidades blandas: {json.dumps(req.soft_skills_summary) if req.soft_skills_summary else 'No disponible'}
 
-Write 3 sections:
-1. Current state summary
-2. Main risks and concerns
-3. Concrete recommendations (3-5 action items)
+Escribe 3 secciones:
+1. Resumen del estado actual
+2. Principales riesgos y preocupaciones
+3. Recomendaciones concretas (3-5 acciones)
 
-Return ONLY valid JSON with no markdown, no backticks:
+Responde SOLO con JSON válido, sin markdown, sin backticks:
 {{
-    "report_title": "Clan {req.clan} - Performance Report",
-    "generated_date": "{datetime.now().strftime('%B %d, %Y')}",
+    "report_title": "Clan {req.clan} - Informe de Rendimiento",
+    "generated_date": "{datetime.now().strftime('%d de %B de %Y')}",
     "risk_level": "low|medium|high|critical",
-    "summary": "paragraph about current state",
-    "risks": "paragraph about risks",
-    "recommendations": "paragraph about what the TL should do",
-    "action_items": ["item 1", "item 2", "item 3"]
+    "summary": "párrafo sobre el estado actual",
+    "risks": "párrafo sobre los riesgos",
+    "recommendations": "párrafo sobre lo que debe hacer el TL",
+    "action_items": ["acción 1", "acción 2", "acción 3"]
 }}
 """
 
         completion = groq_client.chat.completions.create(
             model=os.getenv("MODEL_NAME", "llama-3.3-70b-versatile"),
             messages=[
-                {"role": "system", "content": "You are an educational analyst. Respond only with valid JSON, no markdown."},
+                {"role": "system", "content": "Eres un analista educativo. Responde solo con JSON válido, sin markdown."},
                 {"role": "user",   "content": prompt},
             ],
             max_tokens=1000,
@@ -282,7 +282,7 @@ def _build_pdf(clan: str, coders: list, skills_map: dict, progress_map: dict, ai
     pdf.set_xy(13, pdf.get_y() + 2)
     pdf.set_font("Helvetica", "B", 11)
     pdf.set_text_color(*PURPLE_DARK)
-    pdf.cell(0, 6, "CODER PROFILES", ln=True)
+    pdf.cell(0, 6, "PERFILES DE CODERS", ln=True)
     pdf.ln(4)
 
     for i, coder in enumerate(coders):
@@ -363,7 +363,7 @@ def _build_pdf(clan: str, coders: list, skills_map: dict, progress_map: dict, ai
         pdf.set_xy(13, pdf.get_y() + 2)
         pdf.set_font("Helvetica", "B", 11)
         pdf.set_text_color(*PURPLE_DARK)
-        pdf.cell(0, 6, "AI ANALYSIS", ln=True)
+        pdf.cell(0, 6, "ANALISIS IA", ln=True)   
         pdf.ln(4)
 
         risk_colors = {
@@ -381,7 +381,7 @@ def _build_pdf(clan: str, coders: list, skills_map: dict, progress_map: dict, ai
 
         pdf.set_font("Helvetica", "B", 10)
         pdf.set_text_color(*GRAY_DARK)
-        pdf.cell(0, 6, "Summary:", ln=True)
+        pdf.cell(0, 6, "Resumen:", ln=True)  
         pdf.set_font("Helvetica", "", 9)
         pdf.set_text_color(*GRAY_MID)
         pdf.multi_cell(190, 5, _sanitize(ai_report.get("summary_text", "")))
@@ -389,7 +389,7 @@ def _build_pdf(clan: str, coders: list, skills_map: dict, progress_map: dict, ai
 
         pdf.set_font("Helvetica", "B", 10)
         pdf.set_text_color(*GRAY_DARK)
-        pdf.cell(0, 6, "Recommendations:", ln=True)
+        pdf.cell(0, 6, "Recomendaciones:", ln=True)
         pdf.set_font("Helvetica", "", 9)
         pdf.set_text_color(*GRAY_MID)
         pdf.multi_cell(190, 5, _sanitize(ai_report.get("recommendations", "")))
