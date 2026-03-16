@@ -1,10 +1,5 @@
-/* =====================================================
-   GLOBAL.CSS — Kairo Design System
-   Single source of truth. Imported by every page.
-   ===================================================== */
-/* ─────────────────────────────────────────────────────
-   1. DESIGN TOKENS
-   ───────────────────────────────────────────────────── */
+/* LOBAL.CSS — Kairo Design System */
+
 :root {
   /* Backgrounds */
   --bg-body: #050505;
