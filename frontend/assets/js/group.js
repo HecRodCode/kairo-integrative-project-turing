@@ -2,16 +2,21 @@ import { guards, sessionManager } from '../../src/core/auth/session.js';
 import { API_BASE } from '../../src/core/config.js';
 
 const GROUP_SIZE = 4;
+const MIN_TEAMS = 1;
+const MAX_TEAMS = 12;
+const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const THEME_KEY = 'kairo_theme';
 const GROUP_STATE_KEY = 'kairo_groups_state_v2';
 const LEADERS_HISTORY_KEY = 'kairo_groups_leaders_history_v1';
 
 let coders = [];
 let manualMode = false;
-let manualAssignments = {}; // { coderId: { group: "A", role: "leader" | "member" } }
+let manualAssignments = {};
 let currentGroups = [];
 let leadersHistory = [];
 let historyVisible = false;
+let desiredTeamCount = 0;
+let manualGroupCount = 0;
 
 const coderList = document.getElementById('coder-list');
 const groupsContainer = document.getElementById('groups-container');
@@ -21,6 +26,11 @@ const codersCount = document.getElementById('coders-count');
 const btnRandom = document.getElementById('btn-random');
 const btnManual = document.getElementById('btn-manual');
 const btnLevel = document.getElementById('btn-level');
+const teamCountSelect = document.getElementById('team-count-select');
+const btnAddManualGroup = document.getElementById('btn-add-manual-group');
+const deleteGroupSelect = document.getElementById('manual-group-delete-select');
+const btnRemoveManualGroup = document.getElementById('btn-remove-manual-group');
+const manualGroupsPreview = document.getElementById('manual-groups-preview');
 
 let btnHistory = null;
 let historyPanel = null;
@@ -53,11 +63,13 @@ async function start() {
   loadStateFromStorage();
 
   await loadCoders();
+  initializeTeamControls();
   normalizeManualAssignments();
   renderCoderList();
   restoreGroupsFromStorage();
   renderHistory();
   wireButtons();
+  updateManualToolsUI();
 }
 
 function applyThemeFromStorage() {
@@ -152,25 +164,95 @@ async function loadCoders() {
   }
 }
 
-function getGroupLetters() {
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  const count = Math.max(4, Math.min(12, Math.ceil(coders.length / 2)));
+function getDefaultTeamCount() {
+  if (!coders.length) return 0;
+  return clampTeamCount(Math.ceil(coders.length / GROUP_SIZE));
+}
+
+function getMaxTeamsAllowed() {
+  if (!coders.length) return MAX_TEAMS;
+  return Math.max(MIN_TEAMS, Math.min(MAX_TEAMS, coders.length));
+}
+
+function clampTeamCount(value) {
+  const max = getMaxTeamsAllowed();
+  const numeric = Number(value) || MIN_TEAMS;
+  return Math.max(MIN_TEAMS, Math.min(max, numeric));
+}
+
+function getGroupLetters(count) {
+  const safeCount = Math.max(MIN_TEAMS, Math.min(MAX_TEAMS, count || MIN_TEAMS));
   const letters = [];
-  for (let i = 0; i < count; i++) {
-    letters.push(alphabet[i]);
+
+  for (let i = 0; i < safeCount; i++) {
+    letters.push(ALPHABET[i]);
   }
+
   return letters;
+}
+
+function letterToIndex(letter) {
+  if (!letter || typeof letter !== 'string') return -1;
+  return ALPHABET.indexOf(letter.toUpperCase());
+}
+
+function getHighestAssignedManualGroupIndex() {
+  const ids = Object.keys(manualAssignments);
+  let highest = -1;
+
+  for (let i = 0; i < ids.length; i++) {
+    const assignment = manualAssignments[ids[i]];
+    if (!assignment || !assignment.group) continue;
+    const idx = letterToIndex(assignment.group);
+    if (idx > highest) highest = idx;
+  }
+
+  return highest;
+}
+
+function getActiveManualGroupLetters() {
+  const highestAssigned = getHighestAssignedManualGroupIndex() + 1;
+  const count = Math.max(manualGroupCount, desiredTeamCount, highestAssigned);
+  return getGroupLetters(count);
+}
+
+function initializeTeamControls() {
+  if (desiredTeamCount <= 0) {
+    desiredTeamCount = getDefaultTeamCount();
+  }
+
+  desiredTeamCount = clampTeamCount(desiredTeamCount || getDefaultTeamCount());
+  manualGroupCount = clampTeamCount(
+    Math.max(manualGroupCount || 0, desiredTeamCount || MIN_TEAMS)
+  );
+
+  if (!teamCountSelect) return;
+
+  teamCountSelect.innerHTML = '';
+  const max = getMaxTeamsAllowed();
+
+  for (let i = MIN_TEAMS; i <= max; i++) {
+    const option = document.createElement('option');
+    option.value = String(i);
+    option.textContent = String(i);
+    teamCountSelect.appendChild(option);
+  }
+
+  teamCountSelect.value = String(desiredTeamCount || MIN_TEAMS);
 }
 
 function renderCoderList() {
   coderList.innerHTML = '';
 
+  updateManualToolsUI();
+
   if (coders.length === 0) {
     coderList.innerHTML = '<p class="empty-state">Sin coders disponibles.</p>';
+    renderManualGroupsPreview();
     return;
   }
 
-  const groupLetters = getGroupLetters();
+  const groupLetters = getActiveManualGroupLetters();
 
   for (let i = 0; i < coders.length; i++) {
     const c = coders[i];
@@ -255,6 +337,215 @@ function renderCoderList() {
   if (manualMode) {
     wireManualControls();
   }
+
+  renderManualGroupsPreview();
+}
+
+function updateManualToolsUI() {
+  if (teamCountSelect && teamCountSelect.value !== String(desiredTeamCount || MIN_TEAMS)) {
+    teamCountSelect.value = String(desiredTeamCount || MIN_TEAMS);
+  }
+
+  syncDeleteGroupControls();
+  if (!btnAddManualGroup) return;
+
+  const max = getMaxTeamsAllowed();
+  const atLimit = manualGroupCount >= max;
+  btnAddManualGroup.disabled = !manualMode || atLimit;
+}
+
+function syncDeleteGroupControls() {
+  if (!deleteGroupSelect || !btnRemoveManualGroup) return;
+
+  const letters = getActiveManualGroupLetters();
+  const previous = deleteGroupSelect.value;
+  deleteGroupSelect.innerHTML = '';
+
+  for (let i = 0; i < letters.length; i++) {
+    const option = document.createElement('option');
+    option.value = letters[i];
+    option.textContent = 'Grupo ' + letters[i];
+    deleteGroupSelect.appendChild(option);
+  }
+
+  if (letters.length === 0) {
+    const empty = document.createElement('option');
+    empty.value = '';
+    empty.textContent = 'Sin grupos';
+    deleteGroupSelect.appendChild(empty);
+  }
+
+  if (previous && letters.indexOf(previous) !== -1) {
+    deleteGroupSelect.value = previous;
+  } else if (letters.length > 0) {
+    deleteGroupSelect.value = letters[letters.length - 1];
+  }
+
+  const canRemove = manualMode && letters.length > MIN_TEAMS;
+  deleteGroupSelect.disabled = !canRemove;
+  btnRemoveManualGroup.disabled = !canRemove;
+}
+
+function renderManualGroupsPreview() {
+  if (!manualGroupsPreview) return;
+
+  if (!manualMode) {
+    manualGroupsPreview.classList.add('hidden');
+    manualGroupsPreview.innerHTML = '';
+    return;
+  }
+
+  const letters = getActiveManualGroupLetters();
+  if (letters.length === 0) {
+    manualGroupsPreview.classList.add('hidden');
+    manualGroupsPreview.innerHTML = '';
+    return;
+  }
+
+  const codersById = {};
+  for (let i = 0; i < coders.length; i++) {
+    codersById[String(coders[i].id)] = coders[i];
+  }
+
+  let html = '';
+  for (let i = 0; i < letters.length; i++) {
+    const letter = letters[i];
+    const members = [];
+
+    const ids = Object.keys(manualAssignments);
+    for (let j = 0; j < ids.length; j++) {
+      const assignment = manualAssignments[ids[j]];
+      if (!assignment || assignment.group !== letter) continue;
+      members.push({
+        coder: codersById[ids[j]],
+        role: assignment.role || 'member',
+      });
+    }
+
+    let leaderName = 'Sin líder';
+    for (let j = 0; j < members.length; j++) {
+      if (members[j].role === 'leader' && members[j].coder) {
+        leaderName = members[j].coder.full_name || '—';
+        break;
+      }
+    }
+
+    const canDelete = manualMode && letters.length > MIN_TEAMS;
+    html +=
+      '<article class="manual-group-pill">' +
+      '<div class="manual-group-pill-head">' +
+      '<strong>Grupo ' +
+      letter +
+      '</strong>' +
+      (canDelete
+        ? '<button class="manual-group-remove" type="button" data-group="' +
+          letter +
+          '" title="Eliminar grupo ' +
+          letter +
+          '">' +
+          '<i class="fa-solid fa-trash"></i>' +
+          '</button>'
+        : '') +
+      '</div>' +
+      '<span>' +
+      members.length +
+      ' integrantes</span>' +
+      '<span class="manual-group-leader">Líder: ' +
+      leaderName +
+      '</span>' +
+      '</article>';
+  }
+
+  manualGroupsPreview.classList.remove('hidden');
+  manualGroupsPreview.innerHTML = html;
+
+  const removeButtons = manualGroupsPreview.querySelectorAll('.manual-group-remove');
+  for (let i = 0; i < removeButtons.length; i++) {
+    removeButtons[i].addEventListener('click', function () {
+      const targetGroup = removeButtons[i].getAttribute('data-group');
+      removeManualGroup(targetGroup);
+    });
+  }
+}
+
+function addManualGroup() {
+  const max = getMaxTeamsAllowed();
+
+  if (manualGroupCount >= max) {
+    groupsHint.textContent = 'Ya llegaste al máximo de equipos permitidos.';
+    updateManualToolsUI();
+    return;
+  }
+
+  manualGroupCount = clampTeamCount(manualGroupCount + 1);
+  groupsHint.textContent =
+    'Grupo manual agregado. Asigna coders y define un líder por grupo.';
+  saveStateToStorage();
+  renderCoderList();
+}
+
+function removeManualGroup(groupLetter) {
+  if (!manualMode) {
+    groupsHint.textContent = 'Activa el modo manual para eliminar grupos.';
+    updateManualToolsUI();
+    return;
+  }
+
+  if (manualGroupCount <= MIN_TEAMS) {
+    groupsHint.textContent = 'Debe existir al menos un grupo manual.';
+    updateManualToolsUI();
+    return;
+  }
+
+  const targetIndex = letterToIndex(groupLetter);
+  if (targetIndex < 0 || targetIndex >= manualGroupCount) {
+    groupsHint.textContent = 'Selecciona un grupo válido para eliminar.';
+    updateManualToolsUI();
+    return;
+  }
+
+  const ids = Object.keys(manualAssignments);
+  const nextAssignments = {};
+
+  for (let i = 0; i < ids.length; i++) {
+    const id = ids[i];
+    const assignment = manualAssignments[id];
+    if (!assignment || !assignment.group) continue;
+
+    const idx = letterToIndex(assignment.group);
+    if (idx < 0) continue;
+    if (idx === targetIndex) continue;
+
+    if (idx > targetIndex) {
+      const shifted = ALPHABET[idx - 1];
+      if (!shifted) continue;
+      nextAssignments[id] = {
+        group: shifted,
+        role: assignment.role === 'leader' ? 'leader' : 'member',
+      };
+      continue;
+    }
+
+    nextAssignments[id] = {
+      group: assignment.group,
+      role: assignment.role === 'leader' ? 'leader' : 'member',
+    };
+  }
+
+  manualAssignments = nextAssignments;
+  manualGroupCount = clampTeamCount(Math.max(MIN_TEAMS, manualGroupCount - 1));
+
+  if (desiredTeamCount > manualGroupCount) {
+    desiredTeamCount = manualGroupCount;
+  }
+
+  keepSingleLeaderPerGroup();
+  groupsHint.textContent =
+    'Grupo ' +
+    groupLetter +
+    ' eliminado. Se reasignaron letras y se limpiaron coders de ese grupo.';
+  saveStateToStorage();
+  renderCoderList();
 }
 
 function wireManualControls() {
@@ -411,36 +702,99 @@ function renderGroups(groups) {
   }
 }
 
-function randomGroups() {
-  const shuffled = coders.slice().sort(function () {
-    return Math.random() - 0.5;
+function shuffleArray(list) {
+  const items = list.slice();
+  for (let i = items.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const temp = items[i];
+    items[i] = items[j];
+    items[j] = temp;
+  }
+  return items;
+}
+
+function getRecentLeaderIds(limit) {
+  const recent = [];
+  const max = Math.max(0, Number(limit) || 0);
+
+  for (let i = 0; i < leadersHistory.length && recent.length < max; i++) {
+    const row = leadersHistory[i];
+    if (!row || !row.leaders) continue;
+    for (let j = 0; j < row.leaders.length && recent.length < max; j++) {
+      if (row.leaders[j] && row.leaders[j].leaderId != null) {
+        recent.push(String(row.leaders[j].leaderId));
+      }
+    }
+  }
+
+  return recent;
+}
+
+function pickLeaderCandidate(members, recentLeaderIds, usedInRun) {
+  if (!members || members.length === 0) return null;
+
+  const available = members.filter(function (member) {
+    return !usedInRun.has(String(member.id));
   });
+  const uniquePool = available.length > 0 ? available : members;
 
-  const groups = [];
-  let groupNumber = 1;
-  const now = new Date().toISOString();
+  const freshPool = uniquePool.filter(function (member) {
+    return recentLeaderIds.indexOf(String(member.id)) === -1;
+  });
+  const pool = freshPool.length > 0 ? freshPool : uniquePool;
 
-  for (let i = 0; i < shuffled.length; i += GROUP_SIZE) {
-    const members = shuffled.slice(i, i + GROUP_SIZE);
-    groups.push({
-      title: 'Grupo ' + groupNumber,
-      members: members,
-      leader: members[0] || null,
-      modeLabel: 'Aleatorio',
-      createdAt: now,
-    });
-    groupNumber++;
+  return pool[Math.floor(Math.random() * pool.length)] || null;
+}
+
+function assignLeadersToGroups(groups) {
+  const recentLeaderIds = getRecentLeaderIds(30);
+  const usedInRun = new Set();
+
+  for (let i = 0; i < groups.length; i++) {
+    const leader = pickLeaderCandidate(groups[i].members, recentLeaderIds, usedInRun);
+    groups[i].leader = leader;
+    if (leader && leader.id != null) {
+      usedInRun.add(String(leader.id));
+    }
   }
 
   return groups;
 }
 
-function levelGroups() {
+function randomGroups() {
+  const shuffled = shuffleArray(coders);
+  const safeTeamCount = clampTeamCount(desiredTeamCount || getDefaultTeamCount());
+  const teamCount = Math.min(safeTeamCount, shuffled.length || safeTeamCount);
+  const now = new Date().toISOString();
+  const groups = [];
+
+  for (let i = 0; i < teamCount; i++) {
+    groups.push({
+      title: 'Grupo ' + (i + 1),
+      members: [],
+      leader: null,
+      modeLabel: 'Aleatorio',
+      createdAt: now,
+    });
+  }
+
+  for (let i = 0; i < shuffled.length; i++) {
+    const groupIndex = i % teamCount;
+    groups[groupIndex].members.push(shuffled[i]);
+  }
+
+  assignLeadersToGroups(groups);
+
+  return groups.filter(function (group) {
+    return group.members.length > 0;
+  });
+}
+
+function splitByLevel() {
   const level1 = [];
   const level2 = [];
   const level3 = [];
   const noData = [];
-  const now = new Date().toISOString();
 
   for (let i = 0; i < coders.length; i++) {
     const week = Number(coders[i].current_week);
@@ -451,17 +805,24 @@ function levelGroups() {
     else level3.push(coders[i]);
   }
 
+  return { level1, level2, level3, noData };
+}
+
+function levelGroups() {
+  const levels = splitByLevel();
+  const now = new Date().toISOString();
   const groups = [
-    { title: 'Nivel 1 (Semanas 1-4)', members: level1, modeLabel: 'Por nivel' },
-    { title: 'Nivel 2 (Semanas 5-8)', members: level2, modeLabel: 'Por nivel' },
-    { title: 'Nivel 3 (Semanas 9+)', members: level3, modeLabel: 'Por nivel' },
-    { title: 'Sin datos', members: noData, modeLabel: 'Por nivel' },
+    { title: 'Nivel 1 (Semanas 1-4)', members: levels.level1, modeLabel: 'Por nivel' },
+    { title: 'Nivel 2 (Semanas 5-8)', members: levels.level2, modeLabel: 'Por nivel' },
+    { title: 'Nivel 3 (Semanas 9+)', members: levels.level3, modeLabel: 'Por nivel' },
+    { title: 'Sin datos', members: levels.noData, modeLabel: 'Por nivel' },
   ];
 
   for (let i = 0; i < groups.length; i++) {
-    groups[i].leader = groups[i].members[0] || null;
     groups[i].createdAt = now;
   }
+
+  assignLeadersToGroups(groups);
 
   return groups;
 }
@@ -531,26 +892,63 @@ function manualGroups() {
 }
 
 function wireButtons() {
+  if (teamCountSelect) {
+    teamCountSelect.addEventListener('change', function () {
+      desiredTeamCount = clampTeamCount(teamCountSelect.value);
+      if (manualGroupCount < desiredTeamCount) {
+        manualGroupCount = desiredTeamCount;
+      }
+
+      updateManualToolsUI();
+      renderCoderList();
+      saveStateToStorage();
+    });
+  }
+
+  if (btnAddManualGroup) {
+    btnAddManualGroup.addEventListener('click', function () {
+      if (!manualMode) {
+        groupsHint.textContent = 'Primero activa el modo manual para agregar grupos.';
+        return;
+      }
+      addManualGroup();
+    });
+  }
+
+  if (btnRemoveManualGroup) {
+    btnRemoveManualGroup.addEventListener('click', function () {
+      const targetGroup = deleteGroupSelect ? deleteGroupSelect.value : '';
+      removeManualGroup(targetGroup);
+    });
+  }
+
   btnRandom.addEventListener('click', function () {
     manualMode = false;
     renderCoderList();
     const groups = randomGroups();
-    useGeneratedGroups(groups, 'Grupos generados al azar.', 'random');
+    useGeneratedGroups(
+      groups,
+      'Grupos al azar generados con ' + groups.length + ' equipos.',
+      'random'
+    );
   });
 
   btnLevel.addEventListener('click', function () {
     manualMode = false;
     renderCoderList();
     const groups = levelGroups();
-    useGeneratedGroups(groups, 'Grupos generados por nivel de estudio.', 'level');
+    useGeneratedGroups(groups, 'Grupos por nivel generados.', 'level');
   });
 
   btnManual.addEventListener('click', function () {
     if (!manualMode) {
       manualMode = true;
+      if (manualGroupCount < desiredTeamCount) {
+        manualGroupCount = desiredTeamCount;
+      }
       renderCoderList();
       groupsHint.textContent =
-        'Modo manual: asigna grupo, define un líder y vuelve a presionar para crear.';
+        'Modo manual activo: agrega grupos, asigna coders y vuelve a presionar para crear.';
       saveStateToStorage();
       return;
     }
@@ -688,11 +1086,16 @@ function normalizeManualAssignments() {
 
   manualAssignments = normalized;
   keepSingleLeaderPerGroup();
+  manualGroupCount = clampTeamCount(
+    Math.max(manualGroupCount || 0, desiredTeamCount || 0, getHighestAssignedManualGroupIndex() + 1)
+  );
 }
 
 function saveStateToStorage() {
   const snapshot = {
     manualMode: manualMode,
+    desiredTeamCount: desiredTeamCount,
+    manualGroupCount: manualGroupCount,
     manualAssignments: manualAssignments,
     groups: currentGroups.map(function (g) {
       return {
@@ -724,11 +1127,15 @@ function loadStateFromStorage() {
     if (!raw) return;
     const parsed = JSON.parse(raw);
     manualMode = !!parsed.manualMode;
+    desiredTeamCount = Number(parsed.desiredTeamCount) || 0;
+    manualGroupCount = Number(parsed.manualGroupCount) || 0;
     manualAssignments = parsed.manualAssignments || {};
     currentGroups = parsed.groups || [];
     if (parsed.hint) groupsHint.textContent = parsed.hint;
   } catch (_e) {
     manualMode = false;
+    desiredTeamCount = 0;
+    manualGroupCount = 0;
     manualAssignments = {};
     currentGroups = [];
   }
@@ -804,6 +1211,69 @@ function injectGroupsStyles() {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
+    }
+    .groups-config {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .teams-control {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-main);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .teams-control .manual-select {
+      min-width: 84px;
+    }
+    .manual-groups-preview {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    }
+    .manual-groups-preview.hidden {
+      display: none;
+    }
+    .manual-group-pill {
+      border: 1px solid var(--border-glass);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 9px 10px;
+      display: grid;
+      gap: 3px;
+      color: var(--text-main);
+      font-size: 12px;
+    }
+    .manual-group-pill-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .manual-group-pill strong {
+      font-size: 13px;
+    }
+    .manual-group-remove {
+      border: 1px solid rgba(239, 68, 68, 0.45);
+      background: rgba(239, 68, 68, 0.12);
+      color: #ef4444;
+      border-radius: 8px;
+      width: 28px;
+      height: 28px;
+      display: inline-grid;
+      place-items: center;
+      cursor: pointer;
+      transition: border-color .2s ease, background .2s ease;
+    }
+    .manual-group-remove:hover {
+      border-color: rgba(239, 68, 68, 0.7);
+      background: rgba(239, 68, 68, 0.2);
+    }
+    .manual-group-leader {
+      color: var(--text-muted);
     }
     .groups-hint {
       margin: 0;
@@ -1089,6 +1559,13 @@ function injectGroupsStyles() {
     @media (max-width: 520px) {
       .manual-controls {
         grid-template-columns: 1fr;
+      }
+      .groups-config {
+        align-items: stretch;
+      }
+      .teams-control {
+        justify-content: space-between;
+        width: 100%;
       }
     }
   `;

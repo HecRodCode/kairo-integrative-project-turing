@@ -106,29 +106,12 @@
               <i class="fa-solid fa-shuffle"></i> Grupos al azar
             </button>
             <button class="btn-action-secondary" id="btn-manual">
-              <i class="fa-solid fa-hand-pointer"></i> Modo manual
+              <i class="fa-solid fa-hand-pointer"></i> Grupos manuales
             </button>
             <button class="btn-action-primary" id="btn-level">
               <i class="fa-solid fa-layer-group"></i> Grupo por nivel
             </button>
           </div>
-          <div class="groups-config">
-            <label class="teams-control" for="team-count-select">
-              Equipos:
-              <select id="team-count-select" class="manual-select"></select>
-            </label>
-            <button class="btn-action-secondary" id="btn-add-manual-group" disabled>
-              <i class="fa-solid fa-plus"></i> Agregar grupo manual
-            </button>
-            <label class="teams-control" for="manual-group-delete-select">
-              Eliminar:
-              <select id="manual-group-delete-select" class="manual-select" disabled></select>
-            </label>
-            <button class="btn-action-secondary" id="btn-remove-manual-group" disabled>
-              <i class="fa-solid fa-trash"></i> Eliminar grupo
-            </button>
-          </div>
-          <div class="manual-groups-preview hidden" id="manual-groups-preview"></div>
           <p class="groups-hint" id="groups-hint">Selecciona un modo para agrupar coders.</p>
         </section>
 
