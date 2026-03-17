@@ -28,9 +28,7 @@ let pollCount = 0;
 /* ── DOM shorthand ── */
 const el = (id) => document.getElementById(id);
 
-/* ══════════════════════════════════════
-   BOOTSTRAP
-══════════════════════════════════════ */
+/* BOOTSTRAP */
 (async function init() {
   applyTheme();
   wireTheme();
@@ -66,9 +64,7 @@ const el = (id) => document.getElementById(id);
   });
 })();
 
-/* ══════════════════════════════════════
-   PLAN CHECK
-══════════════════════════════════════ */
+/* PLAN CHECK */
 async function checkPlan() {
   try {
     const res = await fetch(`${API_BASE}/coder/plan`, {
@@ -98,9 +94,7 @@ async function checkPlan() {
   }
 }
 
-/* ══════════════════════════════════════
-   POLLING
-══════════════════════════════════════ */
+/* POLLING */
 const POLL_MAX = 30;
 
 function startPolling() {
@@ -149,9 +143,7 @@ function startPolling() {
   }, POLL_INTERVAL);
 }
 
-/* ══════════════════════════════════════
-   REQUEST NEW PLAN
-══════════════════════════════════════ */
+/* REQUEST NEW PLAN */
 function wireRequestPlan() {
   el('btn-request-plan').addEventListener('click', async () => {
     const btn = el('btn-request-plan');
@@ -175,10 +167,7 @@ function wireRequestPlan() {
   });
 }
 
-/* ══════════════════════════════════════
-   RENDER ACTIVE PLAN
-   Listeners se registran UNA SOLA VEZ con _listenersWired
-══════════════════════════════════════ */
+/*  RENDER ACTIVE PLAN */
 let _listenersWired = false;
 
 function renderActivePlan() {
@@ -200,7 +189,6 @@ function renderActivePlan() {
   renderWeekNav(viewWeek);
   renderDay(viewDay);
 
-  // Registrar listeners solo la primera vez — evita acumulación en recargas
   if (!_listenersWired) {
     el('btn-prev-day').addEventListener('click', () => goToDay(viewDay - 1));
     el('btn-next-day').addEventListener('click', () => goToDay(viewDay + 1));
@@ -270,10 +258,7 @@ function isPerformanceDay(day) {
   return day === 20;
 }
 
-/* ══════════════════════════════════════
-   RENDER DAY — bug corregido:
-   btnExercise declarado con const antes de usarse
-══════════════════════════════════════ */
+/* RENDER DAY  */
 function renderDay(day) {
   viewDay = day;
 
@@ -305,7 +290,6 @@ function renderDay(day) {
     perfBanner.classList.toggle('hidden', !isPerformanceDay(day));
   }
 
-  // FIX: declarar btnExercise correctamente antes de usarla
   const btnExercise = el('btn-open-exercise');
   if (btnExercise) {
     if (isPerformanceDay(day)) {
@@ -415,7 +399,6 @@ function goToDay(d) {
   renderDay(d);
 }
 
-// Exponer para onclick= en HTML generado dinámicamente
 window.selectWeek = (w) => {
   viewWeek = w;
   buildWeekTabs();
@@ -423,9 +406,7 @@ window.selectWeek = (w) => {
 };
 window.selectDay = (d) => renderDay(d);
 
-/* ══════════════════════════════════════
-   STATE MACHINE
-══════════════════════════════════════ */
+/* STATE MACHINE */
 function showState(state) {
   ['generating', 'no-plan', 'active'].forEach((s) =>
     el(`state-${s}`).classList.add('hidden')
@@ -442,9 +423,7 @@ function showNoPlanWithError(reason) {
   }
 }
 
-/* ══════════════════════════════════════
-   THEME
-══════════════════════════════════════ */
+/* THEME */
 function applyTheme() {
   const stored = localStorage.getItem('kairo_theme') || 'dark';
   document.documentElement.setAttribute('data-theme', stored);
@@ -468,9 +447,7 @@ function syncThemeIcon(theme) {
   el('icon-sun').style.display = theme === 'light' ? 'block' : 'none';
 }
 
-/* ══════════════════════════════════════
-   UTILS
-══════════════════════════════════════ */
+/* UTILS */
 function wireLogout() {
   document
     .querySelectorAll('.btn-logout')
@@ -521,9 +498,7 @@ const extractUrl = (text) => {
   return match ? match[0] : null;
 };
 
-/* ══════════════════════════════════════
-   EXERCISE MODAL
-══════════════════════════════════════ */
+/* EXERCISE MODAL */
 let monacoEditor = null;
 let currentExercise = null;
 let hintIndex = 0;
@@ -756,9 +731,7 @@ function closeExerciseModal() {
 
 window.closeExerciseModal = closeExerciseModal;
 
-/* ══════════════════════════════════════
-   RAG — RECURSOS DEL TL
-══════════════════════════════════════ */
+/* RAG — RESORURCES DEL TL */
 async function searchAndRenderResources(topic, moduleId) {
   const cardsEl = el('resources-cards');
   const emptyEl = el('resources-empty');
