@@ -11,12 +11,11 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
       rel="stylesheet"
     />
-    <script src="../../../src/core/utils/theme.js" defer></script>
     <script src="https://unpkg.com/i18next@23.11.5/dist/umd/i18next.min.js"></script>
     <script src="./../../core/utils/i18n.js"></script>
+    <script src="../../../src/core/utils/theme.js" defer></script>
 
     <style>
-      /* ── OTP-specific styles ─ */
       .otp-header-icon {
         width: 56px;
         height: 56px;
@@ -28,26 +27,21 @@
         justify-content: center;
         margin: 0 auto 20px;
       }
-
       .otp-header-icon svg {
         width: 26px;
         height: 26px;
         stroke: var(--accent);
       }
-
       .otp-email-target {
         color: var(--accent);
         font-weight: 600;
         word-break: break-all;
       }
-
-      /* Fila de 6 inputs OTP */
       .otp-grid {
         display: flex;
         gap: 10px;
         margin-bottom: 8px;
       }
-
       .otp-digit {
         flex: 1;
         height: 58px;
@@ -64,40 +58,32 @@
           border-color 0.2s ease,
           box-shadow 0.2s ease,
           background 0.2s ease;
-        /* Quitar flechas de input number */
         -moz-appearance: textfield;
         appearance: textfield;
       }
-
       .otp-digit::-webkit-outer-spin-button,
       .otp-digit::-webkit-inner-spin-button {
         -webkit-appearance: none;
       }
-
       .otp-digit:focus {
         border-color: var(--accent);
         box-shadow: 0 0 0 3px var(--primary-glow);
         background: rgba(30, 41, 59, 0.75);
       }
-
       .otp-digit.filled {
         border-color: var(--accent-border);
         background: var(--accent-dim);
       }
-
       .otp-digit.error-digit {
         border-color: var(--color-error) !important;
         background: rgba(239, 68, 68, 0.05);
       }
-
-      /* Timer */
       .timer-row {
         display: flex;
         align-items: center;
         justify-content: space-between;
         margin: 6px 0 20px;
       }
-
       .timer-badge {
         display: inline-flex;
         align-items: center;
@@ -107,7 +93,6 @@
         border-radius: 8px;
         padding: 5px 12px;
       }
-
       .timer-dot {
         width: 6px;
         height: 6px;
@@ -115,7 +100,6 @@
         background: var(--color-error);
         animation: blink-dot 1s step-start infinite;
       }
-
       @keyframes blink-dot {
         0%,
         100% {
@@ -125,7 +109,6 @@
           opacity: 0.15;
         }
       }
-
       .timer-badge.expired {
         background: rgba(100, 116, 139, 0.08);
         border-color: rgba(100, 116, 139, 0.2);
@@ -137,7 +120,6 @@
       .timer-badge.expired #timer-display {
         color: var(--text-muted);
       }
-
       #timer-display {
         font-family: 'Inter', monospace;
         font-size: 13px;
@@ -145,12 +127,10 @@
         color: var(--color-error);
         letter-spacing: 0.05em;
       }
-
       .resend-wrap {
         font-size: 13px;
         color: var(--text-muted);
       }
-
       .resend-wrap button {
         background: none;
         border: none;
@@ -162,17 +142,13 @@
         padding: 0;
         transition: color 0.2s;
       }
-
       .resend-wrap button:hover:not(:disabled) {
         color: var(--purple-light);
       }
-
       .resend-wrap button:disabled {
         color: var(--text-muted);
         cursor: not-allowed;
       }
-
-      /* Intentos restantes */
       .attempts-hint {
         font-size: 12px;
         color: var(--text-muted);
@@ -180,8 +156,6 @@
         margin-top: 8px;
         min-height: 18px;
       }
-
-      /* Sobreescribe .link para el volver */
       .link-back {
         display: inline-flex;
         align-items: center;
@@ -192,7 +166,6 @@
         transition: color 0.2s;
         margin-top: 4px;
       }
-
       .link-back:hover {
         color: var(--text-main);
       }
@@ -201,16 +174,16 @@
 
   <body class="body-content">
     <main class="card-content">
-      <!-- ── Logo panel (igual que login/register) ── -->
+      <!-- Logo panel -->
       <section class="content-logo">
         <div class="container">
           <img src="./../../../assets/img/logo.png" alt="Riwi Logo" />
         </div>
       </section>
 
-      <!-- ── Form panel ── -->
+      <!-- Form panel -->
       <section class="content-form">
-        <!-- Ícono de escudo -->
+        <!-- Shield icon -->
         <div class="otp-header-icon">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -223,29 +196,30 @@
               stroke-linecap="round"
               stroke-linejoin="round"
               d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6
-               11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623
-               5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152
-               c-3.196 0-6.1-1.248-8.25-3.285z"
+                 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623
+                 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152
+                 c-3.196 0-6.1-1.248-8.25-3.285z"
             />
           </svg>
         </div>
 
         <header class="header">
           <h1 data-i18n="auth.otp_title">Verifica tu correo</h1>
-          <p data-i18n="auth.otp_p">
-            Enviamos un código de 6 dígitos a<br />
+          <p>
+            <span data-i18n="auth.otp_p">Enviamos un código de 6 dígitos a</span
+            ><br />
             <span class="otp-email-target" id="display-email">tu correo</span>
           </p>
         </header>
 
-        <!-- Mensajes de error / éxito -->
+        <!-- Error / success message -->
         <span
           class="error-text"
           id="msg-error"
           style="display: none; text-align: center; margin-bottom: 10px"
         ></span>
 
-        <!-- 6 inputs OTP -->
+        <!-- 6 OTP inputs -->
         <div class="otp-grid" id="otp-inputs">
           <input
             class="otp-digit"
@@ -298,24 +272,24 @@
           />
         </div>
 
-        <!-- Timer + reenviar -->
+        <!-- Timer + resend -->
         <div class="timer-row">
           <div class="timer-badge" id="timer-badge">
             <span class="timer-dot"></span>
             <span id="timer-display">05:00</span>
           </div>
           <p class="resend-wrap">
-            ¿No llegó?
+            <span data-i18n="auth.no_arrive">¿No llegó?</span>
             <button id="resend-btn" disabled data-i18n="auth.resend_code">
               Reenviar
             </button>
           </p>
         </div>
 
-        <!-- Hint de intentos -->
+        <!-- Attempts hint -->
         <p class="attempts-hint" id="attempts-hint"></p>
 
-        <!-- Botón verificar -->
+        <!-- Verify button -->
         <button
           type="button"
           class="btn-auth btn-submit"
@@ -325,7 +299,7 @@
           Verificar código
         </button>
 
-        <!-- Volver -->
+        <!-- Back link -->
         <p class="link" style="margin-top: 20px">
           <a href="./register.html" class="link-back">
             <svg
@@ -349,7 +323,7 @@
       </section>
     </main>
 
-    <!-- Theme / Language toggles (idéntico a login) -->
+    <!-- Theme / Language toggles -->
     <div class="theme-switch-wrapper">
       <button
         id="language-toggle"
@@ -424,4 +398,3 @@
     <script type="module" src="../../../src/core/auth/otp-ui.js"></script>
   </body>
 </html>
- 

@@ -17,7 +17,7 @@ const t = (key, params = {}) => {
   return msg;
 };
 
-/* ── Strength bar ─────────────────────────────────────────── */
+/* ── Password strength bar ── */
 function setupStrengthBar() {
   const passwordInput = document.getElementById('password');
   const bar = document.getElementById('strength-bar');
@@ -35,21 +35,17 @@ function setupStrengthBar() {
   passwordInput.addEventListener('input', () => {
     const pass = passwordInput.value;
     const { score } = validator.checkPasswordStrength(pass);
-
     bar.className = 'strength-bar';
-
     if (pass.length === 0) {
       bar.style.width = '0%';
       hint.textContent = '';
       return;
     }
-
     const stateMap = {
       1: { cls: 'strength-weak', width: '33%', color: '#ef4444' },
       2: { cls: 'strength-medium', width: '66%', color: '#f59e0b' },
       3: { cls: 'strength-strong', width: '100%', color: '#10b981' },
     };
-
     const state = stateMap[score];
     bar.classList.add(state.cls);
     bar.style.width = state.width;
@@ -58,7 +54,17 @@ function setupStrengthBar() {
   });
 }
 
-/* ── UI helpers ───────────────────────────────────────────── */
+/* ── Password tooltip — must be called after DOM is ready ── */
+function setupPasswordTooltip() {
+  const input = document.getElementById('password');
+  const tooltip = document.getElementById('pass-tooltip');
+  // Guard: login page has no tooltip, only register does
+  if (!input || !tooltip) return;
+  input.addEventListener('focus', () => tooltip.classList.add('visible'));
+  input.addEventListener('blur', () => tooltip.classList.remove('visible'));
+}
+
+/* ── UI helpers ── */
 const ui = {
   getLang: () =>
     localStorage.getItem('kairo-lang') || document.documentElement.lang || 'es',
@@ -79,7 +85,6 @@ const ui = {
     `;
     el.textContent = message;
     document.body.appendChild(el);
-
     el.animate(
       [
         { transform: 'translateX(100%)', opacity: 0 },
@@ -87,7 +92,6 @@ const ui = {
       ],
       { duration: 300, easing: 'ease-out' }
     );
-
     setTimeout(() => {
       el.style.opacity = '0';
       el.style.transform = 'translateX(20px)';
@@ -132,7 +136,7 @@ const ui = {
   },
 };
 
-/* ── HANDLERS ─────────────────────────────────────────────── */
+/* ── Login handler ── */
 async function handleLogin(e) {
   e.preventDefault();
   const btn = e.target.querySelector('.btn-submit');
@@ -153,7 +157,7 @@ async function handleLogin(e) {
 
     if (res.ok) {
       ui.showMessage('auth.alerts.login_success', 'success', {
-        name: data.user.fullName,
+        name: data.user?.fullName || data.user?.full_name || '',
       });
       sessionManager.saveUser(data.user);
       setTimeout(() => sessionManager.redirectByRole(data.user), 1500);
@@ -177,6 +181,7 @@ async function handleLogin(e) {
   }
 }
 
+/* ── Register handler ── */
 async function handleRegister(e) {
   e.preventDefault();
   const btn = e.target.querySelector('.btn-submit');
@@ -190,20 +195,17 @@ async function handleRegister(e) {
     ui.showMessage('auth.alerts.required_fields', 'error');
     return;
   }
-
   if (!validator.validateEmail(email)) {
     validator.highlightError('email');
     ui.showMessage('auth.alerts.invalid_email', 'error');
     return;
   }
-
   if (!validator.isPasswordStrong(pass)) {
     validator.highlightError('password');
     ui.showMessage('auth.alerts.weak_password', 'error');
     document.getElementById('password')?.focus();
     return;
   }
-
   if (!validator.doMatch(pass, confirm)) {
     validator.highlightError('confirm-password');
     ui.showMessage('auth.alerts.pass_mismatch', 'error');
@@ -211,7 +213,6 @@ async function handleRegister(e) {
   }
 
   const userData = { fullName, email, password: pass, clanId, role: 'coder' };
-
   ui.setLoading(btn, true, 'auth.btn_reg');
 
   try {
@@ -220,18 +221,21 @@ async function handleRegister(e) {
 
     if (res.ok) {
       sessionStorage.setItem('kairo_pending_email', email);
-      ui.showMessage('auth.alerts.register_success', 'success');
+      ui.showMessage('auth.alerts.register_success', 'success', {
+        clan: clanId || '',
+      });
       setTimeout(() => {
         ui.fadeOutCard(() => {
           window.location.href = './email-validation.html';
         });
       }, 1000);
     } else if (res.status === 409) {
-      ui.showMessage('auth.alerts.email_exists', 'success');
+      // Email already registered — redirect to OTP so user can verify
+      ui.showMessage('auth.alerts.user_exists', 'error');
       sessionStorage.setItem('kairo_pending_email', email);
       setTimeout(() => {
         window.location.href = './email-validation.html';
-      }, 1000);
+      }, 1500);
     } else {
       ui.showMessage(data.error || 'auth.alerts.conn_error', 'error');
     }
@@ -242,9 +246,9 @@ async function handleRegister(e) {
   }
 }
 
-/* ── INIT ─────────────────────────────────────────────────── */
+/* ── INIT — all DOM access goes inside DOMContentLoaded ── */
 document.addEventListener('DOMContentLoaded', async () => {
-  // ── OAuth callback handler ──────────────────────────────
+  // Handle OAuth callback (?oauth=success&dest=...)
   const params = new URLSearchParams(window.location.search);
   const oauthSuccess = params.get('oauth') === 'success';
   const dest = params.get('dest');
@@ -256,17 +260,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (res.ok && data.authenticated) {
         sessionManager.saveUser(data.user);
         window.location.replace(decodeURIComponent(dest));
-        return; // ← no ejecuta nada más
+        return; // Do not wire forms after redirect
       }
     } catch (err) {
       console.warn('[OAuth redirect] checkAuth failed:', err.message);
     }
   }
-  // ───────────────────────────────────────────────────────
 
+  // Redirect to dashboard if session already exists (non-blocking)
   await guards.requireGuest();
 
-  // OAuth buttons
+  // Wire OAuth buttons
   document
     .querySelectorAll('.btn-social.google')
     .forEach((a) => (a.href = `${API_BASE}/auth/google`));
@@ -274,18 +278,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     .querySelectorAll('.btn-social.github')
     .forEach((a) => (a.href = `${API_BASE}/auth/github`));
 
+  // Wire UI components — all getElementById calls are safe here
   ui.setupPasswordToggles();
   setupStrengthBar();
+  setupPasswordTooltip();
 
+  // Wire forms
   const loginForm = document.getElementById('login-form');
   const registerForm = document.getElementById('register-form');
   if (loginForm) loginForm.addEventListener('submit', handleLogin);
   if (registerForm) registerForm.addEventListener('submit', handleRegister);
 });
-
-// information about password
-const input   = document.getElementById('password');
-const tooltip = document.getElementById('pass-tooltip');
-
-input.addEventListener('focus', () => tooltip.classList.add('visible'));
-input.addEventListener('blur',  () => tooltip.classList.remove('visible'));
