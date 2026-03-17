@@ -25,10 +25,9 @@ let viewWeek = 1;
 let pollTimer = null;
 let pollCount = 0;
 
-/* ── DOM shorthand ── */
 const el = (id) => document.getElementById(id);
 
-/* BOOTSTRAP */
+
 (async function init() {
   applyTheme();
   wireTheme();
@@ -57,9 +56,7 @@ const el = (id) => document.getElementById(id);
 
   window.addEventListener('kairo-notification', (e) => {
     const n = e.detail;
-    if (n.type === 'feedback' || n.type === 'assignment') {
-      checkPlan();
-    }
+    if (n.type === 'feedback' || n.type === 'assignment') checkPlan();
   });
 })();
 
@@ -70,21 +67,16 @@ async function checkPlan() {
       credentials: 'include',
     });
     const data = await res.json();
-
     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-
     if (!data.hasPlan) {
       showState('no-plan');
       return;
     }
-
     planData = data.plan;
-
     if (!planData.planContent?.weeks?.length) {
       startPolling();
       return;
     }
-
     showState('active');
     renderActivePlan();
   } catch (err) {
@@ -119,25 +111,21 @@ function startPolling() {
         credentials: 'include',
       });
       const data = await res.json();
-
       if (!data.hasPlan) return;
-
       const content = data.plan?.planContent;
       if (content?.status === 'fallback' || !content?.weeks?.length) {
         clearInterval(pollTimer);
         showNoPlanWithError(
-          content?.summary ||
-            'El servicio de IA no está disponible. Verifica la API key.'
+          content?.summary || 'El servicio de IA no está disponible.'
         );
         return;
       }
-
       clearInterval(pollTimer);
       planData = data.plan;
       showState('active');
       renderActivePlan();
     } catch {
-      // silently retry
+      /* silently retry */
     }
   }, POLL_INTERVAL);
 }
@@ -149,7 +137,6 @@ function wireRequestPlan() {
     btn.disabled = true;
     btn.innerHTML =
       '<i class="fa-solid fa-spinner fa-spin"></i> Solicitando...';
-
     try {
       await fetch(`${API_BASE}/coder/plan/request`, {
         method: 'POST',
@@ -166,14 +153,13 @@ function wireRequestPlan() {
   });
 }
 
-/*  RENDER ACTIVE PLAN */
+/* RENDER ACTIVE PLAN */
 let _listenersWired = false;
 
 function renderActivePlan() {
   const plan = planData.planContent;
   const current = planData.currentDay || 1;
 
-  // Plan header chips
   el('chip-type').textContent =
     plan.plan_type === 'analytical' ? '📊 Analítico' : '🔮 Interpretivo';
   el('chip-style').textContent = `👁 ${plan.learning_style_applied || '—'}`;
@@ -201,26 +187,22 @@ function renderActivePlan() {
   }
 }
 
-/* ── Overall progress ── */
 function renderOverall() {
   const count = Object.keys(planData.completedDays || {}).length;
   const pct = Math.round((count / 20) * 100);
   el('stat-completed').textContent = count;
   el('overall-fill').style.width = `${pct}%`;
   el('overall-pct').textContent = `${pct}%`;
-
   if (planData.isComplete)
     el('plan-complete-banner').classList.remove('hidden');
 }
 
-/* ── Week tabs ── */
 function buildWeekTabs() {
   el('week-tabs').innerHTML = [1, 2, 3, 4]
     .map(
       (w) => `
     <button class="week-tab ${w === viewWeek ? 'active' : ''}"
-            data-week="${w}"
-            onclick="selectWeek(${w})">
+            data-week="${w}" onclick="selectWeek(${w})">
       Semana ${w}
     </button>
   `
@@ -228,19 +210,15 @@ function buildWeekTabs() {
     .join('');
 }
 
-/* ── Day dots ── */
 function renderWeekNav(week) {
   viewWeek = week;
-
   el('week-tabs')
     .querySelectorAll('.week-tab')
     .forEach((tab) => {
       tab.classList.toggle('active', parseInt(tab.dataset.week) === week);
     });
-
   const done = planData.completedDays || {};
   const startDay = (week - 1) * 5 + 1;
-
   el('day-dots').innerHTML = Array.from({ length: 5 }, (_, i) => {
     const d = startDay + i;
     const isDone = !!done[String(d)];
@@ -252,12 +230,11 @@ function renderWeekNav(week) {
   }).join('');
 }
 
-/* ── Performance day helper ── */
 function isPerformanceDay(day) {
   return day === 20;
 }
 
-/* RENDER DAY  */
+/* RENDER DAY */
 function renderDay(day) {
   viewDay = day;
 
@@ -270,11 +247,9 @@ function renderDay(day) {
   el('day-number').textContent = `Día ${day}`;
   el('day-week-label').textContent =
     `Semana ${weekIdx + 1} — ${weekObj?.focus || ''}`;
-
   el('btn-prev-day').disabled = day <= 1;
   el('btn-next-day').disabled = day >= 20;
 
-  // Completed state
   const isDone = !!(planData.completedDays || {})[String(day)];
   el('day-completed-banner').classList.toggle('hidden', !isDone);
   el('card-tech').classList.toggle('completed', isDone);
@@ -283,11 +258,8 @@ function renderDay(day) {
     ? '<i class="fa-solid fa-circle-check"></i> Día completado'
     : '<i class="fa-solid fa-check"></i> Marcar día como completado';
 
-  // Performance day banner
   const perfBanner = el('perf-day-banner');
-  if (perfBanner) {
-    perfBanner.classList.toggle('hidden', !isPerformanceDay(day));
-  }
+  if (perfBanner) perfBanner.classList.toggle('hidden', !isPerformanceDay(day));
 
   const btnExercise = el('btn-open-exercise');
   if (btnExercise) {
@@ -310,7 +282,6 @@ function renderDay(day) {
     return;
   }
 
-  // Technical activity
   const tech = dayObj.technical_activity || {};
   el('tech-title').textContent = tech.title || '—';
   el('tech-desc').textContent = tech.description || '—';
@@ -322,7 +293,6 @@ function renderDay(day) {
   el('tech-difficulty').textContent = capDifficulty(diff);
   el('tech-difficulty').className = `badge-difficulty ${diff}`;
 
-  // Resources
   const chips = (tech.resources || [])
     .map((r) => {
       const url = extractUrl(r);
@@ -339,7 +309,6 @@ function renderDay(day) {
   el('resources-chips').innerHTML =
     chips || '<span class="resource-chip">Sin recursos adicionales</span>';
 
-  // Soft skill activity
   const soft = dayObj.soft_skill_activity || {};
   el('soft-title').textContent = soft.title || '—';
   el('soft-desc').textContent = soft.description || '—';
@@ -351,13 +320,8 @@ function renderDay(day) {
   );
   el('reflection-text').textContent = soft.reflection_prompt || '—';
 
-  // Sync week nav dots
   renderWeekNav(Math.ceil(day / 5));
-
-  // Search TL resources for this day's topic
-  if (tech.title) {
-    searchAndRenderResources(tech.title, planData.moduleId);
-  }
+  if (tech.title) searchAndRenderResources(tech.title, planData.moduleId);
 }
 
 /* ── Mark day complete ── */
@@ -365,20 +329,20 @@ async function markDayComplete(day) {
   const btn = el('btn-complete-tech');
   btn.disabled = true;
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
-
   try {
     const res = await fetch(
       `${API_BASE}/coder/plan/${planData.id}/day/${day}/complete`,
-      { method: 'POST', credentials: 'include' }
+      {
+        method: 'POST',
+        credentials: 'include',
+      }
     );
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
-
     planData.completedDays = data.completedDays;
     planData.completedCount = data.completedCount;
     planData.currentDay = data.nextDay || day;
     planData.isComplete = data.isComplete;
-
     renderOverall();
     renderDay(day);
     buildWeekTabs();
@@ -390,7 +354,6 @@ async function markDayComplete(day) {
   }
 }
 
-/* ── Navigation ── */
 function goToDay(d) {
   if (d < 1 || d > 20) return;
   const newWeek = Math.ceil(d / 5);
@@ -430,7 +393,10 @@ function applyTheme() {
 }
 
 function wireTheme() {
-  el('btn-theme').addEventListener('click', () => {
+  // Guard: btn-theme may not exist in all page variants
+  const btn = el('btn-theme');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
     const next =
       document.documentElement.getAttribute('data-theme') === 'dark'
         ? 'light'
@@ -442,8 +408,10 @@ function wireTheme() {
 }
 
 function syncThemeIcon(theme) {
-  el('icon-moon').style.display = theme === 'dark' ? 'block' : 'none';
-  el('icon-sun').style.display = theme === 'light' ? 'block' : 'none';
+  const moon = el('icon-moon');
+  const sun = el('icon-sun');
+  if (moon) moon.style.display = theme === 'dark' ? 'block' : 'none';
+  if (sun) sun.style.display = theme === 'light' ? 'block' : 'none';
 }
 
 /* UTILS */
@@ -456,7 +424,9 @@ function wireLogout() {
 }
 
 function setDate() {
-  el('topbar-date').textContent = new Date().toLocaleDateString('es-CO', {
+  const dateEl = el('topbar-date');
+  if (!dateEl) return;
+  dateEl.textContent = new Date().toLocaleDateString('es-CO', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -555,7 +525,6 @@ async function openExerciseModal(day) {
       }),
     });
     const data = await res.json();
-
     if (!res.ok || !data.exercise)
       throw new Error(data.error || 'Error al cargar ejercicio');
 
@@ -584,7 +553,6 @@ function renderExerciseModal(ex) {
     javascript: 'JavaScript',
     html: 'HTML/CSS',
   };
-
   el('modal-lang-badge').textContent =
     langLabels[ex.language] || ex.language?.toUpperCase() || 'CODE';
   el('modal-ex-title').textContent = ex.title || 'Ejercicio del día';
@@ -636,7 +604,6 @@ function mountMonaco(language, code) {
     monacoEditor.dispose();
     monacoEditor = null;
   }
-
   const langMap = {
     sql: 'sql',
     python: 'python',
@@ -644,7 +611,6 @@ function mountMonaco(language, code) {
     html: 'html',
   };
   const monacoLang = langMap[language] || 'plaintext';
-
   monacoEditor = window.monaco.editor.create(el('monaco-editor'), {
     value: code,
     language: monacoLang,
@@ -664,10 +630,8 @@ function mountMonaco(language, code) {
 
 async function submitSolution(exerciseId) {
   if (!monacoEditor || !exerciseId) return;
-
   const btn = el('btn-submit-exercise');
   const code = monacoEditor.getValue().trim();
-
   if (!code) {
     btn.innerHTML =
       '<i class="fa-solid fa-exclamation"></i> Escribe algo primero';
@@ -676,10 +640,8 @@ async function submitSolution(exerciseId) {
     }, 2000);
     return;
   }
-
   btn.disabled = true;
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
-
   try {
     const res = await fetch(`${API_BASE}/coder/exercise/${exerciseId}/submit`, {
       method: 'POST',
@@ -688,7 +650,6 @@ async function submitSolution(exerciseId) {
       body: JSON.stringify({ code }),
     });
     const data = await res.json();
-
     if (data.success) {
       btn.innerHTML =
         '<i class="fa-solid fa-circle-check"></i> ¡Solución enviada!';
@@ -721,7 +682,7 @@ function closeExerciseModal() {
 
 window.closeExerciseModal = closeExerciseModal;
 
-/* RAG — RESORURCES DEL TL */
+/* RAG — RECURSOS DEL TL */
 async function searchAndRenderResources(topic, moduleId) {
   const cardsEl = el('resources-cards');
   const emptyEl = el('resources-empty');
@@ -739,9 +700,7 @@ async function searchAndRenderResources(topic, moduleId) {
       body: JSON.stringify({ topic, moduleId, limit: 3 }),
     });
     const data = await res.json();
-
     loadingEl.classList.add('hidden');
-
     if (!data.resources?.length) {
       emptyEl.classList.remove('hidden');
       return;
@@ -751,9 +710,7 @@ async function searchAndRenderResources(topic, moduleId) {
       .map(
         (r) => `
       <div class="resource-card">
-        <div class="resource-card-icon">
-          <i class="fa-solid fa-file-pdf"></i>
-        </div>
+        <div class="resource-card-icon"><i class="fa-solid fa-file-pdf"></i></div>
         <div class="resource-card-body">
           <p class="resource-card-title">${r.title}</p>
           <p class="resource-card-preview">${r.preview_text || r.file_name}</p>
