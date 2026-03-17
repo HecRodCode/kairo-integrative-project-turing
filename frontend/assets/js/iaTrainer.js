@@ -32,7 +32,6 @@ const el = (id) => document.getElementById(id);
 (async function init() {
   applyTheme();
   wireTheme();
-  wireLang();
   wireLogout();
   setDate();
 
@@ -454,15 +453,6 @@ function wireLogout() {
     .forEach((btn) =>
       btn.addEventListener('click', () => sessionManager.logout())
     );
-}
-
-const LANGS = ['ES', 'EN'];
-let langIdx = 0;
-function wireLang() {
-  el('btn-lang').addEventListener('click', () => {
-    langIdx = (langIdx + 1) % LANGS.length;
-    el('btn-lang').title = `Idioma: ${LANGS[langIdx]}`;
-  });
 }
 
 function setDate() {

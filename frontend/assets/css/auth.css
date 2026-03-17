@@ -417,14 +417,14 @@ input:focus,
 .req-item.met .req-icon { border-color: #22c55e; background: #22c55e; }
 .req-item.met .req-icon svg { display: block; }
 
-/* ── 1024px: card un poco más estrecha ── */
+/* ── 1024px ── */
 @media (max-width: 1024px) {
   .card-content {
     width: 88%;
   }
 }
 
-/* ── 768px: apila logo + form verticalmente ── */
+/* ── 768px ── */
 @media (max-width: 768px) {
   .body-content {
     align-items: flex-start;
@@ -440,7 +440,6 @@ input:focus,
     margin: 0 auto;
   }
 
-  /* Panel del logo: se convierte en banner superior compacto */
   .content-logo {
     width: 100%;
     min-height: 140px;
@@ -458,7 +457,6 @@ input:focus,
     height: 120px;
   }
 
-  /* Panel del form: ocupa todo el ancho */
   .content-form {
     width: 100%;
     padding: 24px 20px 28px;
@@ -468,7 +466,6 @@ input:focus,
     font-size: 24px;
   }
 
-  /* Tooltip: cae debajo del input en móvil */
   .pass-tooltip {
     left: 0;
     right: 0;
@@ -497,7 +494,6 @@ input:focus,
     padding: 20px 16px 24px;
   }
 
-  /* Password row pasa a columna en pantallas muy pequeñas */
   .password-row {
     grid-template-columns: 1fr;
   }
@@ -511,7 +507,6 @@ input:focus,
     font-size: 14px;
   }
 
-  /* OTP grid: inputs más pequeños */
   .otp-grid {
     gap: 6px;
   }
@@ -520,6 +515,25 @@ input:focus,
     height: 50px;
     font-size: 18px;
   }
+}
+
+.link-back-landing {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.2s;
+  padding: 4px 0;
+
+  position: absolute;
+  top: 20px; 
+  left: 20px;
+  z-index: 10;
+}
+.link-back-landing:hover {
+  color: var(--accent);
 }
 
 /* ── 390px: mínimo soporte ── */

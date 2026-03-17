@@ -83,6 +83,7 @@ const resources = {
         has_acc: 'Already have an account?',
         link_reg: 'Register Here',
         link_login: 'Log In',
+        back_landing: '← Back to home',
         // OTP
         otp_title: 'Verify your email',
         otp_p: 'We sent a 6-digit code to',
@@ -468,6 +469,7 @@ const resources = {
         has_acc: '¿Ya tienes una cuenta?',
         link_reg: 'Regístrate Aquí',
         link_login: 'Iniciar Sesión',
+        back_landing: '← Volver al inicio',
         // OTP
         otp_title: 'Verifica tu correo',
         otp_p: 'Enviamos un código de 6 dígitos a',
